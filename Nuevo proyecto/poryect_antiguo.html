@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KAN BAN PROYECT BI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .kanban-column {
+            min-height: 70vh;
+            border-radius: 1.25rem;
+            padding: 1rem;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            min-width: 300px;
+        }
+        /* Inteligencia de color por columna */
+        #col-backlog { background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); border: 2px dashed #cbd5e1; }
+        #col-todo { background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%); border: 2px dashed #f59e0b; }
+        #col-progress { background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); border: 2px dashed #3b82f6; }
+        #col-review { background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%); border: 2px dashed #8b5cf6; }
+        #col-done { background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); border: 2px dashed #10b981; }
+        #col-archived { background: linear-gradient(135deg, #fafafa 0%, #f4f4f5 100%); border: 2px dashed #a1a1aa; }
+        
+        .drag-over { filter: brightness(0.9) saturate(1.2); transform: scale(1.01); border-style: solid !important; }
+
+        .task-card {
+            cursor: grab;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+        .task-card:active { cursor: grabbing; }
+        .task-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 20px -5px rgba(0, 0, 0, 0.1);
+        }
+
+        #modal-overlay, #alert-overlay, #file-modal-overlay, #auth-overlay, #role-modal-overlay {
+            background-color: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(10px);
+        }
+
+        .role-indicator {
+            height: 5px;
+            width: 100%;
+            border-radius: 10px 10px 0 0;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+    </style>
+</head>
+<body class="bg-slate-50 font-sans p-4 md:p-6 text-slate-900 custom-scrollbar">
+
+    <!-- Pantalla de Autenticación -->
+    <div id="auth-overlay" class="fixed inset-0 flex items-center justify-center p-4 z-[100]">
+        <div class="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-lg p-10 text-center animate-in fade-in zoom-in duration-500">
+            <div class="mb-6 flex justify-center">
+                <div class="w-20 h-20 bg-indigo-600 rounded-3xl flex items-center justify-center shadow-2xl shadow-indigo-200 transform -rotate-12">
+                    <span class="text-4xl">📊</span>
+                </div>
+            </div>
+            <h2 class="text-3xl font-black text-slate-800 mb-2 tracking-tighter uppercase">Kanban Proyect BI</h2>
+            <p class="text-slate-400 mb-8 font-medium">Gestión de Flujo de Datos & Control</p>
+            
+            <div id="auth-existing-list" class="grid grid-cols-2 gap-3 mb-8"></div>
+
+            <div class="relative mb-8">
+                <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-slate-100"></div></div>
+                <div class="relative flex justify-center text-[10px] uppercase tracking-widest"><span class="bg-white px-4 text-slate-400 font-black">Nuevo Perfil</span></div>
+            </div>
+
+            <div class="space-y-4">
+                <input type="text" id="user-identity" placeholder="Ingresa tu nombre..." class="w-full border-2 border-slate-100 rounded-2xl p-4 text-center text-lg font-bold focus:border-indigo-500 outline-none transition-all shadow-inner">
+                <button onclick="login()" class="w-full bg-indigo-600 text-white py-5 rounded-2xl font-black shadow-xl hover:bg-indigo-700 transition-all uppercase tracking-widest">
+                    Entrar al Sistema
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <header class="mb-10">
+        <div class="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-8 mb-8">
+            <div>
+                <h1 class="text-4xl font-black text-slate-800 tracking-tighter mb-2">🔹 Kanban <span class="text-[#F2C811] italic">Proyect BI</span></h1>
+                <div class="flex flex-wrap items-center gap-3">
+                    <span id="display-user" class="text-indigo-700 font-black text-xs bg-indigo-100 px-4 py-1.5 rounded-full border border-indigo-200 uppercase tracking-widest italic shadow-sm">Sesión no iniciada</span>
+                    <a href="https://paideiaprogramas.pucp.edu.pe/" target="_blank" class="bg-slate-800 text-white px-4 py-1.5 rounded-full text-[10px] font-black hover:bg-black transition-all shadow-md">
+                        🎓 PLATAFORMA INFOPUC
+                    </a>
+                </div>
+            </div>
+            
+            <div id="file-status-panel" class="bg-white p-5 rounded-3xl shadow-2xl border border-slate-100 flex flex-col sm:flex-row items-center gap-6 w-full xl:w-auto">
+                <div class="flex items-center gap-4">
+                    <div id="status-indicator" class="w-4 h-4 rounded-full bg-emerald-500 animate-pulse border-4 border-emerald-50"></div>
+                    <div>
+                        <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Archivo Maestro</p>
+                        <h4 id="status-text" class="text-xs font-black text-emerald-600 uppercase">Disponible ✅</h4>
+                    </div>
+                </div>
+                <div class="flex flex-wrap items-center gap-2 border-l-2 pl-6 border-slate-50">
+                    <button onclick="openFileLinkWithInternalLog()" class="bg-indigo-600 text-white px-4 py-2.5 rounded-xl hover:bg-indigo-700 transition-all flex items-center gap-2 shadow-lg shadow-indigo-100 group">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+                        <span class="text-[10px] font-black uppercase">Abrir Drive</span>
+                    </button>
+                    <!-- Botón Auditoría Relacional Histórica -->
+                    <button onclick="downloadAccessLogs()" class="bg-emerald-600 text-white px-4 py-2.5 rounded-xl hover:bg-emerald-700 transition-all flex items-center gap-2 shadow-lg shadow-emerald-100">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                        <span class="text-[10px] font-black uppercase">Auditoría</span>
+                    </button>
+                    <button onclick="openFileEditModal()" class="bg-slate-100 text-slate-500 p-2.5 rounded-xl hover:bg-slate-200 transition-all">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+                    </button>
+                    <button onclick="toggleFileStatus()" class="bg-slate-900 text-white px-4 py-2.5 rounded-xl text-[9px] font-black hover:bg-black transition-all uppercase tracking-widest">
+                        Estado
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex flex-col lg:flex-row gap-4 items-center">
+            <button onclick="openModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3.5 rounded-2xl font-black shadow-xl shadow-indigo-100 transition-all flex items-center justify-center gap-2 hover:scale-105">
+                <span>➕</span> Nueva Tarea
+            </button>
+            <button onclick="openRoleModal()" class="bg-white hover:bg-slate-50 text-slate-700 px-6 py-3.5 rounded-2xl font-black shadow-xl border border-slate-200 transition-all flex items-center justify-center gap-2">
+                <span>⚙️</span> Roles
+            </button>
+            <div class="flex bg-white p-1 rounded-2xl border border-slate-200 shadow-xl">
+                <button id="view-kanban" onclick="switchView('kanban')" class="px-6 py-2 rounded-xl text-xs font-black transition-all bg-indigo-600 text-white shadow-lg uppercase">Tablero</button>
+                <button id="view-archive" onclick="switchView('archive')" class="px-6 py-2 rounded-xl text-xs font-black transition-all text-slate-400 hover:text-slate-600 uppercase">Historial 📦</button>
+            </div>
+            
+            <div class="bg-white flex-1 p-3 rounded-2xl shadow-xl border border-slate-100 flex items-center gap-4 overflow-x-auto custom-scrollbar">
+                <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">🔍 Filtros:</span>
+                <div id="filter-container" class="flex gap-2"></div>
+            </div>
+        </div>
+    </header>
+
+    <!-- KANBAN VIEW -->
+    <div id="kanban-view" class="flex gap-6 overflow-x-auto pb-8 custom-scrollbar">
+        <!-- Backlog -->
+        <div id="col-backlog" class="kanban-column flex-shrink-0" ondrop="drop(event, 'backlog')" ondragover="allowDrop(event)">
+            <h2 class="text-[11px] font-black text-slate-500 uppercase tracking-widest mb-4 px-2 flex justify-between items-center">
+                <span>📥 Backlog</span> <span id="badge-backlog" class="bg-slate-200 px-2 rounded-full">0</span>
+            </h2>
+            <div id="tasks-backlog" class="space-y-4"></div>
+        </div>
+        <!-- To Do -->
+        <div id="col-todo" class="kanban-column flex-shrink-0" ondrop="drop(event, 'todo')" ondragover="allowDrop(event)">
+            <h2 class="text-[11px] font-black text-amber-600 uppercase tracking-widest mb-4 px-2 flex justify-between items-center">
+                <span>📋 Por hacer</span> <span id="badge-todo" class="bg-amber-200 px-2 rounded-full">0</span>
+            </h2>
+            <div id="tasks-todo" class="space-y-4"></div>
+        </div>
+        <!-- In Progress -->
+        <div id="col-progress" class="kanban-column flex-shrink-0" ondrop="drop(event, 'progress')" ondragover="allowDrop(event)">
+            <h2 class="text-[11px] font-black text-blue-600 uppercase tracking-widest mb-4 px-2 flex justify-between items-center">
+                <span>🚧 En proceso</span> <span id="badge-progress" class="bg-blue-200 px-2 rounded-full">0</span>
+            </h2>
+            <div id="tasks-progress" class="space-y-4"></div>
+        </div>
+        <!-- Review -->
+        <div id="col-review" class="kanban-column flex-shrink-0" ondrop="drop(event, 'review')" ondragover="allowDrop(event)">
+            <h2 class="text-[11px] font-black text-purple-600 uppercase tracking-widest mb-4 px-2 flex justify-between items-center">
+                <span>👀 En revisión</span> <span id="badge-review" class="bg-purple-200 px-2 rounded-full">0</span>
+            </h2>
+            <div id="tasks-review" class="space-y-4"></div>
+        </div>
+        <!-- Done -->
+        <div id="col-done" class="kanban-column flex-shrink-0" ondrop="drop(event, 'done')" ondragover="allowDrop(event)">
+            <h2 class="text-[11px] font-black text-emerald-600 uppercase tracking-widest mb-4 px-2 flex justify-between items-center">
+                <span>✅ Finalizado</span> <span id="badge-done" class="bg-emerald-200 px-2 rounded-full">0</span>
+            </h2>
+            <div id="tasks-done" class="space-y-4"></div>
+        </div>
+        <!-- Flow Archived -->
+        <div id="col-archived" class="kanban-column flex-shrink-0" ondrop="drop(event, 'archived')" ondragover="allowDrop(event)">
+            <h2 class="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-4 px-2 flex justify-between items-center">
+                <span>📦 Archivado</span> <span id="badge-archived" class="bg-slate-200 px-2 rounded-full">0</span>
+            </h2>
+            <div id="tasks-archived" class="space-y-4"></div>
+        </div>
+    </div>
+
+    <!-- ARCHIVE VIEW (Historial de completados) -->
+    <div id="archive-view" class="hidden animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <div class="bg-white p-10 rounded-[3rem] border border-slate-200 shadow-2xl">
+            <h2 class="text-3xl font-black text-slate-800 mb-8 tracking-tighter">📦 Historial Maestro</h2>
+            <div id="archived-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"></div>
+        </div>
+    </div>
+
+    <!-- MODAL FORMULARIO TAREAS -->
+    <div id="modal-overlay" class="fixed inset-0 hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-5xl overflow-hidden flex flex-col md:flex-row h-[85vh] animate-in zoom-in duration-300">
+            <div class="p-8 border-r border-slate-100 flex-1 overflow-y-auto custom-scrollbar">
+                <h3 id="modal-title" class="text-2xl font-black text-slate-800 mb-8 tracking-tighter uppercase">Gestión de Requerimiento</h3>
+                <form id="task-form" class="space-y-5">
+                    <input type="hidden" id="edit-id">
+                    <div>
+                        <label class="block text-[10px] font-black text-slate-400 uppercase mb-2 tracking-widest">Actividad 📝</label>
+                        <input type="text" id="task-title" required class="w-full border-2 border-slate-50 rounded-2xl p-4 text-sm font-bold focus:border-indigo-500 outline-none bg-slate-50 focus:bg-white transition-all">
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-[10px] font-black text-slate-400 uppercase mb-2 tracking-widest">Responsable 👤</label>
+                            <input type="text" id="task-assignee" list="assignee-suggestions" class="w-full border-2 border-slate-50 rounded-xl p-3 text-sm font-bold outline-none bg-slate-50">
+                            <datalist id="assignee-suggestions"></datalist>
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-black text-slate-400 uppercase mb-2 tracking-widest">Especialidad 🛠️</label>
+                            <select id="task-role" class="w-full border-2 border-slate-50 rounded-xl p-3 text-sm font-bold outline-none bg-slate-50"></select>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div><label class="block text-[10px] font-black text-slate-400 uppercase mb-2 tracking-widest">Inicio 📅</label><input type="date" id="task-date-start" class="w-full border-2 border-slate-50 rounded-xl p-3 text-sm outline-none bg-slate-50"></div>
+                        <div><label class="block text-[10px] font-black text-slate-400 uppercase mb-2 tracking-widest">Fin 📅</label><input type="date" id="task-date-end" class="w-full border-2 border-slate-50 rounded-xl p-3 text-sm outline-none bg-slate-50"></div>
+                    </div>
+                    <div><label class="block text-[10px] font-black text-slate-400 uppercase mb-2 tracking-widest">Etiquetas ✨</label><input type="text" id="task-labels" list="label-suggestions" placeholder="#Dax, #Dashboard" class="w-full border-2 border-slate-50 rounded-xl p-3 text-sm outline-none bg-slate-50"><datalist id="label-suggestions"></datalist></div>
+                    <div><label class="block text-[10px] font-black text-slate-400 uppercase mb-2 tracking-widest">Link Drive 🔗</label><input type="url" id="task-link" placeholder="https://..." class="w-full border-2 border-slate-50 rounded-xl p-3 text-sm outline-none bg-slate-50"></div>
+                    <div class="flex justify-between items-center gap-4 mt-8 pt-6 border-t border-slate-100">
+                        <button type="button" id="btn-delete-task" onclick="deleteCurrentTask()" class="px-5 py-2 text-xs font-black text-red-400 hover:text-red-600 uppercase">Eliminar</button>
+                        <div class="flex gap-3 ml-auto">
+                            <button type="button" id="btn-archive-task" onclick="archiveCurrentTask()" class="px-5 py-2 text-xs font-black text-slate-400 hover:text-slate-800 uppercase">📦 Historial</button>
+                            <button type="button" onclick="closeModal()" class="px-6 py-3 text-xs font-black text-slate-400 hover:text-slate-600 uppercase">Cerrar</button>
+                            <button type="submit" class="bg-indigo-600 text-white px-8 py-3.5 rounded-2xl text-xs font-black shadow-lg hover:bg-indigo-700 uppercase">Guardar</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div id="comments-section" class="w-full md:w-80 bg-slate-50 p-8 flex flex-col border-l border-slate-100">
+                <h4 class="text-xs font-black text-slate-400 uppercase mb-6 tracking-widest">Notas del equipo 💬</h4>
+                <div id="comments-list" class="flex-1 overflow-y-auto space-y-4 mb-6 text-xs custom-scrollbar"></div>
+                <div class="space-y-3">
+                    <textarea id="comment-input" placeholder="Añadir nota..." class="w-full border-2 border-slate-200 rounded-2xl p-4 text-xs outline-none h-24 resize-none bg-white focus:border-indigo-500"></textarea>
+                    <button onclick="addComment()" class="w-full bg-slate-800 text-white py-3 rounded-xl text-[9px] font-black uppercase tracking-widest">Enviar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL CONFIGURACIÓN ROLES -->
+    <div id="role-modal-overlay" class="fixed inset-0 hidden flex items-center justify-center p-4 z-[55]">
+        <div class="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-md p-10 border border-slate-200 animate-in zoom-in duration-300">
+            <h3 class="text-2xl font-black text-slate-800 mb-6 tracking-tighter">Roles del Equipo ⚙️</h3>
+            <div id="role-manager-list" class="space-y-2 mb-8 max-h-52 overflow-y-auto custom-scrollbar pr-2"></div>
+            <div class="pt-6 border-t border-slate-100 space-y-3">
+                <div class="flex gap-2">
+                    <input type="text" id="new-role-name" placeholder="Nombre" class="flex-1 border-2 border-slate-100 rounded-xl p-3 text-xs font-bold outline-none shadow-inner">
+                    <input type="text" id="new-role-emoji" placeholder="🚀" class="w-16 border-2 border-slate-100 rounded-xl p-3 text-center outline-none shadow-inner">
+                </div>
+                <div class="flex gap-2 items-center">
+                    <input type="color" id="new-role-color" value="#6366f1" class="w-12 h-12 border-none cursor-pointer rounded-xl bg-transparent">
+                    <button onclick="addNewRole()" class="flex-1 bg-indigo-600 text-white py-3 rounded-xl text-[9px] font-black uppercase shadow-lg">Registrar Rol</button>
+                </div>
+            </div>
+            <div class="mt-6"><button onclick="closeRoleModal()" class="w-full bg-slate-100 text-slate-500 py-3 rounded-xl text-[9px] font-black uppercase">Cerrar</button></div>
+        </div>
+    </div>
+
+    <!-- MODAL LINK PROYECTO -->
+    <div id="file-modal-overlay" class="fixed inset-0 hidden flex items-center justify-center p-4 z-[55]">
+        <div class="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-md p-10">
+            <h3 class="text-2xl font-black text-slate-800 mb-6 tracking-tighter">Ubicación del Proyecto</h3>
+            <input type="url" id="edit-file-link" class="w-full border-2 border-slate-100 rounded-2xl p-4 text-sm font-bold outline-none focus:border-indigo-500 shadow-inner mb-8">
+            <div class="flex justify-end gap-4">
+                <button onclick="closeFileEditModal()" class="px-6 py-2 text-xs font-black text-slate-400 uppercase">Cancelar</button>
+                <button onclick="saveFileLink()" class="bg-indigo-600 text-white px-8 py-4 rounded-2xl text-xs font-black">Guardar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- SISTEMA DE ALERTAS -->
+    <div id="alert-overlay" class="fixed inset-0 hidden flex items-center justify-center p-4 z-[60]">
+        <div class="bg-white rounded-[2rem] shadow-2xl p-10 max-w-sm text-center border-t-[10px] border-red-500">
+            <div class="text-5xl mb-4">🚫</div>
+            <h4 class="text-2xl font-black text-slate-800 mb-2 tracking-tighter">Acción Bloqueada</h4>
+            <p id="alert-message" class="text-slate-500 text-sm mb-8 leading-relaxed font-medium"></p>
+            <button onclick="closeAlert()" class="w-full bg-slate-900 text-white py-4 rounded-2xl font-black shadow-lg uppercase tracking-widest">Entendido</button>
+        </div>
+    </div>
+
+    <script>
+        // --- DATA & PERSISTENCIA ---
+        let currentUser = null;
+        let currentFilter = 'all';
+        let currentView = 'kanban';
+        
+        let roles, tasks, projectFile, accessLogs;
+
+        const defaults = {
+            roles: [
+                { id: 'etl', name: 'Arquitecto ETL', color: '#f97316', emoji: '🟠' },
+                { id: 'model', name: 'Modelador', color: '#3b82f6', emoji: '🔵' },
+                { id: 'dax', name: 'DAX Expert', color: '#a855f7', emoji: '🟣' },
+                { id: 'ux', name: 'Diseñador UX', color: '#ec4899', emoji: '🔴' },
+                { id: 'visual', name: 'Analista Visual', color: '#10b981', emoji: '🟢' }
+            ],
+            tasks: [
+                { id: 1, title: '📂 Configurar Fuentes ERP', role: 'etl', labels: ['#Urgente'], status: 'backlog', assignee: 'Equipo Aura', dateStart: '2025-05-12', dateEnd: '2025-05-12', link: '', comments: [] }
+            ],
+            projectFile: { available: true, link: 'https://drive.google.com/drive/folders/1nlwk3jpDV25YhfdxJQxuWOHAcoR8Tnyg?usp=sharing' },
+            accessLogs: []
+        };
+
+        function loadData() {
+            const saved = localStorage.getItem('Kanban_ProyectBI_pro_v3');
+            if (saved) {
+                const data = JSON.parse(saved);
+                roles = data.roles || [...defaults.roles];
+                tasks = data.tasks || [...defaults.tasks];
+                projectFile = data.projectFile || {...defaults.projectFile};
+                accessLogs = data.accessLogs || [];
+            } else {
+                roles = [...defaults.roles];
+                tasks = [...defaults.tasks];
+                projectFile = {...defaults.projectFile};
+                accessLogs = [];
+                saveData();
+            }
+        }
+
+        function saveData() {
+            localStorage.setItem('Kanban_ProyectBI_pro_v3', JSON.stringify({ roles, tasks, projectFile, accessLogs }));
+        }
+
+        // --- SISTEMA DE SESIÓN ---
+        function login(nameFromList = null) {
+            const name = nameFromList || document.getElementById('user-identity').value.trim();
+            if (!name) return;
+            currentUser = name;
+            document.getElementById('display-user').innerText = `👤 RESPONSABLE: ${currentUser.toUpperCase()}`;
+            document.getElementById('auth-overlay').classList.add('hidden');
+            renderUI();
+        }
+
+        function renderAuthList() {
+            const container = document.getElementById('auth-existing-list');
+            const assignees = [...new Set(tasks.map(t => t.assignee))];
+            container.innerHTML = assignees.map(a => `
+                <button onclick="login('${a}')" class="bg-slate-50 hover:bg-indigo-50 border-2 border-slate-100 p-3 rounded-2xl text-[10px] font-black text-slate-500 truncate uppercase shadow-sm transition-all">
+                    ${a}
+                </button>
+            `).join('') || '<p class="col-span-2 text-[9px] text-slate-300 italic uppercase">Sin registros previos</p>';
+        }
+
+        // --- AUDITORÍA DE ACCESO ---
+        function openFileLinkWithInternalLog() {
+            if (!currentUser) return;
+            const now = new Date();
+            const logEntry = {
+                user: currentUser,
+                date: now.toLocaleDateString(),
+                time: now.toLocaleTimeString(),
+                timestamp: now.getTime()
+            };
+            accessLogs.push(logEntry);
+            saveData();
+            window.open(projectFile.link, '_blank');
+        }
+
+        function downloadAccessLogs() {
+            if (accessLogs.length === 0) {
+                showAlert("No hay registros de auditoría almacenados todavía.");
+                return;
+            }
+            let logContent = `RELACIÓN HISTÓRICA DE ACCESOS - Kanban Proyect BI\n`;
+            logContent += `Generado el: ${new Date().toLocaleString()}\n`;
+            logContent += `========================================================\n\n`;
+            
+            // Ordenar por fecha descendente
+            const sortedLogs = [...accessLogs].sort((a, b) => b.timestamp - a.timestamp);
+
+            sortedLogs.forEach((log, index) => {
+                logContent += `[${index + 1}] RESPONSABLE: ${log.user}\n`;
+                logContent += `    FECHA: ${log.date} | HORA: ${log.time}\n`;
+                logContent += `    ACCIÓN: Acceso a Carpeta Maestra de Proyecto (Drive)\n`;
+                logContent += `--------------------------------------------------------\n`;
+            });
+
+            const blob = new Blob([logContent], { type: 'text/plain' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `Auditoria_Accesos_Kanban ProyectBI.txt`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+        }
+
+        // --- GESTIÓN DE ROLES ---
+        function openRoleModal() { renderRoleManager(); document.getElementById('role-modal-overlay').classList.remove('hidden'); }
+        function closeRoleModal() { document.getElementById('role-modal-overlay').classList.add('hidden'); renderUI(); }
+        function renderRoleManager() {
+            const list = document.getElementById('role-manager-list');
+            list.innerHTML = roles.map(r => `
+                <div class="flex items-center justify-between bg-slate-50 p-3 rounded-2xl border border-slate-100 shadow-sm">
+                    <div class="flex items-center gap-3">
+                        <div class="w-3 h-3 rounded-full" style="background-color: ${r.color}"></div>
+                        <span class="text-[10px] font-black text-slate-700 uppercase">${r.emoji} ${r.name}</span>
+                    </div>
+                    <button onclick="deleteRole('${r.id}')" class="text-red-300 hover:text-red-500 transition-colors"><svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z"></path></svg></button>
+                </div>
+            `).join('');
+        }
+        function addNewRole() {
+            const name = document.getElementById('new-role-name').value.trim();
+            const emoji = document.getElementById('new-role-emoji').value.trim() || '⚙️';
+            const color = document.getElementById('new-role-color').value;
+            if (!name) return;
+            roles.push({ id: 'role_' + Date.now(), name, color, emoji });
+            document.getElementById('new-role-name').value = '';
+            saveData(); renderRoleManager();
+        }
+        function deleteRole(id) { roles = roles.filter(r => r.id !== id); saveData(); renderRoleManager(); }
+
+        // --- RENDERIZADO KANBAN ---
+        function switchView(view) {
+            currentView = view;
+            document.getElementById('kanban-view').classList.toggle('hidden', view !== 'kanban');
+            document.getElementById('archive-view').classList.toggle('hidden', view !== 'archive');
+            const vK = document.getElementById('view-kanban');
+            const vA = document.getElementById('view-archive');
+            vK.className = `px-6 py-2.5 rounded-xl text-xs font-black transition-all ${view === 'kanban' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:text-slate-600'}`;
+            vA.className = `px-6 py-2.5 rounded-xl text-xs font-black transition-all ${view === 'archive' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:text-slate-600'}`;
+            renderUI();
+        }
+
+        function renderUI() {
+            if (currentView === 'kanban') renderKanban();
+            else renderArchive();
+        }
+
+        function renderKanban() {
+            const statuses = ['backlog', 'todo', 'progress', 'review', 'done', 'archived'];
+            const allLabels = new Set();
+            const allAssignees = new Set();
+
+            statuses.forEach(status => {
+                const container = document.getElementById(`tasks-${status}`);
+                const badge = document.getElementById(`badge-${status}`);
+                const colTasks = tasks.filter(t => {
+                    const match = t.status === status;
+                    const filterMatch = currentFilter === 'all' || (t.labels && t.labels.includes(currentFilter));
+                    return match && filterMatch;
+                });
+                badge.innerText = colTasks.length;
+                container.innerHTML = '';
+
+                colTasks.forEach(task => {
+                    const role = roles.find(r => r.id === task.role) || {color:'#ccc', emoji:'❓', name:'Sin Rol'};
+                    const card = document.createElement('div');
+                    card.className = `task-card bg-white p-5 rounded-3xl shadow-md border border-slate-100 relative overflow-hidden`;
+                    card.draggable = true;
+                    card.id = `task-${task.id}`;
+                    card.ondragstart = (e) => e.dataTransfer.setData("taskId", task.id);
+                    card.onclick = () => editTask(task.id);
+                    const tagsHTML = (task.labels || []).map(l => `<span class="text-[7px] font-black text-slate-400 mr-1 opacity-80 border border-slate-100 px-2 py-0.5 rounded-md uppercase">${l}</span>`).join('');
+
+                    card.innerHTML = `
+                        <div class="role-indicator" style="background-color: ${role.color}"></div>
+                        <div class="mb-3">${tagsHTML}</div>
+                        <h3 class="font-black text-slate-800 text-[13px] mb-3 leading-tight">${task.title}</h3>
+                        ${task.link ? `<button onclick="event.stopPropagation(); window.open('${task.link}', '_blank')" class="w-full mb-4 py-2 bg-indigo-50 text-indigo-600 rounded-xl text-[9px] font-black uppercase hover:bg-indigo-100 border border-indigo-100 transition-colors">🔗 Abrir Link</button>` : ''}
+                        <div class="flex items-center justify-between pt-3 border-t border-slate-50">
+                            <span class="text-[9px] font-black text-indigo-600 uppercase">👤 ${task.assignee.split(' ')[0]}</span>
+                            <span class="text-[10px] font-black text-slate-300 uppercase">${role.emoji}</span>
+                        </div>
+                    `;
+                    container.appendChild(card);
+                });
+            });
+
+            tasks.forEach(t => {
+                t.labels?.forEach(l => allLabels.add(l));
+                if (t.assignee) allAssignees.add(t.assignee);
+            });
+            updateFilterUI(Array.from(allLabels));
+            updateSuggestions(Array.from(allLabels), Array.from(allAssignees));
+            updateRoleSelects();
+        }
+
+        function renderArchive() {
+            const container = document.getElementById('archived-list');
+            const archived = tasks.filter(t => t.status === 'history');
+            container.innerHTML = archived.length ? '' : '<p class="col-span-full text-slate-300 text-xs italic py-20 text-center uppercase tracking-widest font-black">El historial maestro está vacío</p>';
+            archived.forEach(t => {
+                container.innerHTML += `
+                    <div class="bg-white p-6 rounded-3xl border border-slate-100 opacity-80 hover:opacity-100 cursor-pointer shadow-xl transition-all" onclick="editTask(${t.id})">
+                        <h4 class="font-black text-slate-800 text-sm mb-3 tracking-tighter">${t.title}</h4>
+                        <div class="flex justify-between items-center text-[9px] font-black text-slate-400 uppercase tracking-widest">
+                            <span>👤 ${t.assignee}</span><span>📅 ${t.dateEnd || 'S/F'}</span>
+                        </div>
+                    </div>`;
+            });
+        }
+
+        // --- LÓGICA DE TAREAS ---
+        function drop(ev, newStatus) {
+            ev.preventDefault();
+            const taskId = ev.dataTransfer.getData("taskId");
+            const task = tasks.find(t => t.id == taskId);
+            if (task) {
+                // Validación DAX (Seguridad de flujo)
+                if (newStatus === 'done' && (task.role === 'dax' || task.title.toLowerCase().includes('dax'))) {
+                    const pendingModel = tasks.filter(t => (t.role === 'model' || t.title.toLowerCase().includes('relación')) && t.status !== 'done' && t.status !== 'history');
+                    if (pendingModel.length > 0) {
+                        showAlert(`Bloqueo: Debes finalizar el Modelado y las Relaciones antes de validar el DAX (${pendingModel.length} pendientes).`);
+                        return;
+                    }
+                }
+                task.status = newStatus;
+                saveData(); renderUI();
+            }
+            ev.currentTarget.classList.remove('drag-over');
+        }
+        function allowDrop(ev) { ev.preventDefault(); ev.currentTarget.classList.add('drag-over'); }
+
+        function openModal() {
+            document.getElementById('task-form').reset();
+            document.getElementById('edit-id').value = '';
+            document.getElementById('btn-delete-task').classList.add('hidden');
+            document.getElementById('btn-archive-task').classList.add('hidden');
+            document.getElementById('modal-overlay').classList.remove('hidden');
+            renderComments([]);
+        }
+
+        function editTask(id) {
+            const task = tasks.find(t => t.id === id);
+            if (!task) return;
+            document.getElementById('edit-id').value = task.id;
+            document.getElementById('task-title').value = task.title;
+            document.getElementById('task-role').value = task.role;
+            document.getElementById('task-assignee').value = task.assignee;
+            document.getElementById('task-date-start').value = task.dateStart || '';
+            document.getElementById('task-date-end').value = task.dateEnd || '';
+            document.getElementById('task-labels').value = (task.labels || []).join(', ');
+            document.getElementById('task-link').value = task.link || '';
+            document.getElementById('btn-delete-task').classList.remove('hidden');
+            document.getElementById('btn-archive-task').classList.toggle('hidden', task.status === 'history');
+            document.getElementById('modal-overlay').classList.remove('hidden');
+            renderComments(task.comments || []);
+        }
+
+        function archiveCurrentTask() {
+            const id = document.getElementById('edit-id').value;
+            const task = tasks.find(t => t.id == id);
+            if (task) { task.status = 'history'; saveData(); closeModal(); switchView('archive'); }
+        }
+
+        function deleteCurrentTask() {
+            tasks = tasks.filter(t => t.id != document.getElementById('edit-id').value);
+            saveData(); closeModal(); renderUI();
+        }
+
+        function closeModal() { document.getElementById('modal-overlay').classList.add('hidden'); }
+        function openFileEditModal() { document.getElementById('edit-file-link').value = projectFile.link; document.getElementById('file-modal-overlay').classList.remove('hidden'); }
+        function closeFileEditModal() { document.getElementById('file-modal-overlay').classList.add('hidden'); }
+        function saveFileLink() { projectFile.link = document.getElementById('edit-file-link').value; saveData(); closeFileEditModal(); updateStatusUI(); }
+        function toggleFileStatus() { projectFile.available = !projectFile.available; saveData(); updateStatusUI(); }
+        function updateStatusUI() {
+            const ind = document.getElementById('status-indicator');
+            const txt = document.getElementById('status-text');
+            ind.className = `w-4 h-4 rounded-full border-4 ${projectFile.available ? 'bg-emerald-500 animate-pulse border-emerald-50' : 'bg-red-500 border-red-50'}`;
+            txt.innerText = projectFile.available ? 'Disponible ✅' : 'En Uso ⛔';
+            txt.className = `text-xs font-black uppercase tracking-tight ${projectFile.available ? 'text-emerald-600' : 'text-red-600'}`;
+        }
+
+        function renderComments(comments) {
+            const list = document.getElementById('comments-list');
+            list.innerHTML = comments.length ? '' : '<p class="text-slate-300 italic text-center py-4 text-[8px] uppercase">Sin comentarios</p>';
+            comments.forEach(c => {
+                list.innerHTML += `<div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm"><p class="font-black text-indigo-600 text-[9px] uppercase mb-1">${c.user}</p><p class="text-slate-600 text-[10px] leading-tight">${c.text}</p></div>`;
+            });
+            list.scrollTop = list.scrollHeight;
+        }
+
+        function addComment() {
+            const task = tasks.find(t => t.id == document.getElementById('edit-id').value);
+            if (!task || !document.getElementById('comment-input').value.trim() || !currentUser) return;
+            if (!task.comments) task.comments = [];
+            task.comments.push({ user: currentUser, text: document.getElementById('comment-input').value.trim() });
+            document.getElementById('comment-input').value = ''; saveData(); renderComments(task.comments);
+        }
+
+        document.getElementById('task-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const id = document.getElementById('edit-id').value;
+            const labelsInput = document.getElementById('task-labels').value;
+            const labels = labelsInput ? labelsInput.split(',').map(l => { let tag = l.trim(); return tag.startsWith('#') ? tag : '#' + tag; }).filter(l => l !== '#') : [];
+            const data = {
+                title: document.getElementById('task-title').value,
+                role: document.getElementById('task-role').value,
+                assignee: document.getElementById('task-assignee').value,
+                dateStart: document.getElementById('task-date-start').value,
+                dateEnd: document.getElementById('task-date-end').value,
+                labels: labels,
+                link: document.getElementById('task-link').value
+            };
+            if (id) {
+                const idx = tasks.findIndex(t => t.id == id);
+                tasks[idx] = { ...tasks[idx], ...data };
+            } else {
+                tasks.push({ id: Date.now(), ...data, status: 'backlog', comments: [] });
+            }
+            saveData(); closeModal(); renderUI();
+        });
+
+        function updateFilterUI(labels) {
+            const container = document.getElementById('filter-container');
+            container.innerHTML = `<button onclick="setFilter('all')" class="px-5 py-2 rounded-2xl text-[9px] font-black transition-all ${currentFilter === 'all' ? 'bg-indigo-600 text-white shadow-lg' : 'bg-slate-50 text-slate-400 hover:bg-slate-100'} uppercase">Todo</button>`;
+            labels.sort().forEach(l => {
+                const isActive = currentFilter === l;
+                container.innerHTML += `<button onclick="setFilter('${l}')" class="px-5 py-2 rounded-2xl text-[9px] font-black transition-all ${isActive ? 'bg-indigo-600 text-white shadow-lg' : 'bg-slate-50 text-slate-400 hover:bg-slate-100'} uppercase">${l}</button>`;
+            });
+        }
+
+        function setFilter(tag) { currentFilter = tag; renderUI(); }
+        function updateRoleSelects() { document.getElementById('task-role').innerHTML = roles.map(r => `<option value="${r.id}">${r.emoji} ${r.name}</option>`).join(''); }
+        function updateSuggestions(labels, assignees) {
+            document.getElementById('label-suggestions').innerHTML = labels.map(l => `<option value="${l}">`).join('');
+            document.getElementById('assignee-suggestions').innerHTML = assignees.map(a => `<option value="${a}">`).join('');
+        }
+        function showAlert(msg) { document.getElementById('alert-message').innerText = msg; document.getElementById('alert-overlay').classList.remove('hidden'); }
+        function closeAlert() { document.getElementById('alert-overlay').classList.add('hidden'); }
+
+        window.onload = () => { loadData(); updateStatusUI(); renderAuthList(); }
+    </script>
+</body>
+</html>
