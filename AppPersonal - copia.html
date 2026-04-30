@@ -1,0 +1,2585 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KAN BAN Presonal - Cloud</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        // CONFIGURACIÓN CRÍTICA: Activar modo oscuro por clase en Tailwind
+        tailwind.config = {
+            darkMode: 'class',
+        }
+        
+        // Prevenir flash de luz si el modo noche está activo
+        if (localStorage.getItem('bi_kanban_theme') === 'dark') {
+            document.documentElement.classList.add('dark');
+        }
+    </script>
+    <style>
+        /* TRANSICIÓN BASE Y FONDOS MULTICOLOR INTACTOS */
+        body { 
+            transition: background-color 0.4s, color 0.4s; 
+            background-color: #f8fafc; 
+            background-image: radial-gradient(at 0% 0%, hsla(210, 100%, 95%, 1) 0px, transparent 50%),
+                              radial-gradient(at 100% 0%, hsla(280, 100%, 95%, 1) 0px, transparent 50%);
+            background-attachment: fixed;
+            color: #1e293b; 
+        }
+        
+        html.dark body { 
+            background-color: #0b0f19; 
+            background-image: radial-gradient(at 0% 0%, hsla(220, 50%, 15%, 1) 0px, transparent 50%),
+                              radial-gradient(at 100% 0%, hsla(280, 40%, 15%, 1) 0px, transparent 50%);
+            color: #e2e8f0; 
+        }
+
+        /* --- SISTEMA DE DISEÑO DINÁMICO (BLANCO LIMPIO / NEGRO GLASS) --- */
+        
+        /* MODO DÍA: Blanco Limpio y Cómodo */
+        .glass-ui {
+            background-color: #ffffff;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+        }
+
+        /* MODO NOCHE: Negro Translúcido */
+        html.dark .glass-ui {
+            background-color: rgba(30, 41, 59, 0.6);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(71, 85, 105, 0.4);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        /* --- EFECTO HOVER AMARILLO GLOBAL PARA TODOS LOS BOTONES --- */
+        button, a.btn-global-hover {
+            transition: all 0.3s ease !important;
+        }
+        
+        /* Hover en MODO DÍA */
+        button:not(.no-yellow-hover):hover, a.btn-global-hover:hover {
+            background-color: #fef08a !important; 
+            color: #713f12 !important; 
+            border-color: #fde047 !important; 
+            box-shadow: 0 4px 10px rgba(250, 204, 21, 0.2) !important;
+            transform: translateY(-1px);
+        }
+        
+        /* Hover en MODO NOCHE */
+        html.dark button:not(.no-yellow-hover):hover, html.dark a.btn-global-hover:hover {
+            background-color: #facc15 !important; 
+            color: #422006 !important; 
+            border-color: #eab308 !important; 
+            box-shadow: 0 4px 10px rgba(234, 179, 8, 0.2) !important;
+        }
+        /* ------------------------------------------------------------------- */
+
+        .kanban-column {
+            min-height: 70vh;
+            border-radius: 1.5rem;
+            padding: 1.25rem;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            min-width: 320px;
+        }
+        
+        /* Tarjetas y Animaciones */
+        .task-card { cursor: grab; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); border: 1px solid #e2e8f0; }
+        .task-card:active { cursor: grabbing; transform: scale(0.98); }
+        .task-card:hover { transform: translateY(-4px); box-shadow: 0 15px 25px -5px rgba(0, 0, 0, 0.15); background-color: #ffffff !important; }
+        html.dark .task-card { border-color: rgba(71, 85, 105, 0.5); }
+        html.dark .task-card:hover { box-shadow: 0 15px 25px -5px rgba(0, 0, 0, 0.4); background-color: rgba(30, 41, 59, 0.9) !important; }
+        
+        .drag-over { filter: brightness(1.1); transform: scale(1.02); border: 2px dashed #818cf8 !important; }
+        html.dark .drag-over { filter: brightness(1.3); }
+
+        /* Overlays y Scrollbars */
+        .glass-overlay { background-color: rgba(15, 23, 42, 0.5); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); }
+        .custom-scrollbar::-webkit-scrollbar { width: 8px; height: 8px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(148, 163, 184, 0.5); border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(148, 163, 184, 0.8); }
+        html.dark .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(71, 85, 105, 0.6); }
+        html.dark .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(100, 116, 139, 0.8); }
+        
+        /* Animaciones para Subtareas */
+        .subtask-item { transition: all 0.2s ease-in-out; }
+    
+        /* --- PESTAÑA GANTT INTEGRADA AL KANBAN --- */
+        .gantt-shell { min-height: 70vh; }
+        .gantt-board { display: grid; grid-template-columns: 420px minmax(720px, 1fr); overflow: hidden; }
+        .gantt-left, .gantt-right { max-height: 72vh; overflow: auto; }
+        .gantt-left { border-right: 2px solid #cbd5e1; }
+        html.dark .gantt-left { border-right-color: rgba(71, 85, 105, 0.45); }
+        .gantt-head-row, .gantt-data-row, .gantt-group-row, .gantt-role-row { display: grid; grid-template-columns: 1.6fr .8fr .7fr .8fr; align-items: center; min-height: 42px; border-bottom: 1px solid #cbd5e1; }
+        html.dark .gantt-head-row, html.dark .gantt-data-row, html.dark .gantt-group-row, html.dark .gantt-role-row { border-bottom-color: rgba(71, 85, 105, 0.35); }
+        
+        /* Headers Resaltados en Modo Día para el Gantt */
+        .gantt-head-row { position: sticky; top: 0; z-index: 10; background: #e2e8f0; color: #0f172a; font-weight: 900; }
+        html.dark .gantt-head-row { background: rgba(15, 23, 42, .96); color: #94a3b8; }
+        
+        .gantt-cell { padding: 0 14px; min-width: 0; }
+        .gantt-group-row { background: rgba(224, 231, 255, .8); font-weight: 900; }
+        html.dark .gantt-group-row { background: rgba(49, 46, 129, .18); }
+        .gantt-role-row { background: rgba(241, 245, 249, .9); color: #475569; font-weight: 900; }
+        html.dark .gantt-role-row { background: rgba(30, 41, 59, .45); color: #cbd5e1; }
+        .gantt-task-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .gantt-subtask-title { padding-left: 22px; color: #64748b; }
+        html.dark .gantt-subtask-title { color: #cbd5e1; }
+        .gantt-timeline { position: relative; width: max-content; min-width: 100%; }
+        
+        /* Timelines Headers Resaltados */
+        .gantt-months, .gantt-days { display: grid; position: sticky; top: 0; z-index: 8; background: #e2e8f0; color: #0f172a; }
+        html.dark .gantt-months, html.dark .gantt-days { background: rgba(15, 23, 42, .96); color: #94a3b8; }
+        .gantt-months { height: 28px; }
+        .gantt-days { top: 28px; height: 34px; border-bottom: 2px solid #cbd5e1; }
+        html.dark .gantt-days { border-bottom-color: rgba(71, 85, 105, .45); }
+        
+        .gantt-month, .gantt-day { border-right: 1px solid #cbd5e1; display: flex; align-items: center; justify-content: center; }
+        html.dark .gantt-month, html.dark .gantt-day { border-right-color: rgba(71, 85, 105, .35); }
+        .gantt-month { justify-content: flex-start; padding-left: 10px; }
+        .gantt-day.weekend, .gantt-grid-day.weekend { background: rgba(203, 213, 225, 0.4); }
+        html.dark .gantt-day.weekend, html.dark .gantt-grid-day.weekend { background: rgba(30, 41, 59, .5); }
+        
+        .gantt-body { position: relative; }
+        .gantt-grid { position: absolute; inset: 0; display: grid; pointer-events: none; z-index: 0; }
+        .gantt-grid-day { border-right: 1px solid #e2e8f0; }
+        html.dark .gantt-grid-day { border-right-color: rgba(71, 85, 105, .28); }
+        .gantt-bars { position: relative; z-index: 1; }
+        .gantt-chart-row, .gantt-chart-group, .gantt-chart-role { position: relative; min-height: 42px; border-bottom: 1px solid #cbd5e1; }
+        .gantt-chart-group { background: rgba(224, 231, 255, .5); }
+        .gantt-chart-role { background: rgba(241, 245, 249, .6); }
+        html.dark .gantt-chart-row, html.dark .gantt-chart-group, html.dark .gantt-chart-role { border-bottom-color: rgba(71, 85, 105, .35); }
+        .gantt-bar { position: absolute; top: 10px; height: 22px; border-radius: .75rem; color: white; padding: 0 10px; display: flex; align-items: center; gap: 6px; font-size: 10px; font-weight: 900; overflow: hidden; white-space: nowrap; box-shadow: 0 10px 18px rgba(15, 23, 42, .14); cursor: pointer; }
+        .gantt-bar::after { content: ''; position: absolute; inset: 0; width: var(--progress); background: rgba(255,255,255,.24); pointer-events: none; }
+        .gantt-bar span { position: relative; z-index: 1; overflow: hidden; text-overflow: ellipsis; }
+        .gantt-bar.subtask { height: 16px; top: 13px; opacity: .85; }
+        .gantt-today { position: absolute; top: -62px; bottom: 0; width: 2px; background: rgba(79, 70, 229, .75); z-index: 5; pointer-events: none; }
+        .gantt-summary-pill { border-radius: 1rem; padding: .75rem 1rem; }
+        @media (max-width: 1100px) { .gantt-board { grid-template-columns: 360px minmax(620px, 1fr); } }
+
+        /* --- MEJORAS DE JERARQUÍA Y SCROLL SINCRONIZADO GANTT --- */
+        .gantt-board { grid-template-columns: 500px minmax(760px, 1fr); }
+        .gantt-head-row, .gantt-data-row, .gantt-group-row, .gantt-role-row { grid-template-columns: 2.1fr 1fr .8fr .7fr; }
+        .gantt-left, .gantt-right { scroll-behavior: smooth; }
+        .gantt-group-row, .gantt-chart-group { min-height: 48px; }
+        .gantt-role-row, .gantt-chart-role { min-height: 38px; }
+        .gantt-data-row, .gantt-chart-row { min-height: 44px; }
+        .gantt-group-row .gantt-cell:first-child { display: flex; align-items: center; gap: .65rem; }
+        .gantt-group-dot { width: 12px; height: 12px; border-radius: 999px; box-shadow: 0 0 0 4px rgba(99, 102, 241, .12); flex: 0 0 auto; }
+        .gantt-role-row .gantt-cell:first-child { padding-left: 28px; }
+        .gantt-data-row .gantt-cell:first-child { padding-left: 44px; border-left: 3px solid transparent; }
+        .gantt-data-row.subtask-row .gantt-cell:first-child { padding-left: 72px; }
+        .gantt-task-stack { min-width: 0; display: grid; gap: 2px; }
+        .gantt-task-meta { color: #64748b; font-size: 9px; font-weight: 900; text-transform: uppercase; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        html.dark .gantt-task-meta { color: #94a3b8; }
+        .gantt-status-pill { display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; padding: 4px 8px; color: white; font-size: 9px; font-weight: 900; }
+        .gantt-time-pill { display: inline-flex; align-items: center; justify-content: center; min-width: 44px; border-radius: 999px; padding: 4px 8px; background: #f1f5f9; color: #334155; font-weight: 900; }
+        html.dark .gantt-time-pill { background: rgba(51, 65, 85, .75); color: #e2e8f0; }
+        .gantt-bar { border: 1px solid rgba(255,255,255,.22); }
+        .gantt-bar.subtask { border-radius: .55rem; }
+        .gantt-bar.overdue { box-shadow: 0 0 0 3px rgba(239, 68, 68, .18), 0 10px 18px rgba(15, 23, 42, .14); }
+        .subtask-duration-input { max-width: 92px; }
+        @media (max-width: 1100px) { .gantt-board { grid-template-columns: 420px minmax(680px, 1fr); } }
+
+        /* --- AJUSTES FINALES GANTT: SCROLL ÚNICO, DENSIDAD Y COLOR --- */
+        body { background-image: radial-gradient(at 0% 0%, hsla(210, 100%, 94%, 1) 0px, transparent 46%), radial-gradient(at 88% 12%, hsla(265, 95%, 94%, .95) 0px, transparent 42%), radial-gradient(at 50% 100%, hsla(175, 80%, 92%, .8) 0px, transparent 42%); }
+        html.dark body { background-image: radial-gradient(at 0% 0%, hsla(220, 70%, 18%, 1) 0px, transparent 48%), radial-gradient(at 100% 0%, hsla(282, 55%, 20%, .95) 0px, transparent 45%), radial-gradient(at 48% 100%, hsla(190, 55%, 15%, .75) 0px, transparent 42%); }
+        .glass-ui { box-shadow: 0 14px 35px -28px rgba(79, 70, 229, .42), 0 1px 3px rgba(15, 23, 42, .08); }
+        html.dark .glass-ui { box-shadow: 0 0 0 1px rgba(129, 140, 248, .12), 0 18px 55px -34px rgba(56, 189, 248, .45); }
+        .gantt-board { overflow: auto; max-height: 72vh; align-items: start; }
+        .gantt-left, .gantt-right { max-height: none; overflow: visible; }
+        .gantt-left { position: sticky; left: 0; z-index: 12; background: rgba(255,255,255,.94); backdrop-filter: blur(14px); }
+        html.dark .gantt-left { background: rgba(15, 23, 42, .94); }
+        .gantt-head-row { top: 0; }
+        .gantt-months { top: 0; }
+        .gantt-days { top: 28px; }
+        .gantt-controls { display: flex; flex-wrap: wrap; gap: .75rem; align-items: center; justify-content: flex-end; }
+        .gantt-density-select { min-width: 152px; }
+        .gantt-chart-group { background: linear-gradient(90deg, rgba(99,102,241,.12), rgba(14,165,233,.06)); }
+        html.dark .gantt-chart-group { background: linear-gradient(90deg, rgba(99,102,241,.22), rgba(14,165,233,.09)); }
+        .gantt-chart-row { background: rgba(255,255,255,.5); }
+        html.dark .gantt-chart-row { background: rgba(15,23,42,.08); }
+        .gantt-bar.task-main { background-image: linear-gradient(90deg, rgba(255,255,255,.18), rgba(255,255,255,0)) !important; outline: 2px solid rgba(255,255,255,.42); outline-offset: -2px; }
+        .gantt-bar.subtask { filter: saturate(.9) brightness(1.04); }
+        html.dark .gantt-bar.task-main { box-shadow: 0 0 18px rgba(99,102,241,.28), 0 10px 18px rgba(0,0,0,.22); }
+        .subtask-duration-wrap { display: grid; grid-template-columns: 1fr; gap: 3px; }
+        .subtask-duration-wrap span { text-align: center; font-size: 8px; line-height: 1; font-weight: 900; color: #64748b; text-transform: uppercase; }
+        html.dark .subtask-duration-wrap span { color: #94a3b8; }
+
+        /* --- AJUSTE DE ALINEACIÓN E INDICADORES GANTT --- */
+        .gantt-head-row { min-height: 62px; height: 62px; }
+        .gantt-board.compact .gantt-head-row { min-height: 54px; height: 54px; }
+        .gantt-board.compact .gantt-months { height: 24px; }
+        .gantt-board.compact .gantt-days { top: 24px; height: 30px; }
+        .gantt-board.compact .gantt-today { top: -54px; }
+        .gantt-board.detailed .gantt-months { height: 30px; }
+        .gantt-board.detailed .gantt-days { top: 30px; height: 32px; }
+        .gantt-board.detailed .gantt-today { top: -62px; }
+        .gantt-board.compact .gantt-day { font-size: 8px; }
+        .gantt-board.compact .gantt-task-meta { display: none; }
+        .gantt-board.compact .gantt-cell { padding-left: 10px; padding-right: 10px; }
+        .gantt-indicator-option { display: flex; align-items: center; gap: .5rem; padding: .65rem .75rem; border-radius: .9rem; }
+        .gantt-indicator-option input { width: 1rem; height: 1rem; }
+    </style>
+</head>
+<body class="font-sans p-4 md:p-6 custom-scrollbar overflow-x-hidden">
+
+    <!-- Cargando / Errores -->
+    <div id="loading-overlay" class="fixed inset-0 flex items-center justify-center z-[400] glass-overlay">
+        <div class="text-white text-center max-w-lg p-6 animate-pulse">
+            <div id="loader-spinner" class="w-16 h-16 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin mb-4 mx-auto"></div>
+            <p id="loader-text" class="font-black uppercase tracking-widest text-xs">Conectando a Firebase...</p>
+            <div id="loader-error-help" class="hidden mt-4 text-left glass-ui p-6 rounded-2xl">
+                <p class="text-red-400 font-black mb-3 text-sm">⚠️ ERROR DE CONEXIÓN</p>
+                <div id="detailed-error" class="mt-4 p-2 bg-black/40 rounded font-mono text-[10px] text-red-300 whitespace-pre-wrap"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pantalla de Autenticación Rediseñada -->
+    <div id="auth-overlay" class="fixed inset-0 flex items-center justify-center p-4 z-[300] glass-overlay hidden">
+        <div class="glass-ui !bg-white/80 dark:!bg-slate-800/90 rounded-[2rem] w-full max-w-xl overflow-hidden flex flex-col transition-all duration-300">
+            <!-- Header Login -->
+            <div class="bg-indigo-600/90 dark:bg-indigo-900/90 backdrop-blur-md p-8 text-center relative overflow-hidden">
+                <div class="absolute -top-10 -right-10 w-40 h-40 bg-indigo-400/50 dark:bg-indigo-700/50 rounded-full blur-3xl opacity-50"></div>
+                <div class="relative z-10">
+                    <span class="text-5xl mb-4 block">📊</span>
+                    <h2 class="text-3xl font-black text-white tracking-tighter uppercase">Kanban Cloud BI</h2>
+                    <p class="text-indigo-100 text-sm font-medium mt-1">Gestión Colaborativa Segura</p>
+                </div>
+            </div>
+
+            <!-- Body Login -->
+            <div class="p-8">
+                <!-- VISTA 1: Lista de usuarios (Login) -->
+                <div id="login-view">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-sm font-black text-slate-800 dark:text-slate-200 uppercase tracking-widest">Selecciona tu perfil</h3>
+                        <button onclick="toggleRegisterView(true)" class="text-[10px] glass-ui text-indigo-700 dark:text-indigo-300 px-3 py-1.5 rounded-lg font-black transition-all">➕ Nuevo</button>
+                    </div>
+                    <div id="auth-existing-list" class="grid grid-cols-2 sm:grid-cols-3 gap-3 max-h-48 overflow-y-auto custom-scrollbar p-1">
+                        <!-- Generado por JS -->
+                    </div>
+                </div>
+
+                <!-- VISTA 2: Registro de Usuario -->
+                <div id="register-view" class="hidden">
+                    <div class="flex items-center gap-3 mb-6 pb-4 border-b border-slate-200/50 dark:border-slate-600/50">
+                        <button onclick="toggleRegisterView(false)" class="text-slate-600 dark:text-slate-400 font-bold">⬅️ Volver</button>
+                        <h3 class="text-sm font-black text-slate-800 dark:text-slate-200 uppercase tracking-widest">Registrar Nuevo Usuario</h3>
+                    </div>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase mb-1">Nombre Completo</label>
+                            <input type="text" id="reg-name" placeholder="Ej. Juan Pérez" class="w-full glass-ui text-slate-900 dark:text-white rounded-xl p-3 text-sm font-bold focus:border-indigo-500/50 outline-none transition-colors">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase mb-1">Crea una clave (6 números)</label>
+                            <input type="password" id="reg-pass" placeholder="******" maxlength="6" class="w-full glass-ui text-slate-900 dark:text-white rounded-xl p-3 text-center tracking-[0.5em] text-xl font-black focus:border-indigo-500/50 outline-none transition-colors">
+                        </div>
+                        <button onclick="registerNewUser()" class="w-full bg-emerald-500/90 text-white py-4 rounded-xl font-black shadow-lg uppercase tracking-widest mt-4 border border-emerald-400/50">
+                            Crear Cuenta e Ingresar
+                        </button>
+                    </div>
+                </div>
+
+                <!-- VISTA 3: Pedir Clave (Login) -->
+                <div id="password-view" class="hidden">
+                    <div class="flex items-center gap-3 mb-6 pb-4 border-b border-slate-200/50 dark:border-slate-600/50">
+                        <button onclick="hidePasswordView()" class="text-slate-600 dark:text-slate-400 font-bold">⬅️ Volver</button>
+                        <h3 class="text-sm font-black text-slate-800 dark:text-slate-200 uppercase tracking-widest">Verificación de Seguridad</h3>
+                    </div>
+                    <div class="text-center mb-6">
+                        <div id="login-avatar" class="w-16 h-16 glass-ui rounded-full mx-auto flex items-center justify-center text-xl font-black text-indigo-700 dark:text-indigo-300 mb-3"></div>
+                        <p class="font-black text-slate-900 dark:text-white text-lg" id="login-name-display"></p>
+                    </div>
+                    <div class="space-y-4">
+                        <input type="password" id="login-pass" placeholder="******" maxlength="6" class="w-full glass-ui text-slate-900 dark:text-white rounded-xl p-4 text-center tracking-[0.5em] text-2xl font-black focus:border-indigo-500/50 outline-none transition-colors">
+                        <p id="password-help-msg" class="text-center text-xs font-bold text-amber-500 hidden">Actualización: Crea tu clave de 6 dígitos.</p>
+                        <button onclick="executeLogin()" class="w-full bg-indigo-600/90 text-white py-4 rounded-xl font-black shadow-lg uppercase tracking-widest border border-indigo-500/50">
+                            Acceder
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- HEADER PRINCIPAL -->
+    <header class="mb-10 relative z-[60]">
+        <div class="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-8 mb-8">
+            
+            <div class="relative z-[100]">
+                <h1 class="text-4xl font-black tracking-tighter mb-4 flex items-center gap-3">
+                    <span class="text-blue-600 dark:text-blue-400 text-3xl">◆</span> 
+                    <span class="text-blue-800 dark:text-blue-300">Kanban</span> 
+                    <span class="text-amber-500 dark:text-amber-400 italic">Proyecto SAID</span>
+                </h1>
+                
+                <div class="flex flex-wrap items-center gap-3">
+                    <!-- Botón Usuario Glass -->
+                    <span id="display-user" class="glass-ui text-slate-700 dark:text-slate-200 font-black text-xs px-5 py-2.5 rounded-full uppercase flex items-center gap-2 cursor-default">
+                        👤 Invitado
+                    </span>
+                    
+                    <!-- Usuarios Conectados & Notificaciones Glass -->
+                    <div class="flex items-center gap-2 glass-ui px-4 py-1.5 rounded-full relative z-[110]">
+                        <div id="online-users-container" class="flex -space-x-2"></div>
+                        <div class="h-4 w-px bg-slate-200 dark:bg-slate-600 mx-1"></div>
+                        
+                        <!-- Campana -->
+                        <div class="relative cursor-pointer group no-yellow-hover" onclick="toggleNotifications()">
+                            <span class="text-lg hover:scale-110 transition-transform inline-block text-amber-500 dark:text-amber-400">🔔</span>
+                            <span id="notif-count" class="absolute -top-1 -right-1 bg-red-500 text-white text-[8px] font-black rounded-full h-3.5 w-3.5 flex items-center justify-center hidden shadow-md">0</span>
+                        </div>
+                        
+                        <!-- Dropdown Notificaciones -->
+                        <div id="notif-dropdown" class="hidden absolute top-full mt-3 left-0 w-72 glass-ui rounded-2xl shadow-2xl z-[120] overflow-hidden transform origin-top-left transition-all">
+                            <div class="p-3 border-b border-slate-100 dark:border-slate-700/50 bg-slate-50 dark:bg-slate-900/50">
+                                <h4 class="text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase tracking-widest">Notificaciones</h4>
+                            </div>
+                            <div id="notif-list" class="max-h-64 overflow-y-auto custom-scrollbar p-2 space-y-1"></div>
+                        </div>
+                    </div>
+
+                    <!-- Controles Rápidos y Enlaces Dinámicos -->
+                    <div class="flex items-center gap-2 flex-wrap" id="dynamic-quick-links">
+                        <a id="btn-infopucp" href="#" target="_blank" class="glass-ui text-slate-700 dark:text-slate-200 px-5 py-2.5 rounded-full text-[10px] font-black uppercase inline-block btn-global-hover">INFOPUCP 🎓</a>
+                        <!-- Aquí se insertarán más enlaces dinámicos -->
+                    </div>
+                    
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <button onclick="toggleDarkMode()" id="btn-dark-mode" class="glass-ui text-amber-600 dark:text-amber-400 px-5 py-2.5 rounded-full text-[10px] font-black uppercase">🌙 MODO NOCHE</button>
+                        <button onclick="logout()" class="glass-ui text-red-600 dark:text-red-400 px-5 py-2.5 rounded-full text-[10px] font-black uppercase">SALIR 🚪</button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Panel Derecho Glass -->
+            <div id="file-status-panel" class="glass-ui p-4 rounded-full flex flex-col sm:flex-row items-center gap-6 w-full xl:w-auto relative z-10">
+                <div class="flex items-center gap-3 pl-2">
+                    <div id="status-indicator" class="w-3.5 h-3.5 rounded-full bg-red-500 border-2 border-white/50 dark:border-slate-700"></div>
+                    <div>
+                        <p class="text-[9px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-0.5">Archivo Maestro</p>
+                        <h4 id="status-text" class="text-[11px] font-black text-red-500 dark:text-red-400 uppercase">EN USO ⛔</h4>
+                    </div>
+                </div>
+                <div class="flex flex-wrap items-center gap-2 border-l-2 pl-4 border-slate-200 dark:border-slate-700/50">
+                    <button onclick="toggleMasterFileStatus()" class="text-indigo-700 bg-indigo-50 dark:bg-transparent dark:text-slate-300 px-4 py-2 rounded-xl text-[9px] font-black uppercase border border-transparent">🔄 Estado</button>
+                    <button id="btn-open-drive" onclick="openFileLinkWithInternalLog()" class="bg-indigo-600/90 dark:bg-indigo-500/80 text-white px-4 py-2 rounded-xl flex items-center gap-2 border border-indigo-500/50 transition-all"><span class="text-[9px] font-black uppercase">📂 Archivo Maestro </span></button>
+                    <button onclick="downloadAccessLogs()" class="bg-emerald-500/90 dark:bg-emerald-500/80 text-white px-4 py-2 rounded-xl flex items-center gap-2 border border-emerald-500/50"><span class="text-[9px] font-black uppercase">Auditoría</span></button>
+                    <button id="btn-settings-config" onclick="openFileEditModal()" class="hidden text-slate-600 dark:text-slate-300 p-2 rounded-xl border border-transparent" title="Configuraciones (Solo Admin)">⚙️</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex flex-col lg:flex-row gap-4 items-center relative z-10">
+            <!-- Botón de Tarea -->
+            <button onclick="openModal()" class="bg-indigo-500/90 dark:bg-indigo-500/80 text-white px-6 py-3 rounded-2xl font-black shadow-md w-full lg:w-auto flex items-center justify-center gap-2 uppercase text-xs border border-indigo-400/50">
+                <span class="text-lg leading-none">+</span> Nueva Tarea
+            </button>
+            <!-- Botón de Roles (Solo ADMIN) -->
+            <button id="btn-roles-config" onclick="openRoleModal()" class="hidden glass-ui px-6 py-3 rounded-2xl font-black w-full lg:w-auto uppercase text-xs text-indigo-800 dark:text-indigo-300">
+                🛡️ Roles
+            </button>
+            <!-- Tablero / Historial Glass -->
+            <div class="flex glass-ui p-1.5 rounded-2xl w-full lg:w-auto">
+                <button id="view-kanban" onclick="switchView('kanban')" class="flex-1 px-6 py-2 rounded-xl text-xs font-black bg-indigo-600/90 text-white shadow uppercase border border-indigo-500/50">Tablero</button>
+                <button id="view-gantt" onclick="switchView('gantt')" class="flex-1 px-6 py-2 rounded-xl text-xs font-black text-slate-600 dark:text-slate-400 uppercase border border-transparent">Gantt</button>
+                <button id="view-calendar" onclick="switchView('calendar')" class="flex-1 px-6 py-2 rounded-xl text-xs font-black text-slate-600 dark:text-slate-400 uppercase border border-transparent">Calendario</button>
+                <button id="view-archive" onclick="switchView('archive')" class="flex-1 px-6 py-2 rounded-xl text-xs font-black text-slate-600 dark:text-slate-400 uppercase border border-transparent">Historial</button>
+            </div>
+            
+            <!-- Barra de Filtros Dinámica Glass -->
+            <div class="glass-ui flex-1 p-2 rounded-2xl flex items-center gap-3 overflow-x-auto custom-scrollbar w-full lg:w-auto cursor-default">
+                <span class="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest pl-2">🔍 Filtros:</span>
+                
+                <select id="user-filter" onchange="setAssigneeFilter(this.value)" class="bg-transparent text-slate-700 dark:text-slate-200 text-[10px] font-black uppercase rounded-xl px-3 py-1.5 outline-none cursor-pointer hover:text-indigo-600">
+                    <option value="all">👥 Todos</option>
+                </select>
+                
+                <div class="w-px h-6 bg-slate-200 dark:bg-slate-600/50 mx-1"></div>
+                <div id="filter-container" class="flex gap-2 items-center"></div>
+            </div>
+        </div>
+    </header>
+
+    <!-- KANBAN VIEW (Colores intensificados para reducir fatiga visual en día) -->
+    <div id="kanban-view" class="flex gap-6 overflow-x-auto pb-8 custom-scrollbar items-start relative z-10">
+        <div id="col-backlog" class="kanban-column flex-shrink-0 bg-blue-100 dark:bg-slate-800/60 border border-blue-300 dark:border-slate-600 shadow-sm" ondrop="drop(event, 'backlog')" ondragover="allowDrop(event)" ondragleave="dragLeave(event)">
+            <h2 class="text-[11px] font-black text-blue-900 dark:text-slate-300 uppercase mb-5 px-1 flex justify-between items-center"><span>📥 Backlog</span> <span id="badge-backlog" class="bg-blue-600 dark:bg-slate-900 text-white shadow-sm px-2.5 py-0.5 rounded-full text-[9px]">0</span></h2>
+            <div id="tasks-backlog" class="space-y-4"></div>
+        </div>
+        <div id="col-todo" class="kanban-column flex-shrink-0 bg-amber-100 dark:bg-amber-900/40 border border-amber-300 dark:border-amber-700/50 shadow-sm" ondrop="drop(event, 'todo')" ondragover="allowDrop(event)" ondragleave="dragLeave(event)">
+            <h2 class="text-[11px] font-black text-amber-900 dark:text-amber-500 uppercase mb-5 px-1 flex justify-between items-center"><span>📋 Por hacer</span> <span id="badge-todo" class="bg-amber-500 dark:bg-amber-900 text-white shadow-sm px-2.5 py-0.5 rounded-full text-[9px]">0</span></h2>
+            <div id="tasks-todo" class="space-y-4"></div>
+        </div>
+        <div id="col-progress" class="kanban-column flex-shrink-0 bg-indigo-100 dark:bg-indigo-900/40 border border-indigo-300 dark:border-indigo-700/50 shadow-sm" ondrop="drop(event, 'progress')" ondragover="allowDrop(event)" ondragleave="dragLeave(event)">
+            <h2 class="text-[11px] font-black text-indigo-900 dark:text-indigo-400 uppercase mb-5 px-1 flex justify-between items-center"><span>🚧 En proceso</span> <span id="badge-progress" class="bg-indigo-500 dark:bg-indigo-900 text-white shadow-sm px-2.5 py-0.5 rounded-full text-[9px]">0</span></h2>
+            <div id="tasks-progress" class="space-y-4"></div>
+        </div>
+        <div id="col-review" class="kanban-column flex-shrink-0 bg-purple-100 dark:bg-purple-900/40 border border-purple-300 dark:border-purple-700/50 shadow-sm" ondrop="drop(event, 'review')" ondragover="allowDrop(event)" ondragleave="dragLeave(event)">
+            <h2 class="text-[11px] font-black text-purple-900 dark:text-purple-400 uppercase mb-5 px-1 flex justify-between items-center"><span>👀 Revisión</span> <span id="badge-review" class="bg-purple-500 dark:bg-purple-900 text-white shadow-sm px-2.5 py-0.5 rounded-full text-[9px]">0</span></h2>
+            <div id="tasks-review" class="space-y-4"></div>
+        </div>
+        <div id="col-done" class="kanban-column flex-shrink-0 bg-emerald-100 dark:bg-emerald-900/40 border border-emerald-300 dark:border-emerald-700/50 shadow-sm" ondrop="drop(event, 'done')" ondragover="allowDrop(event)" ondragleave="dragLeave(event)">
+            <h2 class="text-[11px] font-black text-emerald-900 dark:text-emerald-400 uppercase mb-5 px-1 flex justify-between items-center"><span>✅ Finalizado</span> <span id="badge-done" class="bg-emerald-500 dark:bg-emerald-900 text-white shadow-sm px-2.5 py-0.5 rounded-full text-[9px]">0</span></h2>
+            <div id="tasks-done" class="space-y-4"></div>
+        </div>
+    </div>
+
+
+    <!-- GANTT VIEW -->
+    <div id="gantt-view" class="hidden relative z-10">
+        <div class="gantt-shell glass-ui rounded-[2rem] shadow-xl overflow-hidden">
+            <div class="p-6 md:p-8 border-b border-slate-200 dark:border-slate-700/50 flex flex-col xl:flex-row gap-4 xl:items-end xl:justify-between">
+                <div>
+                    <p class="text-[10px] font-black text-indigo-600 dark:text-indigo-300 uppercase tracking-[0.25em] mb-2">Planificación del tablero</p>
+                    <h2 class="text-3xl font-black text-slate-900 dark:text-white tracking-tighter">Diagrama Gantt del Proyecto BI</h2>
+                    <p class="text-xs font-bold text-slate-500 dark:text-slate-400 mt-2 max-w-3xl">Usa las mismas tareas, responsables, estados, fechas, roles, etiquetas y subtareas del Kanban. Al editar una barra se abre el detalle original de la tarea <n> En "VISTA" se ven el detalle general y los tiempos que se manejaran.</p>
+                </div>
+                <div class="gantt-controls w-full xl:w-auto">
+                    <label class="glass-ui px-4 py-3 rounded-2xl text-[10px] font-black text-slate-600 dark:text-slate-300 uppercase tracking-widest">
+                        Vista
+                        <select id="gantt-density" onchange="renderGanttView()" class="gantt-density-select bg-transparent text-slate-800 dark:text-white outline-none ml-2">
+                            <option value="detailed" selected>Detallada</option>
+                            <option value="compact">Compacta (Todo el Proyecto)</option>
+                        </select>
+                    </label>
+                    <div id="gantt-summary" class="grid grid-cols-2 lg:grid-cols-4 gap-3 w-full xl:w-auto"></div>
+                </div>
+            </div>
+            <div class="gantt-board">
+                <div class="gantt-left custom-scrollbar">
+                    <div class="gantt-head-row text-[10px] font-black text-slate-700 dark:text-slate-400 uppercase tracking-widest">
+                        <div class="gantt-cell">Actividad</div>
+                        <div class="gantt-cell">Responsable</div>
+                        <div class="gantt-cell">Estado</div>
+                        <div class="gantt-cell">Tiempo</div>
+                    </div>
+                    <div id="gantt-table"></div>
+                </div>
+                <div class="gantt-right custom-scrollbar">
+                    <div class="gantt-timeline" id="gantt-timeline">
+                        <div class="gantt-months text-[10px] font-black text-slate-700 dark:text-slate-300 uppercase" id="gantt-months"></div>
+                        <div class="gantt-days text-[9px] font-black text-slate-700 dark:text-slate-400" id="gantt-days"></div>
+                        <div class="gantt-body" id="gantt-body">
+                            <div class="gantt-grid" id="gantt-grid"></div>
+                            <div class="gantt-today" id="gantt-today"></div>
+                            <div class="gantt-bars" id="gantt-bars"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- CALENDAR VIEW -->
+    <div id="calendar-view" class="hidden relative z-10">
+        <div class="glass-ui rounded-[2rem] shadow-xl overflow-hidden">
+            <div class="p-6 md:p-8 border-b border-slate-200 dark:border-slate-700/50 flex flex-col xl:flex-row gap-4 xl:items-end xl:justify-between">
+                <div>
+                    <p class="text-[10px] font-black text-indigo-600 dark:text-indigo-300 uppercase tracking-[0.25em] mb-2">Calendario operativo</p>
+                    <h2 class="text-3xl font-black text-slate-900 dark:text-white tracking-tighter">Tareas del dia y Google Calendar</h2>
+                    <p class="text-xs font-bold text-slate-500 dark:text-slate-400 mt-2 max-w-3xl">Vista diaria generada con las fechas del Kanban/Gantt y el calendario publico configurado.</p>
+                </div>
+                <div class="flex flex-wrap gap-2">
+                    <button type="button" onclick="window.shiftCalendarRange(-7)" class="glass-ui px-4 py-2 rounded-xl text-[10px] font-black uppercase">Semana anterior</button>
+                    <button type="button" onclick="window.shiftCalendarRange(0)" class="bg-indigo-600/90 text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase border border-indigo-500/50">Hoy</button>
+                    <button type="button" onclick="window.shiftCalendarRange(7)" class="glass-ui px-4 py-2 rounded-xl text-[10px] font-black uppercase">Semana siguiente</button>
+                </div>
+            </div>
+            <div class="grid grid-cols-1 xl:grid-cols-[1.15fr_.85fr] gap-0">
+                <div class="p-5 md:p-6 border-b xl:border-b-0 xl:border-r border-slate-200 dark:border-slate-700/50">
+                    <div id="calendar-summary" class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5"></div>
+                    <div id="calendar-days" class="space-y-3 max-h-[68vh] overflow-y-auto custom-scrollbar pr-2"></div>
+                </div>
+                <div class="p-5 md:p-6 bg-slate-50/60 dark:bg-slate-900/35">
+                    <div class="flex items-center justify-between gap-3 mb-4">
+                        <h3 class="text-xs font-black text-slate-700 dark:text-slate-300 uppercase tracking-widest">Google Calendar publico</h3>
+                        <a id="calendar-open-link" href="#" target="_blank" class="glass-ui px-4 py-2 rounded-xl text-[10px] font-black uppercase btn-global-hover">Abrir</a>
+                    </div>
+                    <iframe id="google-calendar-frame" title="Google Calendar" src="about:blank" class="w-full h-[68vh] rounded-2xl border border-slate-200 dark:border-slate-700/50 bg-white"></iframe>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- ARCHIVE VIEW -->
+    <div id="archive-view" class="hidden relative z-10">
+        <div class="glass-ui p-8 md:p-12 rounded-[2rem] shadow-xl">
+            <h2 class="text-3xl font-black text-slate-900 dark:text-white mb-8 tracking-tighter">📦 Historial Maestro</h2>
+            <div id="archived-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"></div>
+        </div>
+    </div>
+
+    <!-- MODAL TAREAS -->
+    <div id="modal-overlay" class="fixed inset-0 hidden flex items-center justify-center p-4 z-[200] glass-overlay">
+        <div class="glass-ui !bg-white/95 dark:!bg-slate-800/90 rounded-[2rem] shadow-2xl w-full max-w-5xl overflow-hidden flex flex-col md:flex-row h-[90vh]">
+            <div class="p-8 border-r border-slate-200 dark:border-slate-700/50 flex-1 overflow-y-auto custom-scrollbar cursor-default">
+                <h3 id="modal-title" class="text-2xl font-black text-slate-900 dark:text-white mb-8 tracking-tighter uppercase">Detalle de Actividad</h3>
+                <form id="task-form" class="space-y-5">
+                    <input type="hidden" id="edit-id">
+                    <div>
+                        <label class="block text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase mb-2">Actividad / Grupo Principal 📝</label>
+                        <input type="text" id="task-title" required placeholder="Ej. Diseño del Dashboard..." class="w-full glass-ui text-slate-900 dark:text-white rounded-xl p-4 text-sm font-bold outline-none focus:border-indigo-500/50 transition-colors">
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        <div>
+                            <label class="block text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase mb-2">Responsable 👤</label>
+                            <input type="text" id="task-assignee" list="assignee-suggestions" class="w-full glass-ui text-slate-900 dark:text-white rounded-xl p-3.5 text-sm font-bold outline-none focus:border-indigo-500/50 transition-colors">
+                            <datalist id="assignee-suggestions"></datalist>
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase mb-2">Especialidad 🛠️</label>
+                            <select id="task-role" class="w-full glass-ui text-slate-900 dark:text-white rounded-xl p-3.5 text-sm font-bold outline-none focus:border-indigo-500/50 cursor-pointer transition-colors"></select>
+                        </div>
+                    </div>
+
+                    <!-- SECCIÓN: SUBTAREAS -->
+                    <div class="pt-2">
+                        <label class="flex justify-between items-center text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase mb-2 border-b border-slate-200 dark:border-slate-700/50 pb-2">
+                            <span>Agrupación de Tareas (Subtareas) 📋</span>
+                            <button type="button" onclick="window.addSubtaskInput()" class="text-indigo-600 dark:text-amber-400 hover:scale-105 transition-transform bg-transparent border-0 p-0 shadow-none no-yellow-hover">➕ Añadir Subtarea</button>
+                        </label>
+                        <div id="task-subtasks-container" class="space-y-2 mt-2"></div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+                        <div>
+                            <label class="block text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase mb-2">Estado 📌</label>
+                            <select id="task-status" class="w-full glass-ui text-indigo-700 dark:text-amber-400 rounded-xl p-3.5 text-sm font-bold outline-none focus:border-indigo-500/50 cursor-pointer transition-colors">
+                                <option value="backlog">📥 Backlog</option>
+                                <option value="todo">📋 Por hacer</option>
+                                <option value="progress">🚧 En proceso</option>
+                                <option value="review">👀 Revisión</option>
+                                <option value="done">✅ Finalizado</option>
+                                <option value="archived">📦 Archivado</option>
+                            </select>
+                        </div>
+                        <div><label class="block text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase mb-2">Inicio 📅</label><input type="date" id="task-date-start" class="w-full glass-ui text-slate-900 dark:text-white rounded-xl p-3.5 text-sm outline-none focus:border-indigo-500/50 transition-colors"></div>
+                        <div><label class="block text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase mb-2">Fin 📅</label><input type="date" id="task-date-end" class="w-full glass-ui text-slate-900 dark:text-white rounded-xl p-3.5 text-sm outline-none focus:border-indigo-500/50 transition-colors"></div>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase mb-2">Etiquetas ✨ <span class="text-[8px] italic text-indigo-500 dark:text-amber-500">(Sepáralas por comas)</span></label>
+                        <input type="text" id="task-labels" list="label-suggestions" placeholder="Ej. #Dashboard, #DAX" class="w-full glass-ui text-slate-900 dark:text-white rounded-xl p-3.5 text-sm outline-none focus:border-indigo-500/50 transition-colors">
+                        <datalist id="label-suggestions"></datalist>
+                    </div>
+
+                    <div id="todoist-task-link-box" class="hidden bg-slate-50/70 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700/50 rounded-2xl p-4">
+                        <div class="flex flex-wrap items-end gap-3">
+                            <div class="flex-1 min-w-[220px]">
+                                <label class="block text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase mb-2">Proyecto Todoist</label>
+                                <select id="task-todoist-project" class="w-full glass-ui text-slate-900 dark:text-white rounded-xl p-3.5 text-sm font-bold outline-none focus:border-indigo-500/50">
+                                    <option value="">Sin proyecto Todoist</option>
+                                </select>
+                            </div>
+                            <button type="button" onclick="window.syncCurrentTaskToTodoist()" class="bg-rose-600/90 text-white px-5 py-3.5 rounded-xl text-[10px] font-black uppercase border border-rose-500/50">Enviar a Todoist</button>
+                        </div>
+                        <p id="task-todoist-status" class="text-[10px] font-bold text-slate-500 dark:text-slate-400 mt-2">Conecta Todoist desde Ajustes para usar proyectos y tags sincronizados.</p>
+                    </div>
+
+                    <!-- SECCIÓN: MÚLTIPLES ENLACES -->
+                    <div class="pt-2">
+                        <label class="flex justify-between items-center text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase mb-2 border-b border-slate-200 dark:border-slate-700/50 pb-2">
+                            <span>Enlaces Adjuntos 🔗</span>
+                            <button type="button" onclick="window.addLinkInput()" class="text-indigo-600 dark:text-amber-400 hover:scale-105 transition-transform bg-transparent border-0 p-0 shadow-none no-yellow-hover">➕ Añadir Enlace</button>
+                        </label>
+                        <div id="task-links-container" class="space-y-2 mt-2"></div>
+                    </div>
+                    
+                    <div class="flex flex-wrap justify-between items-center gap-4 mt-10 pt-6 border-t border-slate-200 dark:border-slate-700/50">
+                        <button type="button" id="btn-delete-task" onclick="deleteCurrentTask()" class="px-5 py-2 text-xs font-black text-red-600 uppercase">🗑️ Eliminar</button>
+                        <div class="flex gap-3">
+                            <button type="button" id="btn-archive-task" onclick="archiveCurrentTask()" class="px-5 py-2 text-xs font-black text-slate-600 dark:text-slate-400 uppercase">📦 Archivar</button>
+                            <button type="button" onclick="closeModal()" class="px-6 py-3 text-xs font-black text-slate-700 dark:text-slate-300 uppercase glass-ui rounded-xl border border-transparent">Cerrar</button>
+                            <button type="submit" class="bg-indigo-600/90 text-white py-3 px-8 rounded-xl text-xs font-black shadow-lg border border-indigo-500/50">Guardar Cambios</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            
+            <div id="comments-section" class="w-full md:w-80 bg-slate-50/50 dark:bg-slate-900/50 backdrop-blur-md p-8 flex flex-col border-l border-slate-200 dark:border-slate-700/50 relative">
+                <h4 class="text-xs font-black text-slate-600 dark:text-slate-400 uppercase mb-6 tracking-widest flex items-center gap-2"><span class="text-lg">💬</span> Notas</h4>
+                <div id="comments-list" class="flex-1 overflow-y-auto space-y-4 mb-6 text-xs custom-scrollbar pr-2"></div>
+                
+                <div class="space-y-3 relative">
+                    <p class="text-[10px] text-slate-600 dark:text-slate-400 italic">Menciona usando <span class="font-bold text-indigo-700 dark:text-amber-500">@usuario</span></p>
+                    
+                    <div id="mention-dropdown" class="absolute hidden bottom-full mb-2 left-0 w-full glass-ui shadow-2xl rounded-xl max-h-40 overflow-y-auto z-[60] custom-scrollbar cursor-pointer">
+                        <!-- Generado por JS -->
+                    </div>
+
+                    <textarea id="comment-input" placeholder="Añadir nota o validación..." class="w-full glass-ui text-slate-900 dark:text-white rounded-xl p-4 text-xs outline-none h-24 resize-none focus:border-indigo-500/50 transition-colors"></textarea>
+                    <button onclick="addComment()" class="w-full bg-slate-900/90 dark:bg-indigo-600/90 text-white py-3 rounded-xl text-[10px] font-black uppercase shadow-md border border-slate-700 dark:border-indigo-500/50">Publicar Nota</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL CONFIGURACIÓN LINKS Y EQUIPO (Solo ADMIN) -->
+    <div id="file-modal-overlay" class="fixed inset-0 hidden flex items-center justify-center p-4 z-[200] glass-overlay">
+        <div class="glass-ui !bg-white/95 dark:!bg-slate-800/90 rounded-[2rem] shadow-2xl w-full max-w-xl p-10 overflow-y-auto max-h-[90vh] custom-scrollbar cursor-default">
+            <h3 class="text-2xl font-black text-slate-900 dark:text-white mb-6">Configuración de Proyecto</h3>
+            <div class="space-y-8">
+                <div class="bg-slate-50/50 dark:bg-slate-900/50 backdrop-blur-sm p-6 rounded-2xl border border-slate-200 dark:border-slate-700/50">
+                    <h4 class="text-[10px] font-black text-indigo-700 dark:text-amber-400 uppercase mb-4 tracking-widest">Accesos Rápidos Base</h4>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase mb-1">Carpeta Drive Maestro 📂</label>
+                            <input type="url" id="edit-drive-link" class="w-full glass-ui text-slate-900 dark:text-white rounded-xl p-3 text-xs font-bold outline-none focus:border-indigo-500/50">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase mb-1">Enlace INFOPUCP Base 🎓</label>
+                            <input type="url" id="edit-pucp-link" class="w-full glass-ui text-slate-900 dark:text-white rounded-xl p-3 text-xs font-bold outline-none focus:border-indigo-500/50">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase mb-1">Duración del Proyecto (días máximos) 📆</label>
+                            <input type="number" min="1" max="730" id="edit-project-days" class="w-full glass-ui text-slate-900 dark:text-white rounded-xl p-3 text-xs font-bold outline-none focus:border-indigo-500/50" placeholder="Ej. 30">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase mb-1">Indicadores Gantt 📊</label>
+                            <select id="edit-gantt-scope" class="w-full glass-ui text-slate-900 dark:text-white rounded-xl p-3 text-xs font-bold outline-none focus:border-indigo-500/50">
+                                <option value="filtered">Según filtros actuales</option>
+                                <option value="all">Todo el tablero activo</option>
+                            </select>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            <label class="gantt-indicator-option glass-ui text-[10px] font-black text-slate-600 dark:text-slate-300 uppercase"><input type="checkbox" id="edit-progress-review"> Revisión cuenta avance</label>
+                            <label class="gantt-indicator-option glass-ui text-[10px] font-black text-slate-600 dark:text-slate-300 uppercase"><input type="checkbox" id="edit-progress-done"> Finalizado cuenta avance</label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- NUEVA SECCION: INTEGRACIONES API -->
+                <div class="bg-slate-50/50 dark:bg-slate-900/50 backdrop-blur-sm p-6 rounded-2xl border border-slate-200 dark:border-slate-700/50">
+                    <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+                        <h4 class="text-[10px] font-black text-indigo-700 dark:text-amber-400 uppercase tracking-widest">Integraciones API</h4>
+                        <div class="flex flex-wrap gap-2">
+                            <button type="button" onclick="window.testTodoistConnection()" class="glass-ui px-4 py-2 rounded-xl text-[10px] font-black uppercase">Probar Todoist</button>
+                            <button type="button" onclick="window.syncTodoistCatalogs()" class="bg-indigo-600/90 text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase border border-indigo-500/50">Sincronizar Todoist</button>
+                        </div>
+                    </div>
+                    <div class="space-y-4">
+                        <label class="flex items-center gap-2 text-[10px] font-black text-slate-600 dark:text-slate-300 uppercase">
+                            <input type="checkbox" id="api-todoist-enabled" class="w-4 h-4">
+                            Todoist activo
+                        </label>
+                        <div>
+                            <label class="block text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase mb-1">Todoist API Token</label>
+                            <input type="password" id="api-todoist-token" class="w-full glass-ui text-slate-900 dark:text-white rounded-xl p-3 text-xs font-bold outline-none focus:border-indigo-500/50" placeholder="Token personal de Todoist">
+                        </div>
+                        <div id="todoist-sync-status" class="text-[10px] font-bold text-slate-500 dark:text-slate-400">Sin sincronizar.</div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <div class="glass-ui p-4 rounded-xl">
+                                <div class="text-[9px] font-black text-slate-500 dark:text-slate-400 uppercase mb-2">Proyectos Todoist</div>
+                                <div id="todoist-project-list" class="max-h-32 overflow-y-auto custom-scrollbar space-y-1 text-[10px] font-bold text-slate-700 dark:text-slate-300"></div>
+                            </div>
+                            <div class="glass-ui p-4 rounded-xl">
+                                <div class="text-[9px] font-black text-slate-500 dark:text-slate-400 uppercase mb-2">Tags Todoist</div>
+                                <div id="todoist-label-list" class="max-h-32 overflow-y-auto custom-scrollbar space-y-1 text-[10px] font-bold text-slate-700 dark:text-slate-300"></div>
+                            </div>
+                        </div>
+                        <div class="pt-4 border-t border-slate-200 dark:border-slate-700/50">
+                            <div class="flex justify-between items-center text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase mb-2">
+                                <span>APIs generales</span>
+                                <button type="button" onclick="window.addGeneralApiInput()" class="text-indigo-600 dark:text-amber-400 bg-transparent border-0 p-0 shadow-none no-yellow-hover">+ API</button>
+                            </div>
+                            <div id="general-api-config-container" class="space-y-2"></div>
+                        </div>
+                        <div class="pt-4 border-t border-slate-200 dark:border-slate-700/50">
+                            <label class="flex items-center gap-2 text-[10px] font-black text-slate-600 dark:text-slate-300 uppercase mb-3">
+                                <input type="checkbox" id="api-google-enabled" class="w-4 h-4">
+                                Google Calendar activo
+                            </label>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                <input type="text" id="api-google-calendar-id" class="glass-ui text-slate-900 dark:text-white rounded-xl p-3 text-xs font-bold outline-none focus:border-indigo-500/50" placeholder="Calendar ID, ej. primary">
+                                <input type="password" id="api-google-token" class="glass-ui text-slate-900 dark:text-white rounded-xl p-3 text-xs font-bold outline-none focus:border-indigo-500/50" placeholder="OAuth Bearer token">
+                            </div>
+                            <input type="url" id="api-google-public-url" class="mt-3 w-full glass-ui text-slate-900 dark:text-white rounded-xl p-3 text-xs font-bold outline-none focus:border-indigo-500/50" placeholder="URL publica embed de Google Calendar">
+                            <p class="text-[10px] font-bold text-slate-500 dark:text-slate-400 mt-2">La URL publica permite visualizar. Para crear o editar eventos se necesita OAuth desde Google Cloud.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- NUEVA SECCIÓN: BOTONES DINÁMICOS -->
+                <div class="pt-6 border-t border-slate-200 dark:border-slate-700/50">
+                    <label class="flex justify-between items-center text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase mb-2 pb-2">
+                        <span>Botones de Acceso Rápido Dinámicos 🔗</span>
+                        <button type="button" onclick="window.addCustomLinkInput()" class="text-indigo-600 dark:text-amber-400 hover:scale-105 transition-transform bg-transparent border-0 p-0 shadow-none no-yellow-hover">➕ Añadir Botón</button>
+                    </label>
+                    <div id="custom-links-config-container" class="space-y-2 mt-2"></div>
+                </div>
+
+                <div class="pt-6 border-t border-slate-200 dark:border-slate-700/50">
+                    <h4 class="text-[10px] font-black text-indigo-700 dark:text-amber-400 uppercase mb-4 tracking-widest">Gestión del Equipo 👤</h4>
+                    <div id="team-list" class="space-y-2 mb-4 grid grid-cols-1 sm:grid-cols-2 gap-2"></div>
+                </div>
+            </div>
+            <div class="flex justify-end gap-4 mt-8 pt-6 border-t border-slate-200 dark:border-slate-700/50">
+                <button onclick="closeFileEditModal()" class="px-6 py-3 text-xs font-black text-slate-700 dark:text-slate-400 glass-ui rounded-xl uppercase">Cerrar</button>
+                <button onclick="saveConfigLinks()" class="bg-indigo-600/90 text-white px-8 py-3 rounded-xl text-xs font-black shadow-lg uppercase border border-indigo-500/50">Guardar Cambios</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL ROLES (Solo ADMIN) -->
+    <div id="role-modal-overlay" class="fixed inset-0 hidden flex items-center justify-center p-4 z-[200] glass-overlay">
+        <div class="glass-ui !bg-white/95 dark:!bg-slate-800/90 rounded-[2rem] shadow-2xl w-full max-w-md p-10 cursor-default">
+            <h3 class="text-2xl font-black text-slate-900 dark:text-white mb-6">Roles 🛡️</h3>
+            <div id="role-manager-list" class="space-y-2 mb-8 max-h-52 overflow-y-auto custom-scrollbar pr-2"></div>
+            <div class="bg-slate-50/50 dark:bg-slate-900/50 backdrop-blur-sm p-5 rounded-2xl border border-slate-200 dark:border-slate-700/50 space-y-3">
+                <h4 class="text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase mb-2">Crear Nuevo Rol</h4>
+                <div class="flex gap-2">
+                    <input type="text" id="new-role-name" placeholder="Nombre (Ej. DAX)" class="flex-1 glass-ui text-slate-900 dark:text-white rounded-xl p-3 text-xs font-bold outline-none focus:border-indigo-500/50">
+                    <input type="text" id="new-role-emoji" placeholder="🚀" class="w-14 glass-ui text-slate-900 dark:text-white rounded-xl p-3 text-center focus:border-indigo-500/50">
+                </div>
+                <div class="flex gap-2 items-center">
+                    <input type="color" id="new-role-color" value="#6366f1" class="w-12 h-12 glass-ui rounded-xl cursor-pointer p-0 border-0 outline-none">
+                    <button onclick="addNewRole()" class="flex-1 bg-indigo-600/90 text-white py-3 rounded-xl text-[10px] font-black uppercase shadow-md border border-indigo-500/50">Agregar Rol</button>
+                </div>
+            </div>
+            <button onclick="closeRoleModal()" class="w-full mt-6 glass-ui text-slate-800 dark:text-slate-300 py-4 rounded-xl text-[10px] font-black uppercase">Cerrar Ventana</button>
+        </div>
+    </div>
+
+    <!-- MODAL VALIDACIÓN -->
+    <div id="validation-modal-overlay" class="fixed inset-0 hidden flex items-center justify-center p-4 z-[210] glass-overlay">
+        <div class="glass-ui !bg-white/95 dark:!bg-slate-800/90 rounded-[2rem] shadow-2xl p-8 max-w-sm w-full text-center cursor-default">
+            <h4 id="validation-title" class="text-2xl font-black text-slate-900 dark:text-slate-100 mb-4 tracking-tighter">Detalle</h4>
+            <p class="text-xs text-slate-600 dark:text-slate-400 mb-6">Por favor explica el motivo de tu validación para el equipo.</p>
+            <input type="hidden" id="validation-task-id">
+            <input type="hidden" id="validation-type">
+            <textarea id="validation-detail" placeholder="Escribe el motivo aquí..." class="w-full glass-ui text-slate-900 dark:text-white rounded-xl p-4 text-sm font-bold outline-none h-32 resize-none focus:border-indigo-500/50 mb-6"></textarea>
+            <div class="flex gap-3">
+                <button onclick="window.closeValidationModal()" class="flex-1 glass-ui text-slate-800 dark:text-slate-300 py-3 rounded-xl text-[10px] font-black uppercase">Cancelar</button>
+                <button onclick="window.submitValidation()" class="flex-1 bg-indigo-600/90 text-white py-3 rounded-xl text-[10px] font-black uppercase shadow-lg border border-indigo-500/50">Guardar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- SISTEMA DE ALERTAS -->
+    <div id="alert-overlay" class="fixed inset-0 hidden flex items-center justify-center p-4 z-[220] glass-overlay">
+        <div class="glass-ui !bg-white/95 dark:!bg-slate-800/95 rounded-[2rem] shadow-2xl p-10 max-w-sm text-center border-t-[8px] border-indigo-500 relative overflow-hidden cursor-default">
+            <div class="w-20 h-20 bg-indigo-100/50 dark:bg-indigo-900/30 backdrop-blur-sm text-indigo-600 rounded-full flex items-center justify-center text-4xl mx-auto mb-4 border border-indigo-200/50 dark:border-indigo-800/50">🔔</div>
+            <h4 class="text-2xl font-black text-slate-900 dark:text-white mb-2">Aviso del Sistema</h4>
+            <p id="alert-message" class="text-slate-700 dark:text-slate-300 text-sm mb-8 leading-relaxed font-medium"></p>
+            <button onclick="closeAlert()" class="w-full bg-indigo-600/90 dark:bg-indigo-600/90 text-white py-4 rounded-xl font-black uppercase shadow-lg border border-indigo-500/50">Entendido</button>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, updateDoc, deleteDoc, collection, onSnapshot, addDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCNsvuEiZkJHZM2ct4XTIVZC1rgNOWRb_c",
+            authDomain: "personal-b1636.firebaseapp.com",
+            databaseURL: "https://personal-b1636-default-rtdb.firebaseio.com",
+            projectId: "personal-b1636",
+            storageBucket: "personal-b1636.firebasestorage.app",
+            messagingSenderId: "282397951559",
+            appId: "1:282397951559:web:1fdea9e88319e4f7b29362"
+        };
+
+        const appId = "pucp-bi-kanban-v2";
+
+        let app, auth, db;
+        let currentUser = null;
+        let tasks = [];
+        let roles = [];
+        let registeredUsers = [];
+        let config = {
+            available: true,
+            link: '#',
+            infoPucpLink: '#',
+            customLinks: [],
+            projectDays: 30,
+            ganttIndicatorScope: 'filtered',
+            ganttProgressStatuses: ['review', 'done'],
+            apiIntegrations: {
+                todoist: {
+                    enabled: true,
+                    token: 'c084943911f907464ec51204e1fb65306ca441b2',
+                    projects: [],
+                    labels: [],
+                    lastSync: null
+                },
+                googleCalendar: {
+                    enabled: false,
+                    token: '',
+                    calendarId: 'primary',
+                    publicEmbedUrl: 'https://calendar.google.com/calendar/embed?src=jamancatorresenriquesaid%40gmail.com&ctz=America%2FLima'
+                },
+                general: []
+            }
+        };
+        
+        let currentFilter = 'all';
+        let currentAssigneeFilter = 'all';
+        let currentView = 'kanban';
+        let calendarStartDate = null;
+        let heartbeatInterval = null;
+
+        window.toggleDarkMode = () => {
+            const html = document.documentElement;
+            html.classList.toggle('dark');
+            const isDark = html.classList.contains('dark');
+            localStorage.setItem('bi_kanban_theme', isDark ? 'dark' : 'light');
+            updateDarkModeButton();
+        };
+
+        function updateDarkModeButton() {
+            const btn = document.getElementById('btn-dark-mode');
+            if (btn) {
+                const isDark = document.documentElement.classList.contains('dark');
+                btn.innerHTML = isDark ? '☀️ MODO DÍA' : '🌙 MODO NOCHE';
+            }
+        }
+        document.addEventListener('DOMContentLoaded', updateDarkModeButton);
+
+        window.addEventListener('beforeunload', () => {
+            if (currentUser) {
+                const me = registeredUsers.find(u => u.name === currentUser);
+                if (me) {
+                    updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', me.id), { isOnline: false }).catch(()=>{});
+                }
+            }
+        });
+
+        function startPresenceHeartbeat() {
+            if (heartbeatInterval) clearInterval(heartbeatInterval);
+            
+            const updatePresence = () => {
+                if (currentUser && registeredUsers.length > 0) {
+                    const me = registeredUsers.find(u => u.name === currentUser);
+                    if (me) {
+                        updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', me.id), { 
+                            isOnline: true, 
+                            lastActive: Date.now() 
+                        }).catch(()=>{});
+                    }
+                }
+            };
+            
+            updatePresence();
+            heartbeatInterval = setInterval(updatePresence, 30000);
+        }
+
+        window.isUserOnline = (u) => {
+            const now = Date.now();
+            return u.isOnline && (now - (u.lastActive || 0) < 120000);
+        };
+
+        window.logout = async () => {
+            if (currentUser) {
+                const me = registeredUsers.find(u => u.name === currentUser);
+                if (me) {
+                    try {
+                        await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', me.id), { isOnline: false });
+                    } catch(e) { console.error("Error updating offline status", e); }
+                }
+            }
+            currentUser = null;
+            localStorage.removeItem('bi_kanban_user');
+            window.location.reload();
+        };
+
+        // --- VALIDAR ACCESOS ADMIN ---
+        function checkAdminAccess() {
+            const isAdmin = currentUser && currentUser.toUpperCase() === 'ADMIN';
+            const btnRoles = document.getElementById('btn-roles-config');
+            const btnSettings = document.getElementById('btn-settings-config');
+            
+            if (btnRoles) {
+                if (isAdmin) btnRoles.classList.remove('hidden');
+                else btnRoles.classList.add('hidden');
+            }
+            if (btnSettings) {
+                if (isAdmin) btnSettings.classList.remove('hidden');
+                else btnSettings.classList.add('hidden');
+            }
+        }
+
+        function updateStatusUI() {
+            const ind = document.getElementById('status-indicator');
+            const txt = document.getElementById('status-text');
+            const btnDrive = document.getElementById('btn-open-drive');
+            
+            if(!ind || !txt) return;
+            ind.className = `w-3.5 h-3.5 rounded-full border-2 border-white/50 dark:border-slate-700 ${config.available ? 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.8)]' : 'bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.8)]'}`;
+            txt.innerText = config.available ? 'DISPONIBLE ✅' : 'EN USO ⛔';
+            txt.className = `text-[11px] font-black uppercase ${config.available ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500'}`;
+
+            // Efecto visual cuando no está disponible el drive
+            if (btnDrive) {
+                if (config.available) {
+                    btnDrive.classList.remove('opacity-50', 'cursor-not-allowed', 'saturate-0');
+                } else {
+                    btnDrive.classList.add('opacity-50', 'cursor-not-allowed', 'saturate-0');
+                }
+            }
+        }
+
+        window.renderOnlineUsers = () => {
+            const container = document.getElementById('online-users-container');
+            if (!container) return;
+            
+            const online = registeredUsers.filter(u => window.isUserOnline(u));
+            container.innerHTML = online.map(u => {
+                const initials = u.name.substring(0, 2).toUpperCase();
+                return `<div class="w-8 h-8 rounded-full bg-indigo-600/90 dark:bg-amber-500/90 backdrop-blur-sm text-white dark:text-slate-900 flex items-center justify-center text-[10px] font-black border-2 border-white/50 dark:border-slate-700/50 shadow-sm z-10 cursor-default" title="${u.name} (En línea)">${initials}</div>`;
+            }).join('') || `<span class="text-[10px] text-slate-500 px-2 font-bold italic">Solo tú</span>`;
+        };
+
+        window.updateNotificationsUI = (notifs) => {
+            const unread = notifs.filter(n => !n.read).sort((a,b) => b.timestamp - a.timestamp);
+            const countBadge = document.getElementById('notif-count');
+            const list = document.getElementById('notif-list');
+            if(!countBadge || !list) return;
+
+            if (unread.length > 0) {
+                countBadge.innerText = unread.length;
+                countBadge.classList.remove('hidden');
+            } else {
+                countBadge.classList.add('hidden');
+            }
+
+            if (unread.length === 0) {
+                list.innerHTML = `<p class="text-center text-[10px] text-slate-500 dark:text-slate-400 py-6 font-bold italic">No tienes notificaciones nuevas.</p>`;
+            } else {
+                list.innerHTML = unread.map(n => `
+                    <div onclick="window.openNotification('${n.taskId}', '${n.id}')" class="p-3 bg-slate-100 dark:bg-slate-700/50 backdrop-blur-sm hover:bg-slate-200 dark:hover:bg-slate-600/50 rounded-xl cursor-pointer transition-all mb-1 border border-slate-200 dark:border-slate-600/50">
+                        <p class="text-[10px] text-slate-800 dark:text-slate-300"><span class="font-black text-indigo-700 dark:text-amber-400">@${n.from}</span> te mencionó en:</p>
+                        <p class="text-xs font-bold text-slate-900 dark:text-white truncate mt-0.5">${n.taskTitle}</p>
+                    </div>
+                `).join('');
+            }
+        };
+
+        window.toggleNotifications = () => { document.getElementById('notif-dropdown').classList.toggle('hidden'); };
+
+        window.openNotification = (taskId, notifId) => {
+            const me = registeredUsers.find(u => u.name === currentUser);
+            if (me && me.notifications) {
+                const myNotifs = me.notifications.map(n => n.id === notifId ? { ...n, read: true } : n);
+                updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', me.id), { notifications: myNotifs });
+            }
+            window.editTask(taskId);
+            document.getElementById('notif-dropdown').classList.add('hidden');
+        };
+
+        function renderRoleManager() {
+            const list = document.getElementById('role-manager-list');
+            if(!list) return;
+            list.innerHTML = roles.map(r => `
+                <div class="flex items-center justify-between glass-ui p-3 rounded-xl mb-2 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
+                    <span class="text-[10px] font-black text-slate-800 dark:text-slate-300 uppercase flex items-center gap-2"><span class="w-3 h-3 rounded-full inline-block" style="background:${r.color}"></span> ${r.emoji} ${r.name}</span>
+                    <button type="button" data-id="${r.id}" onclick="window.deleteRole(this.dataset.id)" class="text-slate-500 hover:text-red-600 transition-colors rounded-full w-8 h-8 flex items-center justify-center bg-transparent border-0 hover:bg-red-50 dark:hover:bg-red-900/30">🗑️</button>
+                </div>
+            `).join('');
+        }
+
+        function renderTeamManager() {
+            const list = document.getElementById('team-list');
+            if(!list) return;
+            list.innerHTML = registeredUsers.map(u => {
+                const isOnline = window.isUserOnline(u);
+                return `
+                <div class="flex items-center justify-between glass-ui p-3 rounded-xl">
+                    <span class="text-[10px] font-bold text-slate-800 dark:text-slate-300 uppercase">👤 ${u.name} ${isOnline ? '<span class="text-emerald-500 ml-1 text-xs">●</span>' : ''}</span>
+                    <button type="button" onclick="window.deleteUser('${u.id}')" class="text-slate-500 hover:text-red-600 transition-colors bg-transparent shadow-none border-0">🗑️</button>
+                </div>`;
+            }).join('') || '<p class="text-[9px] text-slate-500 italic col-span-2">No hay responsables registrados</p>';
+        }
+
+        function updateRoleSelects() {
+            const select = document.getElementById('task-role');
+            if(!select) return;
+            select.innerHTML = roles.map(r => `<option value="${r.id}">${r.emoji} ${r.name}</option>`).join('');
+        }
+
+        function updateSuggestions(assignees, labels) {
+            const listA = document.getElementById('assignee-suggestions');
+            if(listA) listA.innerHTML = assignees.map(a => `<option value="${a}">`).join('');
+
+            const listL = document.getElementById('label-suggestions');
+            if(listL) {
+                const todoistLabels = (getApiIntegrations().todoist.labels || []).map(l => `#${l.name}`);
+                const mergedLabels = Array.from(new Set([...labels, ...todoistLabels]));
+                listL.innerHTML = mergedLabels.map(l => `<option value="${l}">`).join('');
+            }
+            
+            const userFilter = document.getElementById('user-filter');
+            if(userFilter) {
+                let html = `<option value="all">👥 Todos</option>`;
+                assignees.forEach(a => {
+                    html += `<option value="${a}" ${currentAssigneeFilter === a ? 'selected' : ''}>👤 ${a}</option>`;
+                });
+                userFilter.innerHTML = html;
+            }
+        }
+
+        function updateFilterUI(labels) {
+            const container = document.getElementById('filter-container');
+            if(!container) return;
+            
+            const activeClass = 'bg-amber-400/90 text-slate-900 shadow-sm border border-amber-300/50';
+            const inactiveClass = 'glass-ui text-slate-700 dark:text-slate-300';
+
+            container.innerHTML = `<button onclick="window.setFilter('all')" class="px-4 py-1.5 rounded-xl text-[9px] font-black ${currentFilter === 'all' ? activeClass : inactiveClass} uppercase transition-all">Todas</button>`;
+            labels.forEach(l => {
+                container.innerHTML += `<button onclick="window.setFilter('${l}')" class="px-4 py-1.5 rounded-xl text-[9px] font-black ${currentFilter === l ? activeClass : inactiveClass} uppercase transition-all">${l}</button>`;
+            });
+        }
+
+        window.setAssigneeFilter = (val) => {
+            currentAssigneeFilter = val;
+            renderUI();
+        };
+
+        function renderComments(comments) {
+            const list = document.getElementById('comments-list');
+            if(!list) return;
+            list.innerHTML = comments.length ? '' : '<p class="text-slate-500 dark:text-slate-500 italic text-center py-8 text-[9px] uppercase font-bold">Sin notas colaborativas</p>';
+            comments.forEach(c => {
+                const formattedText = c.text.replace(/@\w+/g, match => `<span class="text-indigo-700 dark:text-amber-400 font-black">${match}</span>`);
+                list.innerHTML += `
+                    <div class="glass-ui p-4 rounded-2xl mb-3">
+                        <p class="font-black text-indigo-700 dark:text-amber-500 text-[9px] uppercase mb-1">${c.user} <span class="text-slate-500 font-normal text-[8px] ml-2 lowercase tracking-normal">${c.date}</span></p>
+                        <p class="text-slate-800 dark:text-slate-200 text-xs leading-relaxed whitespace-pre-wrap">${formattedText}</p>
+                    </div>`;
+            });
+            list.scrollTop = list.scrollHeight;
+        }
+
+        function getApiIntegrations() {
+            const defaults = {
+                todoist: { enabled: false, token: '', projects: [], labels: [], lastSync: null },
+                googleCalendar: {
+                    enabled: false,
+                    token: '',
+                    calendarId: 'primary',
+                    publicEmbedUrl: 'https://calendar.google.com/calendar/embed?src=jamancatorresenriquesaid%40gmail.com&ctz=America%2FLima'
+                },
+                general: []
+            };
+            return {
+                ...defaults,
+                ...(config.apiIntegrations || {}),
+                todoist: { ...defaults.todoist, ...((config.apiIntegrations || {}).todoist || {}) },
+                googleCalendar: { ...defaults.googleCalendar, ...((config.apiIntegrations || {}).googleCalendar || {}) },
+                general: Array.isArray((config.apiIntegrations || {}).general) ? (config.apiIntegrations || {}).general : []
+            };
+        }
+
+        function renderTodoistCatalogs() {
+            const api = getApiIntegrations();
+            const projectList = document.getElementById('todoist-project-list');
+            const labelList = document.getElementById('todoist-label-list');
+            const status = document.getElementById('todoist-sync-status');
+            const projects = api.todoist.projects || [];
+            const labels = api.todoist.labels || [];
+
+            if (projectList) {
+                projectList.innerHTML = projects.length
+                    ? projects.map(p => `<div class="truncate">📁 ${escapeHtml(p.name || '')}</div>`).join('')
+                    : '<p class="text-slate-500 italic">Sin proyectos sincronizados</p>';
+            }
+            if (labelList) {
+                labelList.innerHTML = labels.length
+                    ? labels.map(l => `<div class="truncate">#${escapeHtml(l.name || '')}</div>`).join('')
+                    : '<p class="text-slate-500 italic">Sin tags sincronizados</p>';
+            }
+            if (status) {
+                status.innerText = api.todoist.lastSync
+                    ? `Ultima sincronizacion: ${new Date(api.todoist.lastSync).toLocaleString()}`
+                    : 'Sin sincronizar.';
+            }
+            populateTodoistProjectSelect();
+        }
+
+        function populateTodoistProjectSelect(selected = '') {
+            const box = document.getElementById('todoist-task-link-box');
+            const select = document.getElementById('task-todoist-project');
+            const taskStatus = document.getElementById('task-todoist-status');
+            if (!select) return;
+
+            const api = getApiIntegrations();
+            const enabled = !!(api.todoist.enabled && api.todoist.token);
+            if (box) box.classList.toggle('hidden', !enabled);
+            select.innerHTML = '<option value="">Sin proyecto Todoist</option>' + (api.todoist.projects || []).map(p => (
+                `<option value="${p.id}" ${String(selected) === String(p.id) ? 'selected' : ''}>${escapeHtml(p.name || '')}</option>`
+            )).join('');
+            if (taskStatus) {
+                taskStatus.innerText = enabled
+                    ? 'Proyecto y tags disponibles desde Todoist. El envio es manual para conservar el flujo actual.'
+                    : 'Conecta Todoist desde Ajustes para usar proyectos y tags sincronizados.';
+            }
+        }
+
+        window.addGeneralApiInput = (item = {}) => {
+            const container = document.getElementById('general-api-config-container');
+            if (!container) return;
+            const div = document.createElement('div');
+            div.className = 'grid grid-cols-1 md:grid-cols-[1fr_1.4fr_1fr_auto] gap-2 general-api-item';
+            div.innerHTML = `
+                <input type="text" value="${item.name || ''}" placeholder="Nombre API" class="general-api-name glass-ui text-slate-900 dark:text-white rounded-xl p-3 text-xs outline-none focus:border-indigo-500/50">
+                <input type="url" value="${item.baseUrl || ''}" placeholder="Base URL / endpoint" class="general-api-url glass-ui text-slate-900 dark:text-white rounded-xl p-3 text-xs outline-none focus:border-indigo-500/50">
+                <input type="password" value="${item.token || ''}" placeholder="Bearer token opcional" class="general-api-token glass-ui text-slate-900 dark:text-white rounded-xl p-3 text-xs outline-none focus:border-indigo-500/50">
+                <button type="button" onclick="this.closest('.general-api-item').remove()" class="bg-red-50 dark:bg-red-900/30 text-red-500 p-3 rounded-xl border border-transparent shadow-none">✕</button>
+            `;
+            container.appendChild(div);
+        };
+
+        function renderApiConfigForm() {
+            const api = getApiIntegrations();
+            const todoistEnabled = document.getElementById('api-todoist-enabled');
+            const todoistToken = document.getElementById('api-todoist-token');
+            const googleEnabled = document.getElementById('api-google-enabled');
+            const googleCalendarId = document.getElementById('api-google-calendar-id');
+            const googleToken = document.getElementById('api-google-token');
+            const googlePublicUrl = document.getElementById('api-google-public-url');
+            const generalContainer = document.getElementById('general-api-config-container');
+
+            if (todoistEnabled) todoistEnabled.checked = !!api.todoist.enabled;
+            if (todoistToken) todoistToken.value = api.todoist.token || '';
+            if (googleEnabled) googleEnabled.checked = !!api.googleCalendar.enabled;
+            if (googleCalendarId) googleCalendarId.value = api.googleCalendar.calendarId || 'primary';
+            if (googleToken) googleToken.value = api.googleCalendar.token || '';
+            if (googlePublicUrl) googlePublicUrl.value = api.googleCalendar.publicEmbedUrl || '';
+            if (generalContainer) {
+                generalContainer.innerHTML = '';
+                (api.general || []).forEach(item => window.addGeneralApiInput(item));
+            }
+            renderTodoistCatalogs();
+        }
+
+        function readApiConfigForm() {
+            const currentApi = getApiIntegrations();
+            const general = Array.from(document.querySelectorAll('.general-api-item')).map(div => ({
+                name: div.querySelector('.general-api-name')?.value.trim() || '',
+                baseUrl: div.querySelector('.general-api-url')?.value.trim() || '',
+                token: div.querySelector('.general-api-token')?.value.trim() || ''
+            })).filter(item => item.name && item.baseUrl);
+
+            return {
+                todoist: {
+                    ...currentApi.todoist,
+                    enabled: !!document.getElementById('api-todoist-enabled')?.checked,
+                    token: document.getElementById('api-todoist-token')?.value.trim() || ''
+                },
+                googleCalendar: {
+                    ...currentApi.googleCalendar,
+                    enabled: !!document.getElementById('api-google-enabled')?.checked,
+                    token: document.getElementById('api-google-token')?.value.trim() || '',
+                    calendarId: document.getElementById('api-google-calendar-id')?.value.trim() || 'primary',
+                    publicEmbedUrl: document.getElementById('api-google-public-url')?.value.trim() || currentApi.googleCalendar.publicEmbedUrl || ''
+                },
+                general
+            };
+        }
+
+        function todoistNetworkError(err) {
+            if (err instanceof TypeError && String(err.message || '').toLowerCase().includes('failed to fetch')) {
+                return new Error('No se pudo contactar Todoist desde el navegador. Causas probables: token invalido/revocado, bloqueo CORS del origen file://, conexion bloqueada o endpoint antiguo. Prueba abrir la app desde http://localhost o usa OAuth/app Todoist si se publicara para varios usuarios.');
+            }
+            return err;
+        }
+
+        async function todoistFetch(path, options = {}) {
+            const token = document.getElementById('api-todoist-token')?.value.trim() || getApiIntegrations().todoist.token;
+            if (!token) throw new Error('Falta el token de Todoist.');
+            let res;
+            try {
+                res = await fetch(`https://api.todoist.com/api/v1${path}`, {
+                    ...options,
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        'Content-Type': 'application/json',
+                        ...(options.headers || {})
+                    }
+                });
+            } catch (err) {
+                throw todoistNetworkError(err);
+            }
+            const text = await res.text();
+            if (!res.ok) throw new Error(`Todoist ${res.status}: ${text}`);
+            if (res.status === 204 || !text) return null;
+            return JSON.parse(text);
+        }
+
+        async function todoistFetchAll(path) {
+            let cursor = null;
+            const results = [];
+            do {
+                const separator = path.includes('?') ? '&' : '?';
+                const page = await todoistFetch(`${path}${cursor ? `${separator}cursor=${encodeURIComponent(cursor)}` : ''}`);
+                if (Array.isArray(page)) return page;
+                if (Array.isArray(page?.results)) results.push(...page.results);
+                cursor = page?.next_cursor || null;
+            } while (cursor);
+            return results;
+        }
+
+        window.callConfiguredApi = async (apiName, path = '', options = {}) => {
+            const api = getApiIntegrations();
+            const item = (api.general || []).find(x => x.name.toLowerCase() === String(apiName).toLowerCase());
+            if (!item) throw new Error(`API no configurada: ${apiName}`);
+            const url = `${item.baseUrl.replace(/\/$/, '')}${path}`;
+            const res = await fetch(url, {
+                ...options,
+                headers: {
+                    ...(item.token ? { Authorization: `Bearer ${item.token}` } : {}),
+                    'Content-Type': 'application/json',
+                    ...(options.headers || {})
+                }
+            });
+            const text = await res.text();
+            if (!res.ok) throw new Error(`${item.name} ${res.status}: ${text}`);
+            if (res.status === 204 || !text) return null;
+            return JSON.parse(text);
+        };
+
+        window.googleCalendarFetch = async (path = '', options = {}) => {
+            const google = getApiIntegrations().googleCalendar;
+            if (!google.enabled || !google.token) throw new Error('Google Calendar no esta activo o no tiene token OAuth.');
+            const calendarId = encodeURIComponent(google.calendarId || 'primary');
+            const url = `https://www.googleapis.com/calendar/v3/calendars/${calendarId}${path}`;
+            const res = await fetch(url, {
+                ...options,
+                headers: {
+                    Authorization: `Bearer ${google.token}`,
+                    'Content-Type': 'application/json',
+                    ...(options.headers || {})
+                }
+            });
+            const text = await res.text();
+            if (!res.ok) throw new Error(`Google Calendar ${res.status}: ${text}`);
+            if (res.status === 204 || !text) return null;
+            return JSON.parse(text);
+        };
+
+        window.testTodoistConnection = async () => {
+            try {
+                const projects = await todoistFetchAll('/projects');
+                window.showAlert(`Todoist conectado. Proyectos detectados: ${projects.length}.`);
+            } catch (err) {
+                window.showAlert('No se pudo conectar con Todoist: ' + err.message);
+            }
+        };
+
+        window.syncTodoistCatalogs = async () => {
+            try {
+                const [projects, labels] = await Promise.all([todoistFetchAll('/projects'), todoistFetchAll('/labels')]);
+                const nextApi = readApiConfigForm();
+                nextApi.todoist.projects = projects.map(p => ({ id: p.id, name: p.name, color: p.color || '' }));
+                nextApi.todoist.labels = labels.map(l => ({ id: l.id, name: l.name, color: l.color || '' }));
+                nextApi.todoist.lastSync = Date.now();
+                nextApi.todoist.enabled = true;
+
+                await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'config', 'master'), { apiIntegrations: nextApi });
+                window.showAlert(`Todoist sincronizado: ${projects.length} proyectos y ${labels.length} tags.`);
+            } catch (err) {
+                window.showAlert('Error sincronizando Todoist: ' + err.message);
+            }
+        };
+
+        window.syncCurrentTaskToTodoist = async () => {
+            const id = document.getElementById('edit-id')?.value;
+            if (!id) return window.showAlert('Guarda primero la actividad en el Kanban antes de enviarla a Todoist.');
+            const task = tasks.find(t => t.id === id);
+            if (!task) return window.showAlert('No se encontro la actividad actual.');
+
+            try {
+                const labelsInput = document.getElementById('task-labels')?.value || '';
+                const labels = labelsInput.split(',').map(l => l.trim().replace(/^#/, '')).filter(Boolean);
+                const projectId = document.getElementById('task-todoist-project')?.value || task.todoistProjectId || undefined;
+                const payload = {
+                    content: document.getElementById('task-title')?.value || task.title,
+                    description: `Responsable: ${document.getElementById('task-assignee')?.value || task.assignee || ''}`,
+                    labels
+                };
+                if (projectId) payload.project_id = projectId;
+                const due = document.getElementById('task-date-end')?.value || task.dateEnd;
+                if (due) payload.due_string = due;
+
+                let todoistTask;
+                if (task.todoistTaskId) {
+                    todoistTask = await todoistFetch(`/tasks/${task.todoistTaskId}`, { method: 'POST', body: JSON.stringify(payload) });
+                } else {
+                    todoistTask = await todoistFetch('/tasks', { method: 'POST', body: JSON.stringify(payload) });
+                }
+
+                await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'tasks', id), {
+                    todoistProjectId: projectId || '',
+                    todoistTaskId: task.todoistTaskId || todoistTask.id,
+                    todoistSyncedAt: Date.now()
+                });
+                window.showAlert('Actividad enlazada con Todoist correctamente.');
+            } catch (err) {
+                window.showAlert('Error enviando a Todoist: ' + err.message);
+            }
+        };
+
+        // --- SISTEMA DINÁMICO DE ENLACES GENERALES Y TAREAS ---
+        window.addCustomLinkInput = (title = '', url = '') => {
+            const container = document.getElementById('custom-links-config-container');
+            const div = document.createElement('div');
+            div.className = 'flex gap-2 items-center custom-link-item mb-2';
+            div.innerHTML = `
+                <input type="text" value="${title}" placeholder="Nombre Corto" class="custom-link-title w-1/3 glass-ui text-slate-900 dark:text-white rounded-xl p-3 text-xs outline-none focus:border-indigo-500/50 transition-colors">
+                <input type="url" value="${url}" placeholder="https://..." class="custom-link-url flex-1 glass-ui text-slate-900 dark:text-white rounded-xl p-3 text-xs outline-none focus:border-indigo-500/50 transition-colors">
+                <button type="button" onclick="this.parentElement.remove()" class="bg-red-50 dark:bg-red-900/30 text-red-500 hover:text-red-700 hover:bg-red-100 p-3 rounded-xl border border-transparent shadow-none transition-colors">❌</button>
+            `;
+            container.appendChild(div);
+        };
+
+        window.addLinkInput = (val = '') => {
+            const container = document.getElementById('task-links-container');
+            const div = document.createElement('div');
+            div.className = 'flex gap-2 items-center';
+            div.innerHTML = `
+                <input type="url" value="${val}" placeholder="https://mi-enlace.com" class="link-input flex-1 glass-ui text-slate-900 dark:text-white rounded-xl p-3 text-sm outline-none focus:border-indigo-500/50 transition-colors">
+                <button type="button" onclick="this.parentElement.remove()" class="bg-red-50 dark:bg-red-900/30 text-red-500 hover:text-red-700 hover:bg-red-100 p-3 rounded-xl border border-transparent shadow-none transition-colors">❌</button>
+            `;
+            container.appendChild(div);
+        };
+
+        window.addSubtaskInput = (title = '', done = false, durationDays = 1) => {
+            const container = document.getElementById('task-subtasks-container');
+            const div = document.createElement('div');
+            div.className = 'grid grid-cols-[auto_1fr_92px_auto] gap-2 items-center subtask-item';
+            div.innerHTML = `
+                <input type="checkbox" class="subtask-done-cb w-5 h-5 rounded border-slate-300 cursor-pointer" ${done ? 'checked' : ''}>
+                <input type="text" value="${title}" placeholder="Título de la tarea agrupada..." class="subtask-title-input min-w-0 glass-ui text-slate-900 dark:text-white rounded-xl p-3 text-sm outline-none focus:border-indigo-500/50 transition-colors">
+                <div class="subtask-duration-wrap">
+                    <input type="number" min="1" value="${Math.max(1, Number(durationDays) || 1)}" title="Días de la subtarea" placeholder="Días" aria-label="Días de la subtarea" class="subtask-duration-input glass-ui text-slate-900 dark:text-white rounded-xl p-3 text-sm font-black outline-none focus:border-indigo-500/50 transition-colors">
+                    <span>días</span>
+                </div>
+                <button type="button" onclick="this.parentElement.remove()" class="bg-red-50 dark:bg-red-900/30 text-red-500 hover:text-red-700 hover:bg-red-100 p-3 rounded-xl border border-transparent shadow-none transition-colors">❌</button>
+            `;
+            container.appendChild(div);
+        };
+
+        // --- COMPLETAR/DESMARCAR SUBTAREA DESDE TABLERO ---
+        window.toggleSubtask = async (taskId, subindex) => {
+            const task = tasks.find(t => t.id === taskId);
+            if(!task || !task.subtasks) return;
+            
+            const newSubtasks = [...task.subtasks];
+            newSubtasks[subindex].done = !newSubtasks[subindex].done;
+            
+            // Actualización optimista de UI
+            task.subtasks = newSubtasks; 
+            renderUI(); 
+            
+            try {
+                await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'tasks', taskId), { subtasks: newSubtasks });
+            } catch(err) {
+                window.showAlert("Error al actualizar la subtarea: " + err.message);
+            }
+        };
+
+        // Tonos ligeramente más fuertes para día y compatibles en noche
+        const ganttStatusMeta = {
+            backlog: { label: 'Backlog', color: '#2563eb', tint: 'bg-blue-100 dark:bg-slate-800/60' },
+            todo: { label: 'Por hacer', color: '#d97706', tint: 'bg-amber-100 dark:bg-amber-900/40' },
+            progress: { label: 'En proceso', color: '#4f46e5', tint: 'bg-indigo-100 dark:bg-indigo-900/40' },
+            review: { label: 'Revisión', color: '#9333ea', tint: 'bg-purple-100 dark:bg-purple-900/40' },
+            done: { label: 'Finalizado', color: '#059669', tint: 'bg-emerald-100 dark:bg-emerald-900/40' }
+        };
+
+        function escapeHtml(value) {
+            return String(value ?? '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[char]));
+        }
+
+        function ganttDate(value) {
+            if (!value) return null;
+            const parts = String(value).split('-').map(Number);
+            if (parts.length !== 3 || parts.some(Number.isNaN)) return null;
+            return new Date(parts[0], parts[1] - 1, parts[2]);
+        }
+
+        function ganttAddDays(date, days) {
+            const next = new Date(date);
+            next.setDate(next.getDate() + days);
+            return next;
+        }
+
+        function ganttDiffDays(a, b) {
+            const startA = new Date(a.getFullYear(), a.getMonth(), a.getDate());
+            const startB = new Date(b.getFullYear(), b.getMonth(), b.getDate());
+            return Math.round((startA - startB) / 86400000);
+        }
+
+        function ganttTaskStart(task) {
+            return ganttDate(task.dateStart) || ganttDate(task.dateEnd) || new Date();
+        }
+
+        function ganttTaskEnd(task) {
+            const start = ganttTaskStart(task);
+            const explicitEnd = ganttDate(task.dateEnd);
+            return explicitEnd && explicitEnd >= start ? explicitEnd : start;
+        }
+
+        function getTaskDurationDays(startValue, endValue) {
+            const start = ganttDate(startValue);
+            const end = ganttDate(endValue);
+            if (!start && !end) return 1;
+            if (start && end && end >= start) return ganttDiffDays(end, start) + 1;
+            return 1;
+        }
+
+        function ganttIsCompact() {
+            return document.getElementById('gantt-density')?.value === 'compact';
+        }
+
+        function ganttRowHeight(row) {
+            if (ganttIsCompact()) {
+                if (row.type === 'group') return 34;
+                if (row.type === 'role') return 28;
+                return 32;
+            }
+            if (row.type === 'group') return 58;
+            if (row.type === 'role') return 44;
+            return 52;
+        }
+
+        function ganttStatusColor(status) {
+            return (ganttStatusMeta[status || 'backlog'] || ganttStatusMeta.backlog).color;
+        }
+
+        function ganttSmartColor(task, role) {
+            if (task.status === 'done') return '#10b981';
+            const end = ganttTaskEnd(task);
+            const isLate = task.status !== 'done' && end < new Date();
+            if (isLate) return '#ef4444';
+            if (task.status === 'review') return '#a855f7';
+            if (task.status === 'progress') return role?.color || '#6366f1';
+            return ganttStatusColor(task.status);
+        }
+
+        function setupGanttScrollSync() {
+            const left = document.querySelector('.gantt-left');
+            const right = document.querySelector('.gantt-right');
+            if (!left || !right || left.dataset.synced === 'true') return;
+            left.dataset.synced = 'true';
+            right.dataset.synced = 'true';
+            let locking = false;
+            const sync = (source, target) => {
+                if (locking) return;
+                locking = true;
+                target.scrollTop = source.scrollTop;
+                requestAnimationFrame(() => { locking = false; });
+            };
+            left.addEventListener('scroll', () => sync(left, right));
+            right.addEventListener('scroll', () => sync(right, left));
+        }
+        function ganttTaskProgress(task) {
+            if (task.status === 'done') return 100;
+            const subtasks = task.subtasks || [];
+            if (subtasks.length) return Math.round((subtasks.filter(st => st.done).length / subtasks.length) * 100);
+            if (task.status === 'review') return 80;
+            if (task.status === 'progress') return 50;
+            if (task.status === 'todo') return 15;
+            return 0;
+        }
+
+        function ganttVisibleTasks() {
+            return tasks.filter(t => {
+                const activeStatus = ['backlog', 'todo', 'progress', 'review', 'done'].includes(t.status || 'backlog');
+                const labelMatch = currentFilter === 'all' || (t.labels && t.labels.includes(currentFilter));
+                const assigneeMatch = currentAssigneeFilter === 'all' || t.assignee === currentAssigneeFilter;
+                return activeStatus && labelMatch && assigneeMatch;
+            }).sort((a, b) => ganttTaskStart(a) - ganttTaskStart(b));
+        }
+
+        function ganttRows() {
+            const rows = [];
+            const statuses = ['backlog', 'todo', 'progress', 'review', 'done'];
+            const visible = ganttVisibleTasks();
+            statuses.forEach(status => {
+                const statusTasks = visible.filter(t => (t.status || 'backlog') === status);
+                if (!statusTasks.length) return;
+                rows.push({ type: 'group', status });
+                const roleIds = [...new Set(statusTasks.map(t => t.role || 'sin-rol'))];
+                roleIds.forEach(roleId => {
+                    const role = roles.find(r => r.id === roleId) || { id: roleId, name: roleId === 'sin-rol' ? 'Sin rol' : roleId, emoji: '◆', color: ganttStatusMeta[status].color };
+                    rows.push({ type: 'role', status, role });
+                    statusTasks.filter(t => (t.role || 'sin-rol') === roleId).forEach(task => {
+                        rows.push({ type: 'task', status, role, task });
+                        (task.subtasks || []).forEach((subtask, index) => rows.push({ type: 'subtask', status, role, task, subtask, index }));
+                    });
+                });
+            });
+            return rows;
+        }
+
+
+        function ganttIndicatorTasks() {
+            const active = tasks.filter(t => ['backlog', 'todo', 'progress', 'review', 'done'].includes(t.status || 'backlog'));
+            if ((config.ganttIndicatorScope || 'filtered') === 'all') return active;
+            return ganttVisibleTasks();
+        }
+
+        function ganttProgressFromStatus(task) {
+            const statuses = config.ganttProgressStatuses || ['review', 'done'];
+            if (task.status === 'done' && statuses.includes('done')) return 100;
+            if (task.status === 'review' && statuses.includes('review')) return 100;
+            return 0;
+        }
+        
+        function renderGanttView() {
+            const table = document.getElementById('gantt-table');
+            const months = document.getElementById('gantt-months');
+            const days = document.getElementById('gantt-days');
+            const grid = document.getElementById('gantt-grid');
+            const bars = document.getElementById('gantt-bars');
+            const body = document.getElementById('gantt-body');
+            const timeline = document.getElementById('gantt-timeline');
+            const todayLine = document.getElementById('gantt-today');
+            const summary = document.getElementById('gantt-summary');
+            if (!table || !months || !days || !grid || !bars || !body || !timeline || !summary) return;
+
+            const visible = ganttVisibleTasks();
+            const rows = ganttRows();
+            
+            // Indicador Resumen siempre usa el config base para Duración
+            const configuredDays = Math.max(1, Number(config.projectDays || 30));
+            const indicatorTasks = ganttIndicatorTasks();
+            const advancedCount = indicatorTasks.filter(task => ganttProgressFromStatus(task) === 100).length;
+            const progressPct = indicatorTasks.length ? Math.round((advancedCount / indicatorTasks.length) * 100) : 0;
+            const people = new Set(indicatorTasks.map(t => t.assignee).filter(Boolean)).size;
+            
+            summary.innerHTML = [
+                ['Tareas', indicatorTasks.length],
+                ['Duración', `${configuredDays} días`],
+                ['Avance', `${advancedCount}/${indicatorTasks.length} (${progressPct}%)`],
+                ['Responsables', people]
+            ].map(([label, value]) => `<div class="gantt-summary-pill glass-ui"><p class="text-[9px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">${label}</p><strong class="text-lg font-black text-slate-900 dark:text-white">${value}</strong></div>`).join('');
+
+            if (!visible.length) {
+                table.innerHTML = '<div class="p-10 text-center text-xs font-black text-slate-500 uppercase">No hay tareas para los filtros actuales</div>';
+                months.innerHTML = days.innerHTML = grid.innerHTML = bars.innerHTML = '';
+                return;
+            }
+
+            const starts = visible.map(ganttTaskStart);
+            const minDate = ganttAddDays(new Date(Math.min(...starts)), -2); // Margen a la izquierda
+            
+            // Calcular máximo para que encaje exacto o con padding
+            const configuredEnd = ganttAddDays(new Date(Math.min(...starts)), configuredDays - 1);
+            const ends = visible.map(ganttTaskEnd);
+            const maxDate = ganttAddDays(new Date(Math.max(...ends, configuredEnd)), 3); // Padding
+            
+            const totalDays = Math.max(1, ganttDiffDays(maxDate, minDate) + 1);
+            const rightViewport = document.querySelector('.gantt-right')?.clientWidth || 760;
+            
+            // Ajuste especial para que la vista compacta apriete todos los días sin scroll
+            const fittedDayWidth = Math.max(2, Math.floor(rightViewport / Math.max(totalDays, 1)));
+            const dayWidth = ganttIsCompact() ? fittedDayWidth : 54;
+            
+            const totalHeight = rows.reduce((sum, row) => sum + ganttRowHeight(row), 0);
+            const dayList = Array.from({ length: totalDays }, (_, index) => ganttAddDays(minDate, index));
+            const template = `repeat(${totalDays}, ${dayWidth}px)`;
+            months.style.gridTemplateColumns = template;
+            days.style.gridTemplateColumns = template;
+            grid.style.gridTemplateColumns = template;
+            timeline.style.width = `${totalDays * dayWidth}px`;
+            body.style.height = `${totalHeight}px`;
+
+            const monthSpans = [];
+            dayList.forEach(date => {
+                const key = `${date.getFullYear()}-${date.getMonth()}`;
+                const last = monthSpans[monthSpans.length - 1];
+                if (last && last.key === key) last.span += 1;
+                else monthSpans.push({ key, span: 1, label: date.toLocaleDateString('es-PE', { month: 'long', year: 'numeric' }) });
+            });
+            months.innerHTML = monthSpans.map(month => `<div class="gantt-month" style="grid-column: span ${month.span}">${month.label}</div>`).join('');
+            days.innerHTML = dayList.map(date => `<div class="gantt-day ${[0,6].includes(date.getDay()) ? 'weekend' : ''}">${date.toLocaleDateString('es-PE', { weekday: 'short' }).slice(0, 1).toUpperCase()} ${String(date.getDate()).padStart(2, '0')}</div>`).join('');
+            grid.innerHTML = dayList.map(date => `<div class="gantt-grid-day ${[0,6].includes(date.getDay()) ? 'weekend' : ''}"></div>`).join('');
+
+            table.innerHTML = rows.map(row => {
+                const heightStyle = `style="min-height:${ganttRowHeight(row)}px"`;
+                if (row.type === 'group') {
+                    const meta = ganttStatusMeta[row.status];
+                    const count = visible.filter(t => (t.status || 'backlog') === row.status).length;
+                    const statusTasks = visible.filter(t => (t.status || 'backlog') === row.status);
+                    const statusDays = statusTasks.length ? (ganttDiffDays(new Date(Math.max(...statusTasks.map(ganttTaskEnd))), new Date(Math.min(...statusTasks.map(ganttTaskStart)))) + 1) : 0;
+                    return `<div class="gantt-group-row text-[10px] uppercase" ${heightStyle}><div class="gantt-cell"><span class="gantt-group-dot" style="background:${meta.color}"></span>${meta.label}</div><div class="gantt-cell">${count} tareas</div><div class="gantt-cell"><span class="gantt-status-pill" style="background:${meta.color}">Estado</span></div><div class="gantt-cell"><span class="gantt-time-pill">${statusDays}d</span></div></div>`;
+                }
+                if (row.type === 'role') {
+                    const roleTasks = visible.filter(t => (t.status || 'backlog') === row.status && (t.role || 'sin-rol') === row.role.id);
+                    return `<div class="gantt-role-row text-[10px] uppercase" ${heightStyle}><div class="gantt-cell">${row.role.emoji || '◆'} Rol: ${escapeHtml(row.role.name)}</div><div class="gantt-cell">${roleTasks.length} asignadas</div><div class="gantt-cell"></div><div class="gantt-cell"></div></div>`;
+                }
+                const task = row.task;
+                const meta = ganttStatusMeta[task.status || 'backlog'];
+                if (row.type === 'subtask') {
+                    const duration = Math.max(1, Number(row.subtask.durationDays || row.subtask.duration || 1));
+                    return `<div class="gantt-data-row subtask-row text-[10px]" ${heightStyle}><div class="gantt-cell"><div class="gantt-task-stack"><span class="gantt-task-title gantt-subtask-title">↳ ${escapeHtml(row.subtask.title || 'Subtarea')}</span><span class="gantt-task-meta">Subtarea de ${escapeHtml(task.title)}</span></div></div><div class="gantt-cell">${escapeHtml(task.assignee || 'S/A')}</div><div class="gantt-cell"><span class="gantt-status-pill" style="background:${row.subtask.done ? '#10b981' : meta.color}">${row.subtask.done ? 'Hecha' : 'Pendiente'}</span></div><div class="gantt-cell"><span class="gantt-time-pill">${duration}d</span></div></div>`;
+                }
+                const duration = ganttDiffDays(ganttTaskEnd(task), ganttTaskStart(task)) + 1;
+                const labelText = (task.labels || []).join(' · ') || 'Sin etiquetas';
+                return `<div class="gantt-data-row text-[10px] cursor-pointer" ${heightStyle} onclick="window.editTask('${task.id}')"><div class="gantt-cell" style="border-left-color:${meta.color}"><div class="gantt-task-stack"><span class="gantt-task-title font-black text-slate-800 dark:text-slate-100">${escapeHtml(task.title)}</span><span class="gantt-task-meta">${escapeHtml(labelText)}</span></div></div><div class="gantt-cell">${escapeHtml(task.assignee || 'S/A')}</div><div class="gantt-cell"><span class="gantt-status-pill" style="background:${meta.color}">${meta.label}</span></div><div class="gantt-cell"><span class="gantt-time-pill">${duration}d</span></div></div>`;
+            }).join('');
+
+            bars.innerHTML = rows.map((row) => {
+                const heightStyle = `style="min-height:${ganttRowHeight(row)}px"`;
+                if (row.type === 'group') return `<div class="gantt-chart-group" ${heightStyle}></div>`;
+                if (row.type === 'role') return `<div class="gantt-chart-role" ${heightStyle}></div>`;
+                const task = row.task;
+                const taskStart = ganttTaskStart(task);
+                let start = taskStart;
+                let end = ganttTaskEnd(task);
+                let progress = ganttTaskProgress(task);
+                let title = task.title;
+                let isSubtask = false;
+                let color = ganttSmartColor(task, row.role);
+                if (row.type === 'subtask') {
+                    const taskDuration = Math.max(1, ganttDiffDays(ganttTaskEnd(task), taskStart) + 1);
+                    const usedBefore = (task.subtasks || []).slice(0, row.index).reduce((sum, st) => sum + Math.max(1, Number(st.durationDays || st.duration || 1)), 0);
+                    const rawDuration = Math.max(1, Number(row.subtask.durationDays || row.subtask.duration || 1));
+                    const safeOffset = Math.min(usedBefore, taskDuration - 1);
+                    const safeDuration = Math.max(1, Math.min(rawDuration, taskDuration - safeOffset));
+                    start = ganttAddDays(taskStart, safeOffset);
+                    end = ganttAddDays(start, safeDuration - 1);
+                    progress = row.subtask.done ? 100 : 0;
+                    title = row.subtask.title || 'Subtarea';
+                    color = row.subtask.done ? '#10b981' : ganttSmartColor(task, row.role);
+                    isSubtask = true;
+                }
+                const left = ganttDiffDays(start, minDate) * dayWidth;
+                const width = Math.max((ganttDiffDays(end, start) + 1) * dayWidth - (ganttIsCompact() ? 2 : 8), isSubtask ? 20 : 30);
+                const overdue = task.status !== 'done' && end < new Date();
+                return `<div class="gantt-chart-row" ${heightStyle}><button type="button" onclick="window.editTask('${task.id}')" class="gantt-bar ${isSubtask ? 'subtask' : 'task-main'} ${overdue ? 'overdue' : ''}" style="left:${left}px;width:${width}px;background:${color};--progress:${progress}%"><span>${escapeHtml(title)}</span></button></div>`;
+            }).join('');
+
+            const today = new Date();
+            const todayOffset = ganttDiffDays(today, minDate) * dayWidth + dayWidth / 2;
+            todayLine.style.left = `${todayOffset}px`;
+            todayLine.style.display = todayOffset >= 0 && todayOffset <= totalDays * dayWidth ? 'block' : 'none';
+        }
+
+        function calendarTaskDates(task) {
+            const start = ganttDate(task.dateStart || task.dateEnd);
+            const end = ganttDate(task.dateEnd || task.dateStart);
+            if (!start && !end) return [];
+            const from = start || end;
+            const to = end || start;
+            const dates = [];
+            const maxDays = Math.min(45, ganttDiffDays(to, from) + 1);
+            for (let i = 0; i < maxDays; i++) {
+                dates.push(ganttAddDays(from, i));
+            }
+            return dates;
+        }
+
+        function calendarDateKey(date) {
+            return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+        }
+
+        function calendarFormatDay(date) {
+            return date.toLocaleDateString('es-PE', { weekday: 'long', day: '2-digit', month: 'short' });
+        }
+
+        function renderCalendarView() {
+            const daysContainer = document.getElementById('calendar-days');
+            const summary = document.getElementById('calendar-summary');
+            const frame = document.getElementById('google-calendar-frame');
+            const openLink = document.getElementById('calendar-open-link');
+            if (!daysContainer || !summary) return;
+
+            const today = new Date();
+            if (!calendarStartDate) {
+                calendarStartDate = ganttAddDays(today, -((today.getDay() + 6) % 7));
+            }
+            const dayList = Array.from({ length: 7 }, (_, i) => ganttAddDays(calendarStartDate, i));
+            const visibleTasks = tasks.filter(t => (t.status || 'backlog') !== 'archived');
+            const taskMap = new Map(dayList.map(d => [calendarDateKey(d), []]));
+
+            visibleTasks.forEach(task => {
+                calendarTaskDates(task).forEach(date => {
+                    const key = calendarDateKey(date);
+                    if (taskMap.has(key)) taskMap.get(key).push(task);
+                });
+            });
+
+            const weekTasks = Array.from(taskMap.values()).flat();
+            const uniqueWeekTasks = new Set(weekTasks.map(t => t.id));
+            const dueToday = taskMap.get(calendarDateKey(today)) || [];
+            const overdue = visibleTasks.filter(t => {
+                const end = ganttTaskEnd(t);
+                return end && end < new Date(today.getFullYear(), today.getMonth(), today.getDate()) && t.status !== 'done';
+            });
+
+            summary.innerHTML = [
+                ['Semana', uniqueWeekTasks.size],
+                ['Hoy', dueToday.length],
+                ['Vencidas', overdue.length],
+                ['Finalizadas', weekTasks.filter(t => t.status === 'done').length]
+            ].map(([label, value]) => `
+                <div class="gantt-summary-pill glass-ui">
+                    <div class="text-[9px] font-black text-slate-500 dark:text-slate-400 uppercase">${label}</div>
+                    <div class="text-2xl font-black text-slate-900 dark:text-white">${value}</div>
+                </div>
+            `).join('');
+
+            daysContainer.innerHTML = dayList.map(date => {
+                const key = calendarDateKey(date);
+                const items = taskMap.get(key) || [];
+                const isToday = key === calendarDateKey(today);
+                return `
+                    <div class="glass-ui rounded-2xl p-4 ${isToday ? 'border-indigo-400 dark:border-amber-400' : ''}">
+                        <div class="flex items-center justify-between gap-3 mb-3">
+                            <h3 class="text-xs font-black text-slate-900 dark:text-white uppercase">${calendarFormatDay(date)}</h3>
+                            <span class="text-[10px] font-black text-slate-500 dark:text-slate-400">${items.length} tareas</span>
+                        </div>
+                        <div class="space-y-2">
+                            ${items.length ? items.map(task => {
+                                const role = roles.find(r => r.id === task.role) || { color: '#64748b', emoji: '•', name: 'Sin rol' };
+                                const status = ganttStatusMeta[task.status || 'backlog'] || ganttStatusMeta.backlog;
+                                return `
+                                    <button type="button" onclick="window.editTask('${task.id}')" class="w-full text-left bg-slate-50/80 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700/50 rounded-xl p-3">
+                                        <div class="flex items-start gap-3">
+                                            <span class="mt-1 w-3 h-3 rounded-full flex-shrink-0" style="background:${role.color}"></span>
+                                            <div class="min-w-0 flex-1">
+                                                <div class="text-xs font-black text-slate-900 dark:text-white truncate">${escapeHtml(task.title || 'Sin titulo')}</div>
+                                                <div class="mt-1 flex flex-wrap gap-2 text-[9px] font-black uppercase text-slate-500 dark:text-slate-400">
+                                                    <span>${escapeHtml(task.assignee || 'Sin responsable')}</span>
+                                                    <span style="color:${status.color}">${status.label}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </button>
+                                `;
+                            }).join('') : '<p class="text-[10px] font-bold text-slate-500 dark:text-slate-400 italic py-2">Sin tareas programadas.</p>'}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            const embedUrl = getApiIntegrations().googleCalendar.publicEmbedUrl || '';
+            if (frame && embedUrl && frame.src !== embedUrl) frame.src = embedUrl;
+            if (openLink) {
+                openLink.href = embedUrl || '#';
+                openLink.classList.toggle('pointer-events-none', !embedUrl);
+                openLink.classList.toggle('opacity-50', !embedUrl);
+            }
+        }
+
+        window.shiftCalendarRange = (days) => {
+            const today = new Date();
+            if (!calendarStartDate || days === 0) calendarStartDate = ganttAddDays(today, -((today.getDay() + 6) % 7));
+            else calendarStartDate = ganttAddDays(calendarStartDate, days);
+            renderCalendarView();
+        };
+
+        function renderUI() {
+            const statuses = ['backlog', 'todo', 'progress', 'review', 'done'];
+            const allLabels = new Set();
+            const allAssignees = new Set();
+
+            tasks.forEach(t => { 
+                t.labels?.forEach(l => allLabels.add(l)); 
+                if(t.assignee) allAssignees.add(t.assignee); 
+            });
+
+            statuses.forEach(status => {
+                const container = document.getElementById(`tasks-${status}`);
+                const badge = document.getElementById(`badge-${status}`);
+                if(!container || !badge) return;
+
+                const colTasks = tasks.filter(t => {
+                    const statusMatch = t.status === status;
+                    const labelMatch = currentFilter === 'all' || (t.labels && t.labels.includes(currentFilter));
+                    const assigneeMatch = currentAssigneeFilter === 'all' || t.assignee === currentAssigneeFilter;
+                    return statusMatch && labelMatch && assigneeMatch;
+                });
+                
+                badge.innerText = colTasks.length;
+                container.innerHTML = '';
+
+                colTasks.forEach(task => {
+                    const role = roles.find(r => r.id === task.role) || {color:'#ccc', emoji:'❓'};
+                    const card = document.createElement('div');
+                    
+                    card.className = `task-card glass-ui p-5 rounded-[1.25rem] relative overflow-hidden`;
+                    card.draggable = true;
+                    card.id = `task-${task.id}`;
+                    card.ondragstart = (e) => e.dataTransfer.setData("taskId", task.id);
+                    card.onclick = () => window.editTask(task.id);
+                    
+                    const tags = (task.labels || []).map(l => `<span class="text-[8px] font-black text-slate-700 dark:text-slate-200 mr-1 bg-slate-100 dark:bg-slate-700/50 backdrop-blur-sm px-2 py-1 rounded-md uppercase border border-slate-200 dark:border-slate-600/30 cursor-default">${l}</span>`).join('');
+                    
+                    // Renderizado de múltiples enlaces
+                    const taskLinks = task.links || (task.link ? [task.link] : []);
+                    const linksHtml = taskLinks.map((l, idx) => `
+                        <button type="button" onclick="event.stopPropagation(); window.open('${l}', '_blank')" class="mt-2 w-full py-2 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white text-[9px] font-black rounded-xl border border-slate-200 dark:border-slate-600/50 uppercase shadow-sm flex items-center justify-center gap-2">📂 Link ${taskLinks.length > 1 ? idx+1 : 'Drive'}</button>
+                    `).join('');
+
+                    // Renderizado de múltiples subtareas animadas
+                    const subtasks = task.subtasks || [];
+                    let subtasksHtml = '';
+                    if (subtasks.length > 0) {
+                        const doneCount = subtasks.filter(st => st.done).length;
+                        const progress = (doneCount / subtasks.length) * 100;
+                        subtasksHtml = `
+                            <div class="mt-4 mb-2">
+                                <div class="flex justify-between items-center mb-1.5">
+                                    <span class="text-[9px] font-black text-slate-500 uppercase tracking-widest">Tareas del Grupo (${doneCount}/${subtasks.length})</span>
+                                    <span class="text-[9px] font-black text-indigo-500 dark:text-amber-400">${Math.round(progress)}%</span>
+                                </div>
+                                <div class="w-full bg-slate-200 dark:bg-slate-700 h-1.5 rounded-full mb-3 overflow-hidden">
+                                    <div class="bg-indigo-500 dark:bg-amber-500 h-1.5 rounded-full transition-all duration-500 ease-out" style="width: ${progress}%"></div>
+                                </div>
+                                <div class="space-y-1.5">
+                                    ${subtasks.map((st, i) => `
+                                        <div class="subtask-item flex items-center gap-2.5 bg-slate-50/80 dark:bg-slate-800/80 p-2 rounded-lg border border-slate-100 dark:border-slate-600/30 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer group" onclick="event.stopPropagation(); window.toggleSubtask('${task.id}', ${i})">
+                                            <div class="w-4 h-4 rounded-[4px] border ${st.done ? 'bg-indigo-500 border-indigo-500 dark:bg-amber-500 dark:border-amber-500 text-white' : 'bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-500'} flex items-center justify-center transition-colors flex-shrink-0">
+                                                ${st.done ? '<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>' : ''}
+                                            </div>
+                                            <span class="text-[10px] font-bold ${st.done ? 'line-through text-slate-400 dark:text-slate-500' : 'text-slate-700 dark:text-slate-200'} transition-all">${st.title}</span><span class="ml-auto text-[9px] font-black text-slate-400 dark:text-slate-500">${st.durationDays || 1}d</span>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        `;
+                    }
+
+                    let validationButtons = '';
+                    if (task.status === 'review') {
+                        validationButtons = `
+                            <div class="mt-4 pt-3 border-t border-slate-200 dark:border-slate-600/30 flex justify-between gap-2">
+                                <button type="button" onclick="event.stopPropagation(); window.startValidation('${task.id}', 'valid')" class="flex-1 py-2 bg-emerald-50 dark:bg-emerald-900/40 border border-emerald-200 dark:border-emerald-700/30 text-emerald-700 dark:text-emerald-400 text-[10px] font-black rounded-xl text-center" title="Válido">✅ Validar</button>
+                                <button type="button" onclick="event.stopPropagation(); window.startValidation('${task.id}', 'improve')" class="flex-1 py-2 bg-amber-50 dark:bg-amber-900/40 border border-amber-200 dark:border-amber-700/30 text-amber-700 dark:text-amber-400 text-[10px] font-black rounded-xl text-center" title="Mejorable">⚠️</button>
+                                <button type="button" onclick="event.stopPropagation(); window.startValidation('${task.id}', 'fix')" class="flex-1 py-2 bg-red-50 dark:bg-red-900/40 border border-red-200 dark:border-red-700/30 text-red-700 dark:text-red-400 text-[10px] font-black rounded-xl text-center" title="Por corrección">❌</button>
+                            </div>
+                        `;
+                    }
+
+                    card.innerHTML = `
+                        <div class="h-1.5 w-full absolute top-0 left-0 opacity-80" style="background-color: ${role.color}"></div>
+                        <div class="mb-3 flex flex-wrap gap-1 mt-1">${tags}</div>
+                        <h3 class="font-black text-slate-900 dark:text-slate-100 text-sm mb-1 leading-snug">${task.title}</h3>
+                        ${subtasksHtml}
+                        <div class="mt-2 space-y-1">${linksHtml}</div>
+                        ${validationButtons}
+                        <div class="flex items-center justify-between pt-4 mt-3 border-t border-slate-200 dark:border-slate-600/30 cursor-default">
+                            <span class="text-[9px] font-black text-slate-700 dark:text-slate-200 bg-slate-50 dark:bg-slate-700/50 backdrop-blur-sm border border-slate-200 dark:border-slate-600/30 px-3 py-1.5 rounded-full uppercase flex items-center gap-1">👤 ${task.assignee ? task.assignee.split(' ')[0] : 'S/A'}</span>
+                            <span class="text-[12px] bg-slate-50 dark:bg-slate-700/50 backdrop-blur-sm border border-slate-200 dark:border-slate-600/30 w-7 h-7 flex items-center justify-center rounded-full shadow-sm" title="${role.name}">${role.emoji}</span>
+                        </div>`;
+                    container.appendChild(card);
+                });
+            });
+
+            const archList = document.getElementById('archived-list');
+            if(archList) {
+                const archTasks = tasks.filter(t => t.status === 'archived');
+                archList.innerHTML = archTasks.length ? '' : '<p class="col-span-full text-slate-500 dark:text-slate-500 text-center py-10 uppercase font-black">Historial vacío</p>';
+                archTasks.forEach(t => {
+                    archList.innerHTML += `
+                        <div class="glass-ui p-6 rounded-[1.5rem] shadow-sm hover:shadow-md transition-shadow relative group">
+                            <h4 class="font-black text-slate-900 dark:text-slate-100 text-sm mb-4 leading-snug">${t.title}</h4>
+                            <div class="flex justify-between text-[9px] font-black text-slate-700 dark:text-slate-300 uppercase mb-5 bg-slate-50 dark:bg-slate-900/50 backdrop-blur-sm p-2 rounded-lg border border-slate-200 dark:border-slate-700/50 cursor-default">
+                                <span>👤 ${t.assignee}</span><span>📅 ${t.dateEnd || '---'}</span>
+                            </div>
+                            <div class="flex gap-2">
+                                <button type="button" onclick="window.editTask('${t.id}')" class="flex-1 glass-ui py-2.5 rounded-xl text-[9px] font-black text-slate-800 dark:text-slate-200 uppercase">Ver</button>
+                                <button type="button" onclick="window.restoreTask('${t.id}')" class="flex-1 bg-indigo-100/60 dark:bg-indigo-900/40 border border-white/40 dark:border-indigo-700/30 text-indigo-800 dark:text-indigo-300 py-2.5 rounded-xl text-[9px] font-black uppercase">Restaurar ↩️</button>
+                            </div>
+                        </div>`;
+                });
+            }
+
+            renderGanttView();
+            if (currentView === 'calendar') renderCalendarView();
+            updateFilterUI(Array.from(allLabels));
+            updateSuggestions(Array.from(allAssignees), Array.from(allLabels));
+        }
+
+        function setLoaderError(msg, detail = "") {
+            const loaderText = document.getElementById('loader-text');
+            if(!loaderText) return;
+            document.getElementById('loader-spinner').classList.add('hidden');
+            loaderText.innerText = msg;
+            loaderText.classList.add('text-red-500');
+            document.getElementById('loader-error-help').classList.remove('hidden');
+            if (detail) {
+                document.getElementById('detailed-error').innerText = detail;
+            }
+        }
+
+        async function init() {
+            try {
+                app = initializeApp(firebaseConfig);
+                auth = getAuth(app);
+                db = getFirestore(app);
+
+                await signInAnonymously(auth).catch(err => { throw new Error("AUTH_ERROR: " + err.message); });
+
+                onAuthStateChanged(auth, (user) => {
+                    if (user) {
+                        const savedUser = localStorage.getItem('bi_kanban_user');
+                        if (savedUser) {
+                            currentUser = savedUser;
+                            document.getElementById('auth-overlay').classList.add('hidden');
+                            startSync();
+                        } else {
+                            document.getElementById('loading-overlay').classList.add('hidden');
+                            document.getElementById('auth-overlay').classList.remove('hidden');
+                            startSyncOnlyUsers();
+                        }
+                    }
+                });
+            } catch (err) {
+                console.error("Falla en Init:", err);
+                setLoaderError("ERROR DE CONEXIÓN", err.message);
+            }
+        }
+
+        function startSyncOnlyUsers() {
+            onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'users'), (snap) => {
+                registeredUsers = snap.docs.map(d => ({id: d.id, ...d.data()}));
+                window.renderAuthList();
+            });
+        }
+
+        function startSync() {
+            const loadingOverlay = document.getElementById('loading-overlay');
+            if(loadingOverlay) loadingOverlay.classList.remove('hidden');
+            const loaderText = document.getElementById('loader-text');
+            if(loaderText) loaderText.innerText = "Sincronizando datos...";
+            document.getElementById('display-user').innerText = `👤 ${currentUser.toUpperCase()}`;
+            
+            startPresenceHeartbeat();
+            checkAdminAccess(); // Revisar si es admin
+
+            onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'roles'), (snap) => {
+                roles = snap.docs.map(d => ({id: d.id, ...d.data()}));
+                if (roles.length === 0) seedRoles();
+                updateRoleSelects();
+                renderRoleManager();
+                renderUI();
+            }, (err) => setLoaderError("Error al sincronizar Roles", err.message));
+
+            onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'tasks'), (snap) => {
+                tasks = snap.docs.map(d => ({id: d.id, ...d.data()}));
+                renderUI();
+                document.getElementById('loading-overlay').classList.add('hidden');
+            }, (err) => setLoaderError("Error al sincronizar Tareas", err.message));
+
+            onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'users'), (snap) => {
+                registeredUsers = snap.docs.map(d => ({id: d.id, ...d.data()}));
+                const me = registeredUsers.find(u => u.name === currentUser);
+                if (me) window.updateNotificationsUI(me.notifications || []);
+                renderTeamManager();
+                window.renderOnlineUsers();
+                window.renderAuthList();
+            });
+
+            onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'config', 'master'), (snap) => {
+                if (snap.exists()) { 
+                    config = { ...config, ...snap.data() }; 
+                    updateStatusUI(); 
+                    document.getElementById('btn-infopucp').href = config.infoPucpLink || '#';
+                    
+                    // Renderizar botones dinámicos en el header
+                    const dynamicLinksContainer = document.getElementById('dynamic-quick-links');
+                    if (dynamicLinksContainer) {
+                        const customLinks = config.customLinks || [];
+                        const htmlLinks = customLinks.map(l => `<a href="${l.url}" target="_blank" class="glass-ui text-slate-700 dark:text-slate-200 px-5 py-2.5 rounded-full text-[10px] font-black uppercase inline-block btn-global-hover">${l.title} 🔗</a>`).join('');
+                        
+                        dynamicLinksContainer.innerHTML = `
+                            <a id="btn-infopucp" href="${config.infoPucpLink || '#'}" target="_blank" class="glass-ui text-slate-700 dark:text-slate-200 px-5 py-2.5 rounded-full text-[10px] font-black uppercase inline-block btn-global-hover">INFOPUCP 🎓</a>
+                            ${htmlLinks}
+                        `;
+                    }
+                    renderTodoistCatalogs();
+                    if (currentView === 'calendar') renderCalendarView();
+                } else { 
+                    setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'config', 'master'), { available: true, link: '#', infoPucpLink: '#', customLinks: [], apiIntegrations: getApiIntegrations() });
+                }
+            }, (err) => console.error("Config Sync Error:", err));
+        }
+
+        async function seedRoles() {
+            const defaults = [
+                { name: 'Arquitecto ETL', color: '#f97316', emoji: '🟠' },
+                { name: 'Modelador', color: '#3b82f6', emoji: '🔵' },
+                { name: 'DAX Expert', color: '#a855f7', emoji: '🟣' },
+                { name: 'Analista Visual', color: '#10b981', emoji: '🟢' }
+            ];
+            for (const r of defaults) { await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'roles'), r); }
+        }
+
+        window.toggleRegisterView = (show) => {
+            const loginV = document.getElementById('login-view');
+            const regV = document.getElementById('register-view');
+            const passV = document.getElementById('password-view');
+            
+            if (show) {
+                loginV.classList.add('hidden'); passV.classList.add('hidden'); regV.classList.remove('hidden');
+            } else {
+                regV.classList.add('hidden'); passV.classList.add('hidden'); loginV.classList.remove('hidden');
+            }
+        };
+
+        window.hidePasswordView = () => {
+            document.getElementById('password-view').classList.add('hidden');
+            document.getElementById('login-view').classList.remove('hidden');
+            document.getElementById('login-pass').value = '';
+        };
+
+        let pendingLoginUser = null;
+
+        window.checkUserBeforeLogin = (name) => {
+            if (!name) return;
+            const existingUser = registeredUsers.find(u => u.name.toLowerCase() === name.toLowerCase());
+            if (existingUser) {
+                pendingLoginUser = existingUser;
+                document.getElementById('login-name-display').innerText = existingUser.name;
+                document.getElementById('login-avatar').innerText = existingUser.name.substring(0, 2).toUpperCase();
+                
+                const helpMsg = document.getElementById('password-help-msg');
+                if (existingUser.password) helpMsg.classList.add('hidden');
+                else helpMsg.classList.remove('hidden');
+
+                document.getElementById('login-view').classList.add('hidden');
+                document.getElementById('register-view').classList.add('hidden');
+                document.getElementById('password-view').classList.remove('hidden');
+                setTimeout(() => document.getElementById('login-pass').focus(), 100);
+            } else {
+                window.showAlert("Ese usuario no existe. Regístralo haciendo clic en 'Nuevo'.");
+            }
+        };
+
+        window.executeLogin = async () => {
+            if (!pendingLoginUser) return;
+            const passInput = document.getElementById('login-pass').value.trim();
+            
+            if (!/^\d{6}$/.test(passInput)) { window.showAlert("La contraseña debe tener exactamente 6 números."); return; }
+
+            try {
+                if (pendingLoginUser.password) {
+                    if (pendingLoginUser.password !== passInput) { window.showAlert("Contraseña incorrecta."); return; }
+                    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', pendingLoginUser.id), { isOnline: true, lastActive: Date.now() });
+                } else {
+                    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', pendingLoginUser.id), { password: passInput, isOnline: true, lastActive: Date.now() });
+                    window.showAlert("¡Clave configurada exitosamente!");
+                }
+
+                currentUser = pendingLoginUser.name;
+                localStorage.setItem('bi_kanban_user', currentUser);
+                document.getElementById('auth-overlay').classList.add('hidden');
+                document.getElementById('login-pass').value = '';
+                startSync();
+            } catch (err) { window.showAlert("Error: " + err.message); }
+        };
+
+        window.registerNewUser = async () => {
+            const name = document.getElementById('reg-name').value.trim();
+            const pass = document.getElementById('reg-pass').value.trim();
+
+            if (!name) { window.showAlert("Ingresa tu nombre completo."); return; }
+            if (!/^\d{6}$/.test(pass)) { window.showAlert("La contraseña debe tener 6 números."); return; }
+            
+            if (registeredUsers.find(u => u.name.toLowerCase() === name.toLowerCase())) {
+                window.showAlert("Este usuario ya existe."); return;
+            }
+
+            try {
+                await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'users'), {
+                    name: name, password: pass, registeredAt: Date.now(), isOnline: true, lastActive: Date.now(), notifications: []
+                });
+                
+                currentUser = name;
+                localStorage.setItem('bi_kanban_user', currentUser);
+                document.getElementById('auth-overlay').classList.add('hidden');
+                document.getElementById('reg-name').value = '';
+                document.getElementById('reg-pass').value = '';
+                window.toggleRegisterView(false);
+                startSync();
+            } catch(err) { window.showAlert("Error: " + err.message); }
+        };
+
+        window.renderAuthList = () => {
+            const container = document.getElementById('auth-existing-list');
+            if(!container) return;
+            container.innerHTML = registeredUsers.map(u => `
+                <button onclick="window.checkUserBeforeLogin('${u.name}');" class="glass-ui p-3 rounded-2xl text-[10px] font-black text-slate-800 dark:text-slate-300 truncate uppercase shadow-sm">
+                    ${u.name}
+                </button>
+            `).join('') || '<p class="col-span-2 text-[9px] text-slate-500 italic text-center py-4">No hay responsables</p>';
+        };
+
+        const commentInput = document.getElementById('comment-input');
+        const mentionDropdown = document.getElementById('mention-dropdown');
+        
+        if (commentInput && mentionDropdown) {
+            commentInput.addEventListener('input', (e) => {
+                const text = e.target.value;
+                const cursorPos = e.target.selectionStart;
+                const textBeforeCursor = text.slice(0, cursorPos);
+                const match = textBeforeCursor.match(/@([a-zA-ZáéíóúÁÉÍÓÚñÑ]*)$/);
+                
+                if (match) {
+                    const search = match[1].toLowerCase();
+                    const filteredUsers = registeredUsers.filter(u => u.name !== currentUser && u.name.toLowerCase().includes(search));
+                    
+                    if (filteredUsers.length > 0) {
+                        mentionDropdown.innerHTML = filteredUsers.map(u => `
+                            <div class="px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700/50 cursor-pointer border-b border-slate-200 dark:border-slate-600/50 last:border-0 transition-colors"
+                                 onclick="window.insertMention('${u.name}')">
+                                <p class="text-[11px] font-black text-slate-800 dark:text-slate-200">@${u.name}</p>
+                            </div>
+                        `).join('');
+                        mentionDropdown.classList.remove('hidden');
+                    } else { mentionDropdown.classList.add('hidden'); }
+                } else { mentionDropdown.classList.add('hidden'); }
+            });
+            
+            document.addEventListener('click', (e) => {
+                if(e.target !== commentInput && !mentionDropdown.contains(e.target)) mentionDropdown.classList.add('hidden');
+            });
+        }
+
+        window.insertMention = (name) => {
+            const cursorPos = commentInput.selectionStart;
+            const text = commentInput.value;
+            const newText = text.slice(0, text.slice(0, cursorPos).lastIndexOf('@')) + `@${name} ` + text.slice(cursorPos);
+            commentInput.value = newText;
+            mentionDropdown.classList.add('hidden');
+            commentInput.focus();
+        };
+
+        window.deleteUser = async (id) => {
+            if (confirm("¿Eliminar este responsable?")) await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', id));
+        };
+
+        // --- GUARDAR ENLACES DINÁMICOS GENERALES ---
+        window.saveConfigLinks = async () => {
+            const customLinks = Array.from(document.querySelectorAll('.custom-link-item')).map(div => ({
+                title: div.querySelector('.custom-link-title').value.trim(),
+                url: div.querySelector('.custom-link-url').value.trim()
+            })).filter(l => l.title && l.url);
+
+            await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'config', 'master'), { 
+                link: document.getElementById('edit-drive-link').value,
+                infoPucpLink: document.getElementById('edit-pucp-link').value,
+                projectDays: Math.max(1, Number(document.getElementById('edit-project-days')?.value || config.projectDays || 30)),
+                ganttIndicatorScope: document.getElementById('edit-gantt-scope')?.value || config.ganttIndicatorScope || 'filtered',
+                ganttProgressStatuses: ['review', 'done'].filter(status => document.getElementById(status === 'review' ? 'edit-progress-review' : 'edit-progress-done')?.checked),
+                customLinks: customLinks,
+                apiIntegrations: readApiConfigForm()
+            });
+            window.closeFileEditModal();
+        };
+
+        window.toggleMasterFileStatus = async () => {
+            await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'config', 'master'), { available: !config.available });
+        };
+
+        window.editTask = (id) => {
+            const task = tasks.find(t => t.id === id);
+            if (!task) return;
+            document.getElementById('edit-id').value = task.id;
+            document.getElementById('task-title').value = task.title;
+            document.getElementById('task-role').value = task.role;
+            document.getElementById('task-assignee').value = task.assignee;
+            document.getElementById('task-status').value = task.status || 'backlog';
+            document.getElementById('task-date-start').value = task.dateStart || '';
+            document.getElementById('task-date-end').value = task.dateEnd || '';
+            document.getElementById('task-labels').value = (task.labels || []).join(', ');
+            populateTodoistProjectSelect(task.todoistProjectId || '');
+            const todoistStatus = document.getElementById('task-todoist-status');
+            if (todoistStatus && task.todoistSyncedAt) {
+                todoistStatus.innerText = `Ultima sincronizacion Todoist: ${new Date(task.todoistSyncedAt).toLocaleString()}`;
+            }
+            
+            // Llenar enlaces múltiples o migrar el único antiguo
+            const linksContainer = document.getElementById('task-links-container');
+            linksContainer.innerHTML = '';
+            const taskLinks = task.links || (task.link ? [task.link] : []);
+            taskLinks.forEach(l => window.addLinkInput(l));
+
+            // Llenar subtareas
+            const subtasksContainer = document.getElementById('task-subtasks-container');
+            subtasksContainer.innerHTML = '';
+            const subtasks = task.subtasks || [];
+            subtasks.forEach(st => window.addSubtaskInput(st.title, st.done, st.durationDays || st.duration || 1));
+
+            document.getElementById('btn-delete-task').classList.remove('hidden');
+            document.getElementById('btn-archive-task').classList.toggle('hidden', task.status === 'archived');
+            document.getElementById('modal-overlay').classList.remove('hidden');
+            renderComments(task.comments || []);
+        };
+
+        window.restoreTask = async (id) => {
+            await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'tasks', id), { status: 'backlog' });
+            window.showAlert("Tarea devuelta al tablero.");
+        };
+
+        window.dragLeave = (ev) => ev.currentTarget.classList.remove('drag-over');
+
+        window.drop = async (ev, newStatus) => {
+            ev.preventDefault();
+            if (ev.currentTarget) ev.currentTarget.classList.remove('drag-over');
+
+            const taskId = ev.dataTransfer.getData("taskId");
+            const task = tasks.find(t => t.id === taskId);
+            if (task) {
+                const roleObj = roles.find(r => r.id === task.role);
+                const roleName = roleObj ? roleObj.name.toLowerCase() : '';
+                const titleLower = (task.title || '').toLowerCase();
+
+                if (newStatus === 'done' && (roleName.includes('dax') || titleLower.includes('dax'))) {
+                    const pendingModel = tasks.filter(t => (t.title.toLowerCase().includes('modelo') || t.title.toLowerCase().includes('relación')) && t.status !== 'done');
+                    if (pendingModel.length > 0) { window.showAlert(`Bloqueo: Finaliza el Modelo de Datos antes del DAX.`); return; }
+                }
+                await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'tasks', taskId), { status: newStatus });
+            }
+        };
+
+        // --- SISTEMA DE SEGURIDAD PARA ELIMINAR TAREAS ---
+        window.deleteCurrentTask = async () => {
+            const id = document.getElementById('edit-id').value;
+            if (!id) return;
+            
+            const task = tasks.find(t => t.id === id);
+            if (!task) return;
+
+            const isAdmin = currentUser && currentUser.toUpperCase() === 'ADMIN';
+            const isOwner = task.assignee === currentUser;
+
+            // Bloquear si no es Admin y no es el dueño asignado
+            if (!isAdmin && !isOwner) {
+                window.showAlert(`Seguridad: Solo el responsable asignado (${task.assignee || 'Nadie'}) o el ADMIN pueden eliminar esta tarea.`);
+                return;
+            }
+
+            if (confirm("¿Eliminar actividad permanentemente?")) { 
+                try {
+                    await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'tasks', id)); 
+                    window.closeModal(); 
+                } catch (err) {
+                    window.showAlert("Error al eliminar: " + err.message);
+                }
+            }
+        };
+
+        window.archiveCurrentTask = async () => {
+            const id = document.getElementById('edit-id').value;
+            if (id) { await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'tasks', id), { status: 'archived' }); window.closeModal(); }
+        };
+
+        window.addComment = async () => {
+            const id = document.getElementById('edit-id').value;
+            const text = document.getElementById('comment-input').value.trim();
+            if (!id || !text) return;
+            const task = tasks.find(t => t.id === id);
+            const newComments = [...(task.comments || []), { user: currentUser, text, date: new Date().toLocaleString() }];
+            
+            const lowerText = text.toLowerCase();
+            for (const u of registeredUsers) {
+                if (u.name !== currentUser) {
+                    const firstName = u.name.split(' ')[0].toLowerCase();
+                    const cleanFullName = u.name.toLowerCase().replace(/\s/g, '');
+                    if (lowerText.includes('@' + firstName) || lowerText.includes('@' + cleanFullName) || lowerText.includes('@' + u.name.toLowerCase())) {
+                        const newNotif = { id: Date.now().toString(), taskId: id, taskTitle: task.title, from: currentUser, read: false, timestamp: Date.now() };
+                        updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', u.id), { notifications: [...(u.notifications || []), newNotif] });
+                    }
+                }
+            }
+
+            const me = registeredUsers.find(u => u.name === currentUser);
+            if (me && me.notifications) {
+                let changed = false;
+                const myNotifs = me.notifications.map(n => {
+                    if (n.taskId === id && !n.read) { changed = true; return { ...n, read: true }; }
+                    return n;
+                });
+                if (changed) updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', me.id), { notifications: myNotifs });
+            }
+
+            await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'tasks', id), { comments: newComments });
+            document.getElementById('comment-input').value = '';
+            renderComments(newComments);
+        };
+
+        // --- BLOQUEO DE ENTRADA AL DRIVE SI ESTÁ EN USO ---
+        window.openFileLinkWithInternalLog = async () => {
+            if (!config.available) {
+                window.showAlert("El archivo maestro está EN USO por otro usuario. No puedes ingresar en este momento.");
+                return;
+            }
+            if (!config.link || config.link === '#') return;
+            
+            const now = new Date();
+            await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'accessLogs'), { 
+                user: currentUser, action: 'Abrió Drive Maestro', timestamp: Date.now(), date: now.toLocaleDateString(), time: now.toLocaleTimeString()
+            });
+            window.open(config.link, '_blank');
+        };
+
+        window.downloadAccessLogs = () => {
+            onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'accessLogs'), (snap) => {
+                let log = "REPORTE DE AUDITORÍA CLOUD\n=========================\n\n";
+                snap.docs.map(d => d.data()).sort((a,b) => b.timestamp - a.timestamp).forEach(d => { log += `[${d.date} ${d.time}] USUARIO: ${d.user}\nACCION: ${d.action}\n-------------------------\n`; });
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(new Blob([log], { type: 'text/plain' }));
+                a.download = `Auditoria_Kanban_BI.txt`;
+                a.click();
+            }, { once: true });
+        };
+
+        window.openModal = () => { 
+            document.getElementById('task-form').reset(); 
+            document.getElementById('edit-id').value = ''; 
+            document.getElementById('task-status').value = 'backlog';
+            document.getElementById('task-assignee').value = currentUser;
+            populateTodoistProjectSelect('');
+            const today = new Date();
+            document.getElementById('task-date-start').value = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+            
+            // Vaciar contenedores de subtablas y enlaces
+            document.getElementById('task-links-container').innerHTML = '';
+            document.getElementById('task-subtasks-container').innerHTML = '';
+
+            document.getElementById('modal-overlay').classList.remove('hidden'); 
+            renderComments([]); 
+        };
+        
+        window.closeModal = () => document.getElementById('modal-overlay').classList.add('hidden');
+        
+        window.openRoleModal = () => {
+            if (currentUser?.toUpperCase() !== 'ADMIN') return window.showAlert("Acceso denegado: Solo el ADMIN puede configurar los roles.");
+            document.getElementById('role-modal-overlay').classList.remove('hidden');
+        };
+        window.closeRoleModal = () => document.getElementById('role-modal-overlay').classList.add('hidden');
+        
+        window.switchView = (view) => {
+            currentView = view;
+            document.getElementById('kanban-view').classList.toggle('hidden', view !== 'kanban');
+            document.getElementById('gantt-view').classList.toggle('hidden', view !== 'gantt');
+            document.getElementById('calendar-view').classList.toggle('hidden', view !== 'calendar');
+            document.getElementById('archive-view').classList.toggle('hidden', view !== 'archive');
+            const active = 'bg-indigo-600/90 text-white shadow border border-indigo-500/50';
+            const inactive = 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white border border-transparent';
+            document.getElementById('view-kanban').className = `flex-1 px-6 py-2 rounded-xl text-xs font-black transition-all ${view === 'kanban' ? active : inactive} uppercase`;
+            document.getElementById('view-gantt').className = `flex-1 px-6 py-2 rounded-xl text-xs font-black transition-all ${view === 'gantt' ? active : inactive} uppercase`;
+            document.getElementById('view-calendar').className = `flex-1 px-6 py-2 rounded-xl text-xs font-black transition-all ${view === 'calendar' ? active : inactive} uppercase`;
+            document.getElementById('view-archive').className = `flex-1 px-6 py-2 rounded-xl text-xs font-black transition-all ${view === 'archive' ? active : inactive} uppercase`;
+            if (view === 'gantt') renderGanttView();
+            if (view === 'calendar') renderCalendarView();
+        };
+        window.allowDrop = (e) => { e.preventDefault(); e.currentTarget.classList.add('drag-over'); };
+        window.setFilter = (t) => { currentFilter = t; renderUI(); };
+        window.showAlert = (m) => { document.getElementById('alert-message').innerText = m; document.getElementById('alert-overlay').classList.remove('hidden'); };
+        window.closeAlert = () => document.getElementById('alert-overlay').classList.add('hidden');
+        
+        window.openFileEditModal = () => { 
+            if (currentUser?.toUpperCase() !== 'ADMIN') return window.showAlert("Acceso denegado: Solo el ADMIN puede acceder a la configuración del proyecto.");
+            
+            document.getElementById('edit-drive-link').value = config.link || ''; 
+            document.getElementById('edit-pucp-link').value = config.infoPucpLink || '';
+            const projectDaysInput = document.getElementById('edit-project-days');
+            if (projectDaysInput) projectDaysInput.value = config.projectDays || 30;
+            const ganttScopeInput = document.getElementById('edit-gantt-scope');
+            if (ganttScopeInput) ganttScopeInput.value = config.ganttIndicatorScope || 'filtered';
+            const progressStatuses = config.ganttProgressStatuses || ['review', 'done'];
+            const progressReview = document.getElementById('edit-progress-review');
+            const progressDone = document.getElementById('edit-progress-done');
+            if (progressReview) progressReview.checked = progressStatuses.includes('review');
+            if (progressDone) progressDone.checked = progressStatuses.includes('done');
+            renderApiConfigForm();
+            
+            // Cargar enlaces dinámicos en el modal de configuración
+            const customLinksConfigContainer = document.getElementById('custom-links-config-container');
+            customLinksConfigContainer.innerHTML = '';
+            const customLinks = config.customLinks || [];
+            customLinks.forEach(l => window.addCustomLinkInput(l.title, l.url));
+
+            document.getElementById('file-modal-overlay').classList.remove('hidden'); 
+        };
+        window.closeFileEditModal = () => document.getElementById('file-modal-overlay').classList.add('hidden');
+
+        window.startValidation = (taskId, type) => {
+            if (type === 'valid') window.submitValidation(taskId, type, 'Aprobado sin observaciones.');
+            else {
+                document.getElementById('validation-task-id').value = taskId;
+                document.getElementById('validation-type').value = type;
+                document.getElementById('validation-detail').value = '';
+                document.getElementById('validation-title').innerText = `${type === 'improve' ? '⚠️ Mejorable' : '❌ Por corrección'}`;
+                document.getElementById('validation-modal-overlay').classList.remove('hidden');
+            }
+        };
+
+        window.submitValidation = async (taskId = null, type = null, detail = null) => {
+            let isModal = false;
+            if (!taskId) {
+                isModal = true;
+                taskId = document.getElementById('validation-task-id').value;
+                type = document.getElementById('validation-type').value;
+                detail = document.getElementById('validation-detail').value.trim();
+                if (!detail) { window.showAlert("Debes ingresar un motivo."); return; }
+            }
+
+            const task = tasks.find(t => t.id === taskId);
+            if (!task) return;
+
+            const prefix = type === 'improve' ? '⚠️ Mejorable' : (type === 'fix' ? '❌ Por corrección' : '✅ Válido');
+            const newComments = [...(task.comments || []), { user: currentUser, text: `[Validación: ${prefix}] ${detail}`, date: new Date().toLocaleString() }];
+            
+            try {
+                await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'tasks', taskId), { comments: newComments });
+                if(isModal) window.closeValidationModal();
+                if(!isModal) window.showAlert(`Validación registrada: ${prefix}`);
+            } catch (err) { window.showAlert("Error al registrar: " + err.message); }
+        };
+
+        window.closeValidationModal = () => document.getElementById('validation-modal-overlay').classList.add('hidden');
+
+        window.addNewRole = async () => {
+            const name = document.getElementById('new-role-name').value.trim();
+            if (!name) return;
+            try {
+                await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'roles'), { name, emoji: document.getElementById('new-role-emoji').value.trim() || '⚙️', color: document.getElementById('new-role-color').value });
+                document.getElementById('new-role-name').value = '';
+            } catch (err) { window.showAlert("Error: " + err.message); }
+        };
+
+        window.deleteRole = async (id) => { 
+            if (!id) return;
+            if (confirm("¿Estás seguro de que deseas eliminar este rol permanentemente?")) {
+                try {
+                    await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'roles', id));
+                } catch (err) {
+                    window.showAlert("Error al eliminar el rol: " + err.message);
+                }
+            } 
+        };
+        
+        function parseDateLocal(dateStr) {
+            if(!dateStr) return new Date();
+            const [y, m, d] = dateStr.split('-').map(Number);
+            return new Date(y, m - 1, d);
+        }
+
+        const taskForm = document.getElementById('task-form');
+        if (taskForm) {
+            taskForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                
+                try {
+                    const id = document.getElementById('edit-id').value;
+                    
+                    // --- VALIDACIÓN LIMITANTE DEL PROYECTO ---
+                    const configuredDays = Math.max(1, Number(config.projectDays || 30));
+                    let earliestStart = null;
+                    tasks.forEach(t => {
+                        if (t.id !== id && t.dateStart) {
+                            const d = parseDateLocal(t.dateStart).getTime();
+                            if (!earliestStart || d < earliestStart) earliestStart = d;
+                        }
+                    });
+                    
+                    const formDateStartRaw = document.getElementById('task-date-start').value;
+                    const currentTaskStart = parseDateLocal(formDateStartRaw).getTime();
+                    if (!earliestStart || currentTaskStart < earliestStart) {
+                        earliestStart = currentTaskStart;
+                    }
+                    
+                    const maxAllowedEndMs = earliestStart + ((configuredDays - 1) * 86400000);
+                    const formDateEndRaw = document.getElementById('task-date-end').value || formDateStartRaw;
+                    const currentTaskEndMs = parseDateLocal(formDateEndRaw).getTime();
+                    
+                    if (currentTaskEndMs > maxAllowedEndMs) {
+                        const maxDateObj = new Date(maxAllowedEndMs);
+                        const maxDateStr = `${maxDateObj.getFullYear()}-${String(maxDateObj.getMonth() + 1).padStart(2, '0')}-${String(maxDateObj.getDate()).padStart(2, '0')}`;
+                        window.showAlert(`Vigencia de Proyecto Excedida: El proyecto dura un máximo de ${configuredDays} días. La fecha fin de la tarea no puede superar el límite del ${maxDateStr}.`);
+                        return; // Bloquear guardado
+                    }
+                    // ------------------------------------------
+
+                    const labelsInput = document.getElementById('task-labels').value;
+                    const labels = labelsInput ? labelsInput.split(',').map(l => l.trim().startsWith('#') ? l.trim() : '#' + l.trim()).filter(l => l !== '#') : [];
+
+                    // Extraer Links Dinámicos
+                    const linksContainer = document.getElementById('task-links-container');
+                    const links = Array.from(linksContainer.querySelectorAll('.link-input')).map(i => i.value.trim()).filter(v => v);
+                    
+                    // Extraer Subtareas Dinámicas
+                    const subtasksContainer = document.getElementById('task-subtasks-container');
+                    const subtasks = Array.from(subtasksContainer.querySelectorAll('.subtask-item')).map(div => {
+                        const titleInput = div.querySelector('.subtask-title-input');
+                        const cbInput = div.querySelector('.subtask-done-cb');
+                        const durationInput = div.querySelector('.subtask-duration-input');
+                        return {
+                            title: titleInput ? titleInput.value.trim() : '',
+                            done: cbInput ? cbInput.checked : false,
+                            durationDays: Math.max(1, Number(durationInput ? durationInput.value : 1) || 1)
+                        };
+                    }).filter(st => st.title);
+
+                    const parentDuration = getTaskDurationDays(document.getElementById('task-date-start').value, document.getElementById('task-date-end').value);
+                    const subtasksDuration = subtasks.reduce((sum, st) => sum + (Number(st.durationDays) || 1), 0);
+                    if (subtasks.length && subtasksDuration > parentDuration) {
+                        window.showAlert(`Duración inválida: las subtareas suman ${subtasksDuration} días y la tarea principal dura ${parentDuration} días.`);
+                        return;
+                    }
+
+                    const data = {
+                        title: document.getElementById('task-title').value, 
+                        role: document.getElementById('task-role').value,
+                        assignee: document.getElementById('task-assignee').value, 
+                        status: document.getElementById('task-status').value || 'backlog',
+                        dateStart: document.getElementById('task-date-start').value, 
+                        dateEnd: document.getElementById('task-date-end').value,
+                        labels: labels, 
+                        links: links, 
+                        subtasks: subtasks,
+                        todoistProjectId: document.getElementById('task-todoist-project')?.value || '',
+                        todoistTaskId: tasks.find(t => t.id === id)?.todoistTaskId || '',
+                        todoistSyncedAt: tasks.find(t => t.id === id)?.todoistSyncedAt || null,
+                        updatedBy: currentUser, 
+                        timestamp: Date.now()
+                    };
+
+                    const roleObj = roles.find(r => r.id === data.role);
+                    const roleName = roleObj ? roleObj.name.toLowerCase() : '';
+                    const titleLower = (data.title || '').toLowerCase();
+
+                    if (data.status === 'done' && (roleName.includes('dax') || titleLower.includes('dax'))) {
+                        const pendingModel = tasks.filter(t => t.id !== id && (t.title.toLowerCase().includes('modelo') || t.title.toLowerCase().includes('relación')) && t.status !== 'done');
+                        if (pendingModel.length > 0) {
+                            window.showAlert(`Bloqueo: Finaliza el Modelo de Datos antes del DAX.`);
+                            return;
+                        }
+                    }
+
+                    if (id) {
+                        await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'tasks', id), data);
+                    } else {
+                        data.comments = [];
+                        await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'tasks'), data);
+                    }
+                    window.closeModal();
+                } catch (err) {
+                    console.error("Error capturado al guardar: ", err);
+                    window.showAlert("Error al guardar tarea: " + err.message);
+                }
+            });
+        }
+
+        window.renderUI = renderUI;
+        window.renderGanttView = renderGanttView;
+        window.renderCalendarView = renderCalendarView;
+
+        init();
+    </script>
+</body>
+</html>
