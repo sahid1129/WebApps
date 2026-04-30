@@ -3,15 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>KAN BAN Presonal - Cloud</title>
+    <title>KAN BAN Personal - Cloud</title>
     <link rel="icon" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">📅</text></svg>'>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
         // CONFIGURACIÓN CRÍTICA: Activar modo oscuro por clase en Tailwind
         tailwind.config = {
             darkMode: 'class',
         }
-        
+
         // Prevenir flash de luz si el modo noche está activo
         if (localStorage.getItem('bi_kanban_theme') === 'dark') {
             document.documentElement.classList.add('dark');
@@ -19,25 +20,23 @@
     </script>
     <style>
         /* TRANSICIÓN BASE Y FONDOS MULTICOLOR INTACTOS */
-        body { 
-            transition: background-color 0.4s, color 0.4s; 
-            background-color: #f8fafc; 
+        body {
+            transition: background-color 0.4s, color 0.4s;
+            background-color: #f8fafc;
             background-image: radial-gradient(at 0% 0%, hsla(210, 100%, 95%, 1) 0px, transparent 50%),
                               radial-gradient(at 100% 0%, hsla(280, 100%, 95%, 1) 0px, transparent 50%);
             background-attachment: fixed;
-            color: #1e293b; 
+            color: #1e293b;
         }
-        
-        html.dark body { 
-            background-color: #0b0f19; 
+
+        html.dark body {
+            background-color: #0b0f19;
             background-image: radial-gradient(at 0% 0%, hsla(220, 50%, 15%, 1) 0px, transparent 50%),
                               radial-gradient(at 100% 0%, hsla(280, 40%, 15%, 1) 0px, transparent 50%);
-            color: #e2e8f0; 
+            color: #e2e8f0;
         }
 
         /* --- SISTEMA DE DISEÑO DINÁMICO (BLANCO LIMPIO / NEGRO GLASS) --- */
-        
-        /* MODO DÍA: Blanco Limpio y Cómodo */
         .glass-ui {
             background-color: #ffffff;
             border: 1px solid #e2e8f0;
@@ -45,37 +44,31 @@
             transition: all 0.3s ease;
         }
 
-        /* MODO NOCHE: Negro Translúcido */
         html.dark .glass-ui {
-            background-color: rgba(30, 41, 59, 0.6);
+            background-color: rgba(30, 41, 59, 0.7);
             backdrop-filter: blur(16px);
             -webkit-backdrop-filter: blur(16px);
             border: 1px solid rgba(71, 85, 105, 0.4);
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
         }
 
-        /* --- EFECTO HOVER AMARILLO GLOBAL PARA TODOS LOS BOTONES --- */
-        button, a.btn-global-hover {
-            transition: all 0.3s ease !important;
-        }
-        
-        /* Hover en MODO DÍA */
+        /* --- EFECTO HOVER AMARILLO GLOBAL --- */
+        button, a.btn-global-hover { transition: all 0.3s ease !important; }
+
         button:not(.no-yellow-hover):hover, a.btn-global-hover:hover {
-            background-color: #fef08a !important; 
-            color: #713f12 !important; 
-            border-color: #fde047 !important; 
+            background-color: #fef08a !important;
+            color: #713f12 !important;
+            border-color: #fde047 !important;
             box-shadow: 0 4px 10px rgba(250, 204, 21, 0.2) !important;
             transform: translateY(-1px);
         }
-        
-        /* Hover en MODO NOCHE */
+
         html.dark button:not(.no-yellow-hover):hover, html.dark a.btn-global-hover:hover {
-            background-color: #facc15 !important; 
-            color: #422006 !important; 
-            border-color: #eab308 !important; 
+            background-color: #facc15 !important;
+            color: #422006 !important;
+            border-color: #eab308 !important;
             box-shadow: 0 4px 10px rgba(234, 179, 8, 0.2) !important;
         }
-        /* ------------------------------------------------------------------- */
 
         .kanban-column {
             min-height: 70vh;
@@ -88,49 +81,34 @@
             flex: 0 0 360px;
         }
         @media (max-width: 900px) { .kanban-column { width: 320px; min-width: 320px; max-width: 320px; flex-basis: 320px; } }
-        
-        /* Tarjetas y Animaciones */
+
         .task-card { cursor: grab; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); border: 1px solid #e2e8f0; }
         .task-card:active { cursor: grabbing; transform: scale(0.98); }
-.task-card:hover { transform: translateY(-4px); box-shadow: 0 15px 25px -5px rgba(0, 0, 0, 0.15); background-color: #ffffff !important; }
-.task-title-clamp { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; text-overflow: ellipsis; }
-.kanban-task-title { -webkit-line-clamp: 1; overflow-wrap: anywhere; word-break: break-word; max-height: 1.35rem; }
+        .task-card:hover { transform: translateY(-4px); box-shadow: 0 15px 25px -5px rgba(0, 0, 0, 0.15); background-color: #ffffff !important; }
+        .task-title-clamp { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; text-overflow: ellipsis; }
+        .kanban-task-title { -webkit-line-clamp: 1; overflow-wrap: anywhere; word-break: break-word; max-height: 1.35rem; }
         .kanban-task-card { min-height: 116px; }
         .kanban-card-tags { max-height: 3.15rem; overflow: hidden; }
         .kanban-subtask-title { min-width: 0; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; text-overflow: ellipsis; overflow-wrap: anywhere; }
         @media (max-width: 768px) { .kanban-task-title { -webkit-line-clamp: 2; max-height: 2.7rem; } }
-        #todoist-task-link-box,
-        #task-todoist-section,
-        #task-todoist-labels,
-        #task-todoist-id,
-        #api-todoist-token,
-        #todoist-sync-status,
-        #api-todoist-default-project,
-        #todoist-project-list,
-        #todoist-label-list,
-        #todoist-section-map-container,
-        button[onclick="window.testTodoistConnection()"],
-        button[onclick="window.syncTodoistCatalogs()"],
-        button[onclick="window.runTodoistBidirectionalSync(true)"],
-        label:has(#api-todoist-enabled),
-        label:has(#api-todoist-auto-sync),
-        label:has(#api-todoist-sync-push),
-        label:has(#api-todoist-sync-pull),
-        label:has(#api-todoist-sync-subtasks),
-        div:has(> #api-todoist-token),
-        div:has(> #api-todoist-default-project),
-        div:has(> #todoist-project-list),
-        div:has(> #todoist-label-list),
-        div:has(> #todoist-section-map-container) { display: none !important; }
-.tag-suggestion-chip { transition: all .18s ease; }
-.tag-suggestion-chip:hover { transform: translateY(-1px); }
+        
+        /* Ocultar elementos inactivos o Todoist no requeridos */
+        #todoist-task-link-box, #task-todoist-section, #task-todoist-labels, #task-todoist-id, #api-todoist-token,
+        #todoist-sync-status, #api-todoist-default-project, #todoist-project-list, #todoist-label-list, #todoist-section-map-container,
+        button[onclick="window.testTodoistConnection()"], button[onclick="window.syncTodoistCatalogs()"],
+        button[onclick="window.runTodoistBidirectionalSync(true)"], label:has(#api-todoist-enabled), label:has(#api-todoist-auto-sync),
+        label:has(#api-todoist-sync-push), label:has(#api-todoist-sync-pull), label:has(#api-todoist-sync-subtasks),
+        div:has(> #api-todoist-token), div:has(> #api-todoist-default-project), div:has(> #todoist-project-list),
+        div:has(> #todoist-label-list), div:has(> #todoist-section-map-container) { display: none !important; }
+        
+        .tag-suggestion-chip { transition: all .18s ease; }
+        .tag-suggestion-chip:hover { transform: translateY(-1px); }
         html.dark .task-card { border-color: rgba(71, 85, 105, 0.5); }
         html.dark .task-card:hover { box-shadow: 0 15px 25px -5px rgba(0, 0, 0, 0.4); background-color: rgba(30, 41, 59, 0.9) !important; }
-        
+
         .drag-over { filter: brightness(1.1); transform: scale(1.02); border: 2px dashed #818cf8 !important; }
         html.dark .drag-over { filter: brightness(1.3); }
 
-        /* Overlays y Scrollbars */
         .glass-overlay { background-color: rgba(15, 23, 42, 0.5); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); }
         .custom-scrollbar::-webkit-scrollbar { width: 8px; height: 8px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
@@ -138,11 +116,9 @@
         .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(148, 163, 184, 0.8); }
         html.dark .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(71, 85, 105, 0.6); }
         html.dark .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(100, 116, 139, 0.8); }
-        
-        /* Animaciones para Subtareas */
         .subtask-item { transition: all 0.2s ease-in-out; }
-    
-        /* --- PESTAÑA GANTT INTEGRADA AL KANBAN --- */
+
+        /* GANTT BASE CLASSES */
         .gantt-shell { min-height: 70vh; }
         .gantt-board { display: grid; grid-template-columns: 420px minmax(720px, 1fr); overflow: hidden; }
         .gantt-left, .gantt-right { max-height: 72vh; overflow: auto; }
@@ -150,11 +126,8 @@
         html.dark .gantt-left { border-right-color: rgba(71, 85, 105, 0.45); }
         .gantt-head-row, .gantt-data-row, .gantt-group-row, .gantt-role-row { display: grid; grid-template-columns: 1.6fr .8fr .7fr .8fr; align-items: center; min-height: 42px; border-bottom: 1px solid #cbd5e1; }
         html.dark .gantt-head-row, html.dark .gantt-data-row, html.dark .gantt-group-row, html.dark .gantt-role-row { border-bottom-color: rgba(71, 85, 105, 0.35); }
-        
-        /* Headers Resaltados en Modo Día para el Gantt */
         .gantt-head-row { position: sticky; top: 0; z-index: 10; background: #e2e8f0; color: #0f172a; font-weight: 900; }
         html.dark .gantt-head-row { background: rgba(15, 23, 42, .96); color: #94a3b8; }
-        
         .gantt-cell { padding: 0 14px; min-width: 0; }
         .gantt-group-row { background: rgba(224, 231, 255, .8); font-weight: 900; }
         html.dark .gantt-group-row { background: rgba(49, 46, 129, .18); }
@@ -164,20 +137,16 @@
         .gantt-subtask-title { padding-left: 22px; color: #64748b; }
         html.dark .gantt-subtask-title { color: #cbd5e1; }
         .gantt-timeline { position: relative; width: max-content; min-width: 100%; }
-        
-        /* Timelines Headers Resaltados */
         .gantt-months, .gantt-days { display: grid; position: sticky; top: 0; z-index: 8; background: #e2e8f0; color: #0f172a; }
         html.dark .gantt-months, html.dark .gantt-days { background: rgba(15, 23, 42, .96); color: #94a3b8; }
         .gantt-months { height: 28px; }
         .gantt-days { top: 28px; height: 34px; border-bottom: 2px solid #cbd5e1; }
         html.dark .gantt-days { border-bottom-color: rgba(71, 85, 105, .45); }
-        
         .gantt-month, .gantt-day { border-right: 1px solid #cbd5e1; display: flex; align-items: center; justify-content: center; }
         html.dark .gantt-month, html.dark .gantt-day { border-right-color: rgba(71, 85, 105, .35); }
         .gantt-month { justify-content: flex-start; padding-left: 10px; }
         .gantt-day.weekend, .gantt-grid-day.weekend { background: rgba(203, 213, 225, 0.4); }
         html.dark .gantt-day.weekend, html.dark .gantt-grid-day.weekend { background: rgba(30, 41, 59, .5); }
-        
         .gantt-body { position: relative; }
         .gantt-grid { position: absolute; inset: 0; display: grid; pointer-events: none; z-index: 0; }
         .gantt-grid-day { border-right: 1px solid #e2e8f0; }
@@ -195,7 +164,6 @@
         .gantt-summary-pill { border-radius: 1rem; padding: .75rem 1rem; }
         @media (max-width: 1100px) { .gantt-board { grid-template-columns: 360px minmax(620px, 1fr); } }
 
-        /* --- MEJORAS DE JERARQUÍA Y SCROLL SINCRONIZADO GANTT --- */
         .gantt-board { grid-template-columns: 500px minmax(760px, 1fr); }
         .gantt-head-row, .gantt-data-row, .gantt-group-row, .gantt-role-row { grid-template-columns: 2.1fr 1fr .8fr .7fr; }
         .gantt-left, .gantt-right { scroll-behavior: smooth; }
@@ -217,9 +185,7 @@
         .gantt-bar.subtask { border-radius: .55rem; }
         .gantt-bar.overdue { box-shadow: 0 0 0 3px rgba(239, 68, 68, .18), 0 10px 18px rgba(15, 23, 42, .14); }
         .subtask-duration-input { max-width: 92px; }
-        @media (max-width: 1100px) { .gantt-board { grid-template-columns: 420px minmax(680px, 1fr); } }
 
-        /* --- AJUSTES FINALES GANTT: SCROLL ÚNICO, DENSIDAD Y COLOR --- */
         body { background-image: radial-gradient(at 0% 0%, hsla(210, 100%, 94%, 1) 0px, transparent 46%), radial-gradient(at 88% 12%, hsla(265, 95%, 94%, .95) 0px, transparent 42%), radial-gradient(at 50% 100%, hsla(175, 80%, 92%, .8) 0px, transparent 42%); }
         html.dark body { background-image: radial-gradient(at 0% 0%, hsla(220, 70%, 18%, 1) 0px, transparent 48%), radial-gradient(at 100% 0%, hsla(282, 55%, 20%, .95) 0px, transparent 45%), radial-gradient(at 48% 100%, hsla(190, 55%, 15%, .75) 0px, transparent 42%); }
         .glass-ui { box-shadow: 0 14px 35px -28px rgba(79, 70, 229, .42), 0 1px 3px rgba(15, 23, 42, .08); }
@@ -243,8 +209,6 @@
         .subtask-duration-wrap { display: grid; grid-template-columns: 1fr; gap: 3px; }
         .subtask-duration-wrap span { text-align: center; font-size: 8px; line-height: 1; font-weight: 900; color: #64748b; text-transform: uppercase; }
         html.dark .subtask-duration-wrap span { color: #94a3b8; }
-
-        /* --- AJUSTE DE ALINEACIÓN E INDICADORES GANTT --- */
         .gantt-head-row { min-height: 62px; height: 62px; }
         .gantt-board.compact .gantt-head-row { min-height: 54px; height: 54px; }
         .gantt-board.compact .gantt-months { height: 24px; }
@@ -289,18 +253,14 @@
 
             <!-- Body Login -->
             <div class="p-8">
-                <!-- VISTA 1: Lista de usuarios (Login) -->
                 <div id="login-view">
                     <div class="flex justify-between items-center mb-4">
                         <h3 class="text-sm font-black text-slate-800 dark:text-slate-200 uppercase tracking-widest">Selecciona tu perfil</h3>
                         <button onclick="toggleRegisterView(true)" class="text-[10px] glass-ui text-indigo-700 dark:text-indigo-300 px-3 py-1.5 rounded-lg font-black transition-all">➕ Nuevo</button>
                     </div>
-                    <div id="auth-existing-list" class="grid grid-cols-2 sm:grid-cols-3 gap-3 max-h-48 overflow-y-auto custom-scrollbar p-1">
-                        <!-- Generado por JS -->
-                    </div>
+                    <div id="auth-existing-list" class="grid grid-cols-2 sm:grid-cols-3 gap-3 max-h-48 overflow-y-auto custom-scrollbar p-1"></div>
                 </div>
 
-                <!-- VISTA 2: Registro de Usuario -->
                 <div id="register-view" class="hidden">
                     <div class="flex items-center gap-3 mb-6 pb-4 border-b border-slate-200/50 dark:border-slate-600/50">
                         <button onclick="toggleRegisterView(false)" class="text-slate-600 dark:text-slate-400 font-bold">⬅️ Volver</button>
@@ -315,13 +275,10 @@
                             <label class="block text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase mb-1">Crea una clave (6 números)</label>
                             <input type="password" id="reg-pass" placeholder="******" maxlength="6" class="w-full glass-ui text-slate-900 dark:text-white rounded-xl p-3 text-center tracking-[0.5em] text-xl font-black focus:border-indigo-500/50 outline-none transition-colors">
                         </div>
-                        <button onclick="registerNewUser()" class="w-full bg-emerald-500/90 text-white py-4 rounded-xl font-black shadow-lg uppercase tracking-widest mt-4 border border-emerald-400/50">
-                            Crear Cuenta e Ingresar
-                        </button>
+                        <button onclick="registerNewUser()" class="w-full bg-emerald-500/90 text-white py-4 rounded-xl font-black shadow-lg uppercase tracking-widest mt-4 border border-emerald-400/50">Crear Cuenta e Ingresar</button>
                     </div>
                 </div>
 
-                <!-- VISTA 3: Pedir Clave (Login) -->
                 <div id="password-view" class="hidden">
                     <div class="flex items-center gap-3 mb-6 pb-4 border-b border-slate-200/50 dark:border-slate-600/50">
                         <button onclick="hidePasswordView()" class="text-slate-600 dark:text-slate-400 font-bold">⬅️ Volver</button>
@@ -334,9 +291,7 @@
                     <div class="space-y-4">
                         <input type="password" id="login-pass" placeholder="******" maxlength="6" class="w-full glass-ui text-slate-900 dark:text-white rounded-xl p-4 text-center tracking-[0.5em] text-2xl font-black focus:border-indigo-500/50 outline-none transition-colors">
                         <p id="password-help-msg" class="text-center text-xs font-bold text-amber-500 hidden">Actualización: Crea tu clave de 6 dígitos.</p>
-                        <button onclick="executeLogin()" class="w-full bg-indigo-600/90 text-white py-4 rounded-xl font-black shadow-lg uppercase tracking-widest border border-indigo-500/50">
-                            Acceder
-                        </button>
+                        <button onclick="executeLogin()" class="w-full bg-indigo-600/90 text-white py-4 rounded-xl font-black shadow-lg uppercase tracking-widest border border-indigo-500/50">Acceder</button>
                     </div>
                 </div>
             </div>
@@ -346,32 +301,25 @@
     <!-- HEADER PRINCIPAL -->
     <header class="mb-10 relative z-[60]">
         <div class="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-8 mb-8">
-            
             <div class="relative z-[100]">
                 <h1 class="text-4xl font-black tracking-tighter mb-4 flex items-center gap-3">
-                    <span class="text-blue-600 dark:text-blue-400 text-3xl">◆</span> 
-                    <span class="text-blue-800 dark:text-blue-300">Kanban</span> 
+                    <span class="text-blue-600 dark:text-blue-400 text-3xl">◆</span>
+                    <span class="text-blue-800 dark:text-blue-300">Kanban</span>
                     <span class="text-amber-500 dark:text-amber-400 italic">Proyecto SAID</span>
                 </h1>
-                
+
                 <div class="flex flex-wrap items-center gap-3">
-                    <!-- Botón Usuario Glass -->
-                    <span id="display-user" class="glass-ui text-slate-700 dark:text-slate-200 font-black text-xs px-5 py-2.5 rounded-full uppercase flex items-center gap-2 cursor-default">
-                        👤 Invitado
-                    </span>
-                    
-                    <!-- Usuarios Conectados & Notificaciones Glass -->
+                    <span id="display-user" class="glass-ui text-slate-700 dark:text-slate-200 font-black text-xs px-5 py-2.5 rounded-full uppercase flex items-center gap-2 cursor-default">👤 Invitado</span>
+
                     <div class="flex items-center gap-2 glass-ui px-4 py-1.5 rounded-full relative z-[110]">
                         <div id="online-users-container" class="flex -space-x-2"></div>
                         <div class="h-4 w-px bg-slate-200 dark:bg-slate-600 mx-1"></div>
-                        
-                        <!-- Campana -->
+
                         <div class="relative cursor-pointer group no-yellow-hover" onclick="toggleNotifications()">
                             <span class="text-lg hover:scale-110 transition-transform inline-block text-amber-500 dark:text-amber-400">🔔</span>
                             <span id="notif-count" class="absolute -top-1 -right-1 bg-red-500 text-white text-[8px] font-black rounded-full h-3.5 w-3.5 flex items-center justify-center hidden shadow-md">0</span>
                         </div>
-                        
-                        <!-- Dropdown Notificaciones -->
+
                         <div id="notif-dropdown" class="hidden absolute top-full mt-3 left-0 w-72 glass-ui rounded-2xl shadow-2xl z-[120] overflow-hidden transform origin-top-left transition-all">
                             <div class="p-3 border-b border-slate-100 dark:border-slate-700/50 bg-slate-50 dark:bg-slate-900/50">
                                 <h4 class="text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase tracking-widest">Notificaciones</h4>
@@ -380,19 +328,17 @@
                         </div>
                     </div>
 
-                    <!-- Controles Rápidos y Enlaces Dinámicos -->
                     <div class="flex items-center gap-2 flex-wrap" id="dynamic-quick-links">
                         <a id="btn-infopucp" href="#" target="_blank" class="glass-ui text-slate-700 dark:text-slate-200 px-5 py-2.5 rounded-full text-[10px] font-black uppercase inline-block btn-global-hover">INFOPUCP 🎓</a>
-                        <!-- Aquí se insertarán más enlaces dinámicos -->
                     </div>
-                    
+
                     <div class="flex items-center gap-2 flex-wrap">
                         <button onclick="toggleDarkMode()" id="btn-dark-mode" class="glass-ui text-amber-600 dark:text-amber-400 px-5 py-2.5 rounded-full text-[10px] font-black uppercase">🌙 MODO NOCHE</button>
                         <button onclick="logout()" class="glass-ui text-red-600 dark:text-red-400 px-5 py-2.5 rounded-full text-[10px] font-black uppercase">SALIR 🚪</button>
                     </div>
                 </div>
             </div>
-            
+
             <!-- Panel Derecho Glass -->
             <div id="file-status-panel" class="glass-ui p-4 rounded-full flex flex-col sm:flex-row items-center gap-6 w-full xl:w-auto relative z-10">
                 <div class="flex items-center gap-3 pl-2">
@@ -405,44 +351,105 @@
                 <div class="flex flex-wrap items-center gap-2 border-l-2 pl-4 border-slate-200 dark:border-slate-700/50">
                     <button onclick="toggleMasterFileStatus()" class="text-indigo-700 bg-indigo-50 dark:bg-transparent dark:text-slate-300 px-4 py-2 rounded-xl text-[9px] font-black uppercase border border-transparent">🔄 Estado</button>
                     <button id="btn-open-drive" onclick="openFileLinkWithInternalLog()" class="bg-indigo-600/90 dark:bg-indigo-500/80 text-white px-4 py-2 rounded-xl flex items-center gap-2 border border-indigo-500/50 transition-all"><span class="text-[9px] font-black uppercase">📂 Archivo Maestro </span></button>
-                    <button onclick="downloadAccessLogs()" class="bg-emerald-500/90 dark:bg-emerald-500/80 text-white px-4 py-2 rounded-xl flex items-center gap-2 border border-emerald-500/50"><span class="text-[9px] font-black uppercase">Auditoría</span></button>
+                    <button id="btn-metrics-view" onclick="toggleMetricsView()" class="bg-emerald-500/90 dark:bg-emerald-500/80 text-white px-4 py-2 rounded-xl flex items-center gap-2 border border-emerald-500/50"><span class="text-[9px] font-black uppercase">📊 Métricas</span></button>
                     <button id="btn-settings-config" onclick="openFileEditModal()" class="hidden text-slate-600 dark:text-slate-300 p-2 rounded-xl border border-transparent" title="Configuraciones (Solo Admin)">⚙️</button>
                 </div>
             </div>
         </div>
 
         <div class="flex flex-col lg:flex-row gap-4 items-center relative z-10">
-            <!-- Botón de Tarea -->
             <button onclick="openModal()" class="bg-indigo-500/90 dark:bg-indigo-500/80 text-white px-6 py-3 rounded-2xl font-black shadow-md w-full lg:w-auto flex items-center justify-center gap-2 uppercase text-xs border border-indigo-400/50">
                 <span class="text-lg leading-none">+</span> Nueva Tarea
             </button>
-            <!-- Botón de Roles (Solo ADMIN) -->
-            <button id="btn-roles-config" onclick="openRoleModal()" class="hidden glass-ui px-6 py-3 rounded-2xl font-black w-full lg:w-auto uppercase text-xs text-indigo-800 dark:text-indigo-300">
-                🛡️ Roles
-            </button>
-            <!-- Tablero / Historial Glass -->
+            <button id="btn-roles-config" onclick="openRoleModal()" class="hidden glass-ui px-6 py-3 rounded-2xl font-black w-full lg:w-auto uppercase text-xs text-indigo-800 dark:text-indigo-300">🛡️ Roles</button>
             <div class="flex glass-ui p-1.5 rounded-2xl w-full lg:w-auto">
                 <button id="view-kanban" onclick="switchView('kanban')" class="flex-1 px-6 py-2 rounded-xl text-xs font-black bg-indigo-600/90 text-white shadow uppercase border border-indigo-500/50">Tablero</button>
                 <button id="view-gantt" onclick="switchView('gantt')" class="flex-1 px-6 py-2 rounded-xl text-xs font-black text-slate-600 dark:text-slate-400 uppercase border border-transparent">Gantt</button>
                 <button id="view-calendar" onclick="switchView('calendar')" class="flex-1 px-6 py-2 rounded-xl text-xs font-black text-slate-600 dark:text-slate-400 uppercase border border-transparent">Calendario</button>
                 <button id="view-archive" onclick="switchView('archive')" class="flex-1 px-6 py-2 rounded-xl text-xs font-black text-slate-600 dark:text-slate-400 uppercase border border-transparent">Historial</button>
             </div>
-            
-            <!-- Barra de Filtros Dinámica Glass -->
             <div class="glass-ui flex-1 p-2 rounded-2xl flex items-center gap-3 overflow-x-auto custom-scrollbar w-full lg:w-auto cursor-default">
                 <span class="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest pl-2">🔍 Filtros:</span>
-                
                 <select id="user-filter" onchange="setAssigneeFilter(this.value)" class="bg-transparent text-slate-700 dark:text-slate-200 text-[10px] font-black uppercase rounded-xl px-3 py-1.5 outline-none cursor-pointer hover:text-indigo-600">
                     <option value="all">👥 Todos</option>
                 </select>
-                
                 <div class="w-px h-6 bg-slate-200 dark:bg-slate-600/50 mx-1"></div>
                 <div id="filter-container" class="flex gap-2 items-center"></div>
             </div>
         </div>
     </header>
 
-    <!-- KANBAN VIEW (Colores intensificados para reducir fatiga visual en día) -->
+    <!-- DASHBOARD DE MÉTRICAS (OVERLAY) -->
+    <div id="metrics-modal-overlay" class="fixed inset-0 hidden flex items-center justify-center p-4 z-[250] glass-overlay">
+        <div class="glass-ui !bg-white/95 dark:!bg-slate-900/95 rounded-[2rem] shadow-2xl w-full max-w-7xl overflow-hidden flex flex-col h-[95vh] md:h-[90vh]">
+            <!-- Header Metrics -->
+            <div class="p-6 md:p-8 border-b border-slate-200 dark:border-slate-700/50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-50/50 dark:bg-slate-800/50">
+                <div>
+                    <p class="text-[10px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-[0.25em] mb-1">Rendimiento en Vivo</p>
+                    <h2 class="text-3xl font-black text-slate-900 dark:text-white tracking-tighter">Dashboard de Métricas 📊</h2>
+                </div>
+                <div class="flex items-center gap-4 w-full sm:w-auto">
+                    <select id="metrics-user-filter" onchange="renderAdvancedMetrics()" class="glass-ui text-slate-700 dark:text-slate-200 text-[11px] font-black uppercase rounded-xl px-4 py-3 outline-none cursor-pointer hover:text-indigo-600 w-full sm:w-auto">
+                        <option value="all">👥 Mostrar Todo el Equipo</option>
+                    </select>
+                    <button onclick="toggleMetricsView()" class="px-6 py-3 text-xs font-black text-slate-700 dark:text-slate-400 glass-ui rounded-xl uppercase hover:bg-slate-100 dark:hover:bg-slate-700">Cerrar</button>
+                </div>
+            </div>
+            
+            <!-- Body Metrics -->
+            <div class="flex-1 overflow-y-auto custom-scrollbar p-6 md:p-8">
+                
+                <!-- KPIs Panel -->
+                <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-8" id="metrics-kpis-container">
+                    <!-- KPI Cards generated dynamically -->
+                </div>
+
+                <!-- Charts Grid -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    
+                    <!-- Chart 1: Doughnut Status -->
+                    <div id="chart-card-status" class="glass-ui p-6 rounded-2xl relative">
+                        <h3 class="text-[11px] font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-widest mb-1">Estado de Tareas</h3>
+                        <p class="text-[10px] font-bold text-slate-500 dark:text-slate-400 mb-4">Distribución actual del trabajo activo.</p>
+                        <div class="h-64 w-full relative">
+                            <canvas id="canvas-metrics-status"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Chart 2: Timeline Flow -->
+                    <div id="chart-card-timeline" class="glass-ui p-6 rounded-2xl relative">
+                        <h3 class="text-[11px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-widest mb-1">Evolución (Flujo y Pendientes)</h3>
+                        <p class="text-[10px] font-bold text-slate-500 dark:text-slate-400 mb-4">Tendencia de finalización vs proyección en el tiempo.</p>
+                        <div class="h-64 w-full relative">
+                            <canvas id="canvas-metrics-timeline"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Chart 3: Workload -->
+                    <div id="chart-card-workload" class="glass-ui p-6 rounded-2xl relative">
+                        <h3 class="text-[11px] font-black text-amber-600 dark:text-amber-400 uppercase tracking-widest mb-1">Carga Operativa WIP</h3>
+                        <p class="text-[10px] font-bold text-slate-500 dark:text-slate-400 mb-4">Tareas activas (Por hacer, Proceso, Revisión) por Colaborador.</p>
+                        <div class="h-64 w-full relative">
+                            <canvas id="canvas-metrics-workload"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Chart 4: Priority Distribution -->
+                    <div id="chart-card-priority" class="glass-ui p-6 rounded-2xl relative">
+                        <h3 class="text-[11px] font-black text-red-600 dark:text-red-400 uppercase tracking-widest mb-1">Enfoque por Prioridad</h3>
+                        <p class="text-[10px] font-bold text-slate-500 dark:text-slate-400 mb-4">Nivel de criticidad de las tareas no finalizadas.</p>
+                        <div class="h-64 w-full relative">
+                            <canvas id="canvas-metrics-priority"></canvas>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- KANBAN VIEW -->
     <div id="kanban-view" class="flex gap-6 overflow-x-auto pb-8 custom-scrollbar items-start relative z-10">
         <div id="col-backlog" class="kanban-column flex-shrink-0 bg-blue-100 dark:bg-slate-800/60 border border-blue-300 dark:border-slate-600 shadow-sm" ondrop="drop(event, 'backlog')" ondragover="allowDrop(event)" ondragleave="dragLeave(event)">
             <h2 class="text-[11px] font-black text-blue-900 dark:text-slate-300 uppercase mb-5 px-1 flex justify-between items-center"><span>📥 Backlog</span> <span id="badge-backlog" class="bg-blue-600 dark:bg-slate-900 text-white shadow-sm px-2.5 py-0.5 rounded-full text-[9px]">0</span></h2>
@@ -532,12 +539,12 @@
                     <div id="calendar-summary" class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5"></div>
                     <div id="calendar-days" class="space-y-3 max-h-[68vh] overflow-y-auto custom-scrollbar pr-2"></div>
                 </div>
-                <div class="p-5 md:p-6 bg-slate-50/60 dark:bg-slate-900/35">
+                <div class="p-5 md:p-6 bg-slate-50/60 dark:bg-slate-900/35 flex flex-col">
                     <div class="flex items-center justify-between gap-3 mb-4">
-                        <h3 class="text-xs font-black text-slate-700 dark:text-slate-300 uppercase tracking-widest">Google Calendar publico</h3>
-                        <a id="calendar-open-link" href="#" target="_blank" class="glass-ui px-4 py-2 rounded-xl text-[10px] font-black uppercase btn-global-hover">Abrir</a>
+                        <h3 class="text-xs font-black text-slate-700 dark:text-slate-300 uppercase tracking-widest">Google Calendar público</h3>
+                        <a id="calendar-open-link" href="#" target="_blank" class="glass-ui px-4 py-2 rounded-xl text-[10px] font-black uppercase btn-global-hover">Abrir Ext.</a>
                     </div>
-                    <iframe id="google-calendar-frame" title="Google Calendar" src="about:blank" class="w-full h-[68vh] rounded-2xl border border-slate-200 dark:border-slate-700/50 bg-white"></iframe>
+                    <iframe id="google-calendar-frame" title="Google Calendar" src="about:blank" class="w-full flex-1 min-h-[60vh] rounded-2xl border border-slate-200 dark:border-slate-700/50 bg-white"></iframe>
                 </div>
             </div>
         </div>
@@ -561,7 +568,7 @@
                         <label class="block text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase mb-2">Actividad / Grupo Principal 📝</label>
                         <input type="text" id="task-title" required placeholder="Ej. Diseño del Dashboard..." class="w-full glass-ui text-slate-900 dark:text-white rounded-xl p-4 text-sm font-bold outline-none focus:border-indigo-500/50 transition-colors">
                     </div>
-                    
+
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                         <div>
                             <label class="block text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase mb-2">Responsable 👤</label>
@@ -608,12 +615,6 @@
                                 <option value="4">P1 Urgente</option>
                             </select>
                         </div>
-                        <div class="hidden" aria-hidden="true">
-                            <label class="block text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase mb-2">Seccion Todoist</label>
-                            <select id="task-todoist-section" class="w-full glass-ui text-slate-900 dark:text-white rounded-xl p-3.5 text-sm font-bold outline-none focus:border-indigo-500/50">
-                                <option value="">Segun estado Kanban</option>
-                            </select>
-                        </div>
                         <input type="hidden" id="task-todoist-id">
                     </div>
                     <div>
@@ -622,20 +623,6 @@
                         <datalist id="label-suggestions"></datalist>
                         <div id="task-label-suggestions-bar" class="mt-2 flex flex-wrap gap-1.5"></div>
                         <p class="text-[10px] font-bold text-slate-500 dark:text-slate-400 mt-1">Etiquetas internas para filtros y automatizaciones.</p>
-                    </div>
-                    <select id="task-todoist-labels" multiple class="hidden" aria-hidden="true"></select>
-
-                    <div id="todoist-task-link-box" class="hidden bg-slate-50/70 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700/50 rounded-2xl p-4">
-                        <div class="flex flex-wrap items-end gap-3">
-                            <div class="flex-1 min-w-[220px]">
-                                <label class="block text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase mb-2">Proyecto Todoist</label>
-                                <select id="task-todoist-project" class="w-full glass-ui text-slate-900 dark:text-white rounded-xl p-3.5 text-sm font-bold outline-none focus:border-indigo-500/50">
-                                    <option value="">Sin proyecto Todoist</option>
-                                </select>
-                            </div>
-                            <button type="button" onclick="window.syncCurrentTaskToTodoist()" class="bg-rose-600/90 text-white px-5 py-3.5 rounded-xl text-[10px] font-black uppercase border border-rose-500/50">Enviar a Todoist</button>
-                        </div>
-                        <p id="task-todoist-status" class="text-[10px] font-bold text-slate-500 dark:text-slate-400 mt-2">Conecta Todoist desde Ajustes para usar proyectos y tags sincronizados.</p>
                     </div>
 
                     <!-- SECCIÓN: MÚLTIPLES ENLACES -->
@@ -646,7 +633,7 @@
                         </label>
                         <div id="task-links-container" class="space-y-2 mt-2"></div>
                     </div>
-                    
+
                     <div class="flex flex-wrap justify-between items-center gap-4 mt-10 pt-6 border-t border-slate-200 dark:border-slate-700/50">
                         <button type="button" id="btn-delete-task" onclick="deleteCurrentTask()" class="px-5 py-2 text-xs font-black text-red-600 uppercase">🗑️ Eliminar</button>
                         <div class="flex gap-3">
@@ -657,14 +644,14 @@
                     </div>
                 </form>
             </div>
-            
+
             <div id="comments-section" class="w-full md:w-80 bg-slate-50/50 dark:bg-slate-900/50 backdrop-blur-md p-8 flex flex-col border-l border-slate-200 dark:border-slate-700/50 relative">
                 <h4 class="text-xs font-black text-slate-600 dark:text-slate-400 uppercase mb-6 tracking-widest flex items-center gap-2"><span class="text-lg">💬</span> Notas</h4>
                 <div id="comments-list" class="flex-1 overflow-y-auto space-y-4 mb-6 text-xs custom-scrollbar pr-2"></div>
-                
+
                 <div class="space-y-3 relative">
                     <p class="text-[10px] text-slate-600 dark:text-slate-400 italic">Menciona usando <span class="font-bold text-indigo-700 dark:text-amber-500">@usuario</span></p>
-                    
+
                     <div id="mention-dropdown" class="absolute hidden bottom-full mb-2 left-0 w-full glass-ui shadow-2xl rounded-xl max-h-40 overflow-y-auto z-[60] custom-scrollbar cursor-pointer">
                         <!-- Generado por JS -->
                     </div>
@@ -678,11 +665,32 @@
 
     <!-- MODAL CONFIGURACIÓN LINKS Y EQUIPO (Solo ADMIN) -->
     <div id="file-modal-overlay" class="fixed inset-0 hidden flex items-center justify-center p-4 z-[200] glass-overlay">
-        <div class="glass-ui !bg-white/95 dark:!bg-slate-800/90 rounded-[2rem] shadow-2xl w-full max-w-xl p-10 overflow-y-auto max-h-[90vh] custom-scrollbar cursor-default">
+        <div class="glass-ui !bg-white/95 dark:!bg-slate-800/90 rounded-[2rem] shadow-2xl w-full max-w-2xl p-10 overflow-y-auto max-h-[90vh] custom-scrollbar cursor-default">
             <h3 class="text-2xl font-black text-slate-900 dark:text-white mb-6">Configuración de Proyecto</h3>
             <div class="space-y-8">
+                
+                <!-- SECCIÓN: RANGO DE PROYECTO -->
+                <div class="bg-indigo-50/50 dark:bg-indigo-900/20 backdrop-blur-sm p-6 rounded-2xl border border-indigo-200 dark:border-indigo-800/50">
+                    <h4 class="text-[10px] font-black text-indigo-700 dark:text-indigo-400 uppercase mb-4 tracking-widest flex items-center gap-2"><span class="text-base">📆</span> Rango y Tiempo del Proyecto</h4>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase mb-1">Fecha de Inicio</label>
+                            <input type="date" id="edit-project-start" onchange="window.updateProjectDaysCount()" class="w-full glass-ui text-slate-900 dark:text-white rounded-xl p-3 text-xs font-bold outline-none focus:border-indigo-500/50">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase mb-1">Fecha de Fin Estimada</label>
+                            <input type="date" id="edit-project-end" onchange="window.updateProjectDaysCount()" class="w-full glass-ui text-slate-900 dark:text-white rounded-xl p-3 text-xs font-bold outline-none focus:border-indigo-500/50">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase mb-1">Total Días de Proyecto</label>
+                            <input type="number" id="edit-project-days" readonly class="w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 rounded-xl p-3 text-xs font-black text-center outline-none" placeholder="Automático">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SECCIÓN: INTEGRACIONES Y APIS -->
                 <div class="bg-slate-50/50 dark:bg-slate-900/50 backdrop-blur-sm p-6 rounded-2xl border border-slate-200 dark:border-slate-700/50">
-                    <h4 class="text-[10px] font-black text-indigo-700 dark:text-amber-400 uppercase mb-4 tracking-widest">Accesos Rápidos Base</h4>
+                    <h4 class="text-[10px] font-black text-indigo-700 dark:text-amber-400 uppercase mb-4 tracking-widest flex items-center gap-2"><span class="text-base">🔌</span> APIs y Enlaces Base</h4>
                     <div class="space-y-4">
                         <div>
                             <label class="block text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase mb-1">Carpeta Drive Maestro 📂</label>
@@ -693,108 +701,48 @@
                             <input type="url" id="edit-pucp-link" class="w-full glass-ui text-slate-900 dark:text-white rounded-xl p-3 text-xs font-bold outline-none focus:border-indigo-500/50">
                         </div>
                         <div>
-                            <label class="block text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase mb-1">Rango del Proyecto 📆</label>
-                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                <input type="date" id="edit-project-start" class="w-full glass-ui text-slate-900 dark:text-white rounded-xl p-3 text-xs font-bold outline-none focus:border-indigo-500/50">
-                                <input type="date" id="edit-project-end" class="w-full glass-ui text-slate-900 dark:text-white rounded-xl p-3 text-xs font-bold outline-none focus:border-indigo-500/50">
-                            </div>
-                            <input type="number" min="1" max="730" id="edit-project-days" readonly class="mt-2 w-full glass-ui text-slate-500 dark:text-slate-400 rounded-xl p-3 text-xs font-bold outline-none" placeholder="Dias calculados">
+                            <label class="block text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase mb-1">Google Calendar (URL de incrustación / Src) 📅</label>
+                            <input type="url" id="edit-calendar-url" class="w-full glass-ui text-slate-900 dark:text-white rounded-xl p-3 text-xs font-bold outline-none focus:border-indigo-500/50" placeholder="https://calendar.google.com/calendar/embed?src=...">
                         </div>
                         <div>
-                            <label class="block text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase mb-1">Indicadores Gantt 📊</label>
-                            <select id="edit-gantt-scope" class="w-full glass-ui text-slate-900 dark:text-white rounded-xl p-3 text-xs font-bold outline-none focus:border-indigo-500/50">
+                            <label class="block text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase mb-1">Google Chat Webhook (Para alertas automáticas) 💬</label>
+                            <input type="url" id="edit-chat-webhook" class="w-full glass-ui text-slate-900 dark:text-white rounded-xl p-3 text-xs font-bold outline-none focus:border-indigo-500/50" placeholder="https://chat.googleapis.com/v1/spaces/.../messages?...">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <!-- INDICADORES GANTT -->
+                    <div class="bg-slate-50/50 dark:bg-slate-900/50 backdrop-blur-sm p-6 rounded-2xl border border-slate-200 dark:border-slate-700/50">
+                        <h4 class="text-[10px] font-black text-indigo-700 dark:text-amber-400 uppercase mb-4 tracking-widest flex items-center gap-2">Indicadores Gantt 📊</h4>
+                        <div class="space-y-3">
+                            <select id="edit-gantt-scope" class="w-full glass-ui text-slate-900 dark:text-white rounded-xl p-3 text-xs font-bold outline-none focus:border-indigo-500/50 mb-2">
                                 <option value="filtered">Según filtros actuales</option>
                                 <option value="all">Todo el tablero activo</option>
                             </select>
-                        </div>
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
                             <label class="gantt-indicator-option glass-ui text-[10px] font-black text-slate-600 dark:text-slate-300 uppercase"><input type="checkbox" id="edit-progress-review"> Revisión cuenta avance</label>
                             <label class="gantt-indicator-option glass-ui text-[10px] font-black text-slate-600 dark:text-slate-300 uppercase"><input type="checkbox" id="edit-progress-done"> Finalizado cuenta avance</label>
                         </div>
                     </div>
-                </div>
 
-                <!-- NUEVA SECCION: INTEGRACIONES API -->
-                <div class="bg-slate-50/50 dark:bg-slate-900/50 backdrop-blur-sm p-6 rounded-2xl border border-slate-200 dark:border-slate-700/50">
-                    <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
-                        <h4 class="text-[10px] font-black text-indigo-700 dark:text-amber-400 uppercase tracking-widest">Integraciones API</h4>
-                        <div class="flex flex-wrap gap-2">
-                            <button type="button" onclick="window.testTodoistConnection()" class="glass-ui px-4 py-2 rounded-xl text-[10px] font-black uppercase">Probar Todoist</button>
-                            <button type="button" onclick="window.syncTodoistCatalogs()" class="bg-indigo-600/90 text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase border border-indigo-500/50">Sincronizar Todoist</button>
-                        </div>
-                    </div>
-                    <div class="space-y-4">
-                        <label class="flex items-center gap-2 text-[10px] font-black text-slate-600 dark:text-slate-300 uppercase">
-                            <input type="checkbox" id="api-todoist-enabled" class="w-4 h-4">
-                            Todoist activo
-                        </label>
-                        <div>
-                            <label class="block text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase mb-1">Todoist API Token</label>
-                            <input type="password" id="api-todoist-token" class="w-full glass-ui text-slate-900 dark:text-white rounded-xl p-3 text-xs font-bold outline-none focus:border-indigo-500/50" placeholder="Token personal de Todoist">
-                        </div>
-                        <div id="todoist-sync-status" class="text-[10px] font-bold text-slate-500 dark:text-slate-400">Sin sincronizar.</div>
-                        <label class="flex items-center gap-2 text-[10px] font-black text-slate-600 dark:text-slate-300 uppercase">
-                            <input type="checkbox" id="api-todoist-auto-sync" class="w-4 h-4">
-                            Sincronizar cada 1 minuto
-                        </label>
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
+                    <!-- CONFIGURACIÓN DE MÉTRICAS -->
+                    <div class="bg-slate-50/50 dark:bg-slate-900/50 backdrop-blur-sm p-6 rounded-2xl border border-slate-200 dark:border-slate-700/50">
+                        <h4 class="text-[10px] font-black text-indigo-700 dark:text-amber-400 uppercase tracking-widest mb-4 flex items-center gap-2">Métricas y Dashboards 📈</h4>
+                        <div class="space-y-3">
                             <label class="glass-ui p-3 rounded-xl flex items-center gap-2 text-[10px] font-black text-slate-600 dark:text-slate-300 uppercase">
-                                <input type="checkbox" id="api-todoist-sync-push" class="w-4 h-4">
-                                Kanban a Todoist
+                                <input type="checkbox" id="metrics-exclude-backlog" class="w-4 h-4"> Excluir Backlog
                             </label>
-                            <label class="glass-ui p-3 rounded-xl flex items-center gap-2 text-[10px] font-black text-slate-600 dark:text-slate-300 uppercase">
-                                <input type="checkbox" id="api-todoist-sync-pull" class="w-4 h-4">
-                                Todoist a Kanban
-                            </label>
-                            <label class="glass-ui p-3 rounded-xl flex items-center gap-2 text-[10px] font-black text-slate-600 dark:text-slate-300 uppercase">
-                                <input type="checkbox" id="api-todoist-sync-subtasks" class="w-4 h-4">
-                                Subtareas
-                            </label>
-                        </div>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                            <div>
-                                <label class="block text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase mb-1">Proyecto Todoist base</label>
-                                <select id="api-todoist-default-project" class="w-full glass-ui text-slate-900 dark:text-white rounded-xl p-3 text-xs font-bold outline-none focus:border-indigo-500/50"></select>
+                            <div class="grid grid-cols-2 gap-2 mt-2">
+                                <label class="glass-ui p-2 rounded-xl flex items-center gap-2 text-[9px] font-black text-slate-600 dark:text-slate-300 uppercase"><input type="checkbox" id="metrics-show-status" class="w-3 h-3"> Estados</label>
+                                <label class="glass-ui p-2 rounded-xl flex items-center gap-2 text-[9px] font-black text-slate-600 dark:text-slate-300 uppercase"><input type="checkbox" id="metrics-show-timeline" class="w-3 h-3"> Flujo</label>
+                                <label class="glass-ui p-2 rounded-xl flex items-center gap-2 text-[9px] font-black text-slate-600 dark:text-slate-300 uppercase"><input type="checkbox" id="metrics-show-workload" class="w-3 h-3"> Carga</label>
+                                <label class="glass-ui p-2 rounded-xl flex items-center gap-2 text-[9px] font-black text-slate-600 dark:text-slate-300 uppercase"><input type="checkbox" id="metrics-show-priority" class="w-3 h-3"> Prioridad</label>
                             </div>
-                            <button type="button" onclick="window.runTodoistBidirectionalSync(true)" class="self-end bg-rose-600/90 text-white px-4 py-3 rounded-xl text-[10px] font-black uppercase border border-rose-500/50">Sync bidireccional ahora</button>
-                        </div>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                            <div class="glass-ui p-4 rounded-xl">
-                                <div class="text-[9px] font-black text-slate-500 dark:text-slate-400 uppercase mb-2">Proyectos Todoist</div>
-                                <div id="todoist-project-list" class="max-h-32 overflow-y-auto custom-scrollbar space-y-1 text-[10px] font-bold text-slate-700 dark:text-slate-300"></div>
-                            </div>
-                            <div class="glass-ui p-4 rounded-xl">
-                                <div class="text-[9px] font-black text-slate-500 dark:text-slate-400 uppercase mb-2">Tags Todoist</div>
-                                <div id="todoist-label-list" class="max-h-32 overflow-y-auto custom-scrollbar space-y-1 text-[10px] font-bold text-slate-700 dark:text-slate-300"></div>
-                            </div>
-                        </div>
-                        <div class="pt-4 border-t border-slate-200 dark:border-slate-700/50">
-                            <div class="text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase mb-2">Mapeo Kanban ↔ Secciones Todoist</div>
-                            <div id="todoist-section-map-container" class="grid grid-cols-1 md:grid-cols-2 gap-2"></div>
-                        </div>
-                        <div class="pt-4 border-t border-slate-200 dark:border-slate-700/50">
-                            <div class="flex justify-between items-center text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase mb-2">
-                                <span>APIs generales</span>
-                                <button type="button" onclick="window.addGeneralApiInput()" class="text-indigo-600 dark:text-amber-400 bg-transparent border-0 p-0 shadow-none no-yellow-hover">+ API</button>
-                            </div>
-                            <div id="general-api-config-container" class="space-y-2"></div>
-                        </div>
-                        <div class="pt-4 border-t border-slate-200 dark:border-slate-700/50">
-                            <label class="flex items-center gap-2 text-[10px] font-black text-slate-600 dark:text-slate-300 uppercase mb-3">
-                                <input type="checkbox" id="api-google-enabled" class="w-4 h-4">
-                                Google Calendar activo
-                            </label>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                <input type="text" id="api-google-calendar-id" class="glass-ui text-slate-900 dark:text-white rounded-xl p-3 text-xs font-bold outline-none focus:border-indigo-500/50" placeholder="Calendar ID, ej. primary">
-                                <input type="password" id="api-google-token" class="glass-ui text-slate-900 dark:text-white rounded-xl p-3 text-xs font-bold outline-none focus:border-indigo-500/50" placeholder="OAuth Bearer token">
-                            </div>
-                            <input type="url" id="api-google-public-url" class="mt-3 w-full glass-ui text-slate-900 dark:text-white rounded-xl p-3 text-xs font-bold outline-none focus:border-indigo-500/50" placeholder="URL publica embed de Google Calendar">
-                            <p class="text-[10px] font-bold text-slate-500 dark:text-slate-400 mt-2">La URL publica permite visualizar. Para crear o editar eventos se necesita OAuth desde Google Cloud.</p>
                         </div>
                     </div>
                 </div>
 
-                <!-- NUEVA SECCIÓN: BOTONES DINÁMICOS -->
+                <!-- SECCIÓN: BOTONES DINÁMICOS -->
                 <div class="pt-6 border-t border-slate-200 dark:border-slate-700/50">
                     <label class="flex justify-between items-center text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase mb-2 pb-2">
                         <span>Botones de Acceso Rápido Dinámicos 🔗</span>
@@ -886,44 +834,28 @@
             available: true,
             link: '#',
             infoPucpLink: '#',
+            calendarUrl: '',
+            chatWebhook: '',
             customLinks: [],
             projectDays: 30,
             projectStartDate: '',
             projectEndDate: '',
             ganttIndicatorScope: 'filtered',
             ganttProgressStatuses: ['review', 'done'],
-            apiIntegrations: {
-                todoist: {
-                    enabled: true,
-                    token: 'c084943911f907464ec51204e1fb65306ca441b2',
-                    projects: [],
-                    sections: [],
-                    labels: [],
-                    lastSync: null,
-                    defaultProjectId: '',
-                    statusSectionMap: {},
-                    syncEnabled: true,
-                    syncChannels: { pushLocal: true, pullRemote: true, subtasks: true },
-                    lastAutoSync: null
-                },
-                googleCalendar: {
-                    enabled: false,
-                    token: '',
-                    calendarId: 'primary',
-                    publicEmbedUrl: 'https://calendar.google.com/calendar/embed?src=jamancatorresenriquesaid%40gmail.com&ctz=America%2FLima'
-                },
-                general: []
+            metricsConfig: {
+                showStatus: true,
+                showTimeline: true,
+                showWorkload: true,
+                showPriority: true,
+                excludeBacklog: false
             }
         };
-        
+
         let currentFilter = 'all';
         let currentAssigneeFilter = 'all';
         let currentView = 'kanban';
-        let calendarStartDate = null;
         let heartbeatInterval = null;
-        let todoistSyncInterval = null;
-        let todoistSyncInProgress = false;
-        let lastTodoistAutoSyncAt = 0;
+        let metricsChartsObj = {}; // Almacenar instancias de Chart.js
 
         window.toggleDarkMode = () => {
             const html = document.documentElement;
@@ -931,6 +863,10 @@
             const isDark = html.classList.contains('dark');
             localStorage.setItem('bi_kanban_theme', isDark ? 'dark' : 'light');
             updateDarkModeButton();
+            // Refrescar gráficos en el cambio de tema si están visibles
+            if (!document.getElementById('metrics-modal-overlay').classList.contains('hidden')) {
+                window.renderAdvancedMetrics();
+            }
         };
 
         function updateDarkModeButton() {
@@ -953,19 +889,17 @@
 
         function startPresenceHeartbeat() {
             if (heartbeatInterval) clearInterval(heartbeatInterval);
-            
             const updatePresence = () => {
                 if (currentUser && registeredUsers.length > 0) {
                     const me = registeredUsers.find(u => u.name === currentUser);
                     if (me) {
-                        updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', me.id), { 
-                            isOnline: true, 
-                            lastActive: Date.now() 
+                        updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', me.id), {
+                            isOnline: true,
+                            lastActive: Date.now()
                         }).catch(()=>{});
                     }
                 }
             };
-            
             updatePresence();
             heartbeatInterval = setInterval(updatePresence, 30000);
         }
@@ -979,9 +913,7 @@
             if (currentUser) {
                 const me = registeredUsers.find(u => u.name === currentUser);
                 if (me) {
-                    try {
-                        await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', me.id), { isOnline: false });
-                    } catch(e) { console.error("Error updating offline status", e); }
+                    try { await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', me.id), { isOnline: false }); } catch(e) {}
                 }
             }
             currentUser = null;
@@ -989,46 +921,32 @@
             window.location.reload();
         };
 
-        // --- VALIDAR ACCESOS ADMIN ---
         function checkAdminAccess() {
             const isAdmin = currentUser && currentUser.toUpperCase() === 'ADMIN';
             const btnRoles = document.getElementById('btn-roles-config');
             const btnSettings = document.getElementById('btn-settings-config');
-            
-            if (btnRoles) {
-                if (isAdmin) btnRoles.classList.remove('hidden');
-                else btnRoles.classList.add('hidden');
-            }
-            if (btnSettings) {
-                if (isAdmin) btnSettings.classList.remove('hidden');
-                else btnSettings.classList.add('hidden');
-            }
+            if (btnRoles) btnRoles.classList.toggle('hidden', !isAdmin);
+            if (btnSettings) btnSettings.classList.toggle('hidden', !isAdmin);
         }
 
         function updateStatusUI() {
             const ind = document.getElementById('status-indicator');
             const txt = document.getElementById('status-text');
             const btnDrive = document.getElementById('btn-open-drive');
-            
             if(!ind || !txt) return;
             ind.className = `w-3.5 h-3.5 rounded-full border-2 border-white/50 dark:border-slate-700 ${config.available ? 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.8)]' : 'bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.8)]'}`;
             txt.innerText = config.available ? 'DISPONIBLE ✅' : 'EN USO ⛔';
             txt.className = `text-[11px] font-black uppercase ${config.available ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500'}`;
-
-            // Efecto visual cuando no está disponible el drive
             if (btnDrive) {
-                if (config.available) {
-                    btnDrive.classList.remove('opacity-50', 'cursor-not-allowed', 'saturate-0');
-                } else {
-                    btnDrive.classList.add('opacity-50', 'cursor-not-allowed', 'saturate-0');
-                }
+                btnDrive.classList.toggle('opacity-50', !config.available);
+                btnDrive.classList.toggle('cursor-not-allowed', !config.available);
+                btnDrive.classList.toggle('saturate-0', !config.available);
             }
         }
 
         window.renderOnlineUsers = () => {
             const container = document.getElementById('online-users-container');
             if (!container) return;
-            
             const online = registeredUsers.filter(u => window.isUserOnline(u));
             container.innerHTML = online.map(u => {
                 const initials = u.name.substring(0, 2).toUpperCase();
@@ -1041,14 +959,10 @@
             const countBadge = document.getElementById('notif-count');
             const list = document.getElementById('notif-list');
             if(!countBadge || !list) return;
-
             if (unread.length > 0) {
                 countBadge.innerText = unread.length;
                 countBadge.classList.remove('hidden');
-            } else {
-                countBadge.classList.add('hidden');
-            }
-
+            } else { countBadge.classList.add('hidden'); }
             if (unread.length === 0) {
                 list.innerHTML = `<p class="text-center text-[10px] text-slate-500 dark:text-slate-400 py-6 font-bold italic">No tienes notificaciones nuevas.</p>`;
             } else {
@@ -1062,7 +976,6 @@
         };
 
         window.toggleNotifications = () => { document.getElementById('notif-dropdown').classList.toggle('hidden'); };
-
         window.openNotification = (taskId, notifId) => {
             const me = registeredUsers.find(u => u.name === currentUser);
             if (me && me.notifications) {
@@ -1071,6 +984,22 @@
             }
             window.editTask(taskId);
             document.getElementById('notif-dropdown').classList.add('hidden');
+        };
+
+        // --- SISTEMA DE ALERTA API A GOOGLE CHAT ---
+        window.sendGoogleChatAlert = async (taskTitle, actionDesc, author) => {
+            if (!config.chatWebhook) return;
+            try {
+                await fetch(config.chatWebhook, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        text: `🔔 *Aviso del Tablero SAID*\nEl usuario *${author}* ha ${actionDesc}:\n> 📌 Tarea: *${taskTitle}*`
+                    })
+                });
+            } catch (err) {
+                console.error("No se pudo conectar con el webhook de Google Chat:", err);
+            }
         };
 
         function renderRoleManager() {
@@ -1109,11 +1038,11 @@
 
             const listL = document.getElementById('label-suggestions');
             if(listL) {
-                const todoistLabels = (getApiIntegrations().todoist.labels || []).map(l => `#${l.name}`);
-                const mergedLabels = Array.from(new Set([...labels, ...todoistLabels]));
+                // Solo se usan etiquetas locales puras
+                const mergedLabels = Array.from(new Set(labels));
                 listL.innerHTML = mergedLabels.map(l => `<option value="${l}">`).join('');
             }
-            
+
             const userFilter = document.getElementById('user-filter');
             if(userFilter) {
                 let html = `<option value="all">👥 Todos</option>`;
@@ -1127,10 +1056,8 @@
         function updateFilterUI(labels) {
             const container = document.getElementById('filter-container');
             if(!container) return;
-            
             const activeClass = 'bg-amber-400/90 text-slate-900 shadow-sm border border-amber-300/50';
             const inactiveClass = 'glass-ui text-slate-700 dark:text-slate-300';
-
             container.innerHTML = `<button onclick="window.setFilter('all')" class="px-4 py-1.5 rounded-xl text-[9px] font-black ${currentFilter === 'all' ? activeClass : inactiveClass} uppercase transition-all">Todas</button>`;
             labels.forEach(l => {
                 container.innerHTML += `<button onclick="window.setFilter('${l}')" class="px-4 py-1.5 rounded-xl text-[9px] font-black ${currentFilter === l ? activeClass : inactiveClass} uppercase transition-all">${l}</button>`;
@@ -1157,96 +1084,10 @@
             list.scrollTop = list.scrollHeight;
         }
 
-        function getApiIntegrations() {
-            const defaults = {
-                todoist: { enabled: false, token: '', projects: [], sections: [], labels: [], lastSync: null, defaultProjectId: '', statusSectionMap: {}, syncEnabled: true, syncChannels: { pushLocal: true, pullRemote: true, subtasks: true }, lastAutoSync: null },
-                googleCalendar: {
-                    enabled: false,
-                    token: '',
-                    calendarId: 'primary',
-                    publicEmbedUrl: 'https://calendar.google.com/calendar/embed?src=jamancatorresenriquesaid%40gmail.com&ctz=America%2FLima'
-                },
-                general: []
-            };
-            const legacyTodoist = { ...defaults.todoist, ...((config.apiIntegrations || {}).todoist || {}), syncChannels: { ...defaults.todoist.syncChannels, ...(((config.apiIntegrations || {}).todoist || {}).syncChannels || {}) } };
-            return {
-                ...defaults,
-                ...(config.apiIntegrations || {}),
-                todoist: { ...legacyTodoist, enabled: false, token: '', syncEnabled: false },
-                googleCalendar: { ...defaults.googleCalendar, ...((config.apiIntegrations || {}).googleCalendar || {}) },
-                general: Array.isArray((config.apiIntegrations || {}).general) ? (config.apiIntegrations || {}).general : []
-            };
-        }
-
-        function renderTodoistCatalogs() {
-            const api = getApiIntegrations();
-            const projectList = document.getElementById('todoist-project-list');
-            const labelList = document.getElementById('todoist-label-list');
-            const status = document.getElementById('todoist-sync-status');
-            const projects = api.todoist.projects || [];
-            const labels = api.todoist.labels || [];
-
-            if (projectList) {
-                projectList.innerHTML = projects.length
-                    ? projects.map(p => `<div class="truncate">📁 ${escapeHtml(p.name || '')}</div>`).join('')
-                    : '<p class="text-slate-500 italic">Sin proyectos sincronizados</p>';
-            }
-            if (labelList) {
-                labelList.innerHTML = labels.length
-                    ? labels.map(l => `<div class="truncate">#${escapeHtml(l.name || '')}</div>`).join('')
-                    : '<p class="text-slate-500 italic">Sin tags sincronizados</p>';
-            }
-            if (status) {
-                status.innerText = api.todoist.lastSync
-                    ? `Ultima sincronizacion: ${new Date(api.todoist.lastSync).toLocaleString()}`
-                    : 'Sin sincronizar.';
-            }
-            populateTodoistProjectSelect();
-            populateTodoistLabelsSelect();
-            populateTodoistSectionSelect();
-            renderTodoistMappingConfig();
-        }
-
-        function populateTodoistProjectSelect(selected = '') {
-            const box = document.getElementById('todoist-task-link-box');
-            const select = document.getElementById('task-todoist-project');
-            const taskStatus = document.getElementById('task-todoist-status');
-            if (!select) return;
-
-            const api = getApiIntegrations();
-            const enabled = !!(api.todoist.enabled && api.todoist.token);
-            if (box) box.classList.toggle('hidden', !enabled);
-            select.innerHTML = '<option value="">Sin proyecto Todoist</option>' + (api.todoist.projects || []).map(p => (
-                `<option value="${p.id}" ${String(selected) === String(p.id) ? 'selected' : ''}>${escapeHtml(p.name || '')}</option>`
-            )).join('');
-            if (taskStatus) {
-                taskStatus.innerText = enabled
-                    ? 'Proyecto y secciones disponibles desde Todoist. Las etiquetas se gestionan en la barra principal.'
-                    : 'Conecta Todoist desde Ajustes para usar proyectos y secciones sincronizadas.';
-            }
-        }
-
-        function todoistPriorityLabel(priority = 1) {
-            const map = { 4: 'P1', 3: 'P2', 2: 'P3', 1: 'P4' };
-            return map[Number(priority) || 1] || 'P4';
-        }
-
-        function selectedTodoistLabels() {
-            const apiLabels = new Set((getApiIntegrations().todoist.labels || []).map(l => String(l.name || '').toLowerCase()));
-            return readTaskLabelsInput()
-                .map(l => l.replace(/^#/, ''))
-                .filter(l => apiLabels.has(String(l).toLowerCase()));
-        }
-
         function readTaskLabelsInput() {
             const input = document.getElementById('task-labels');
             const raw = input?.value || '';
-            return raw
-                .split(',')
-                .map(l => l.trim())
-                .filter(Boolean)
-                .map(l => l.startsWith('#') ? l : `#${l}`)
-                .filter(l => l !== '#');
+            return raw.split(',').map(l => l.trim()).filter(Boolean).map(l => l.startsWith('#') ? l : `#${l}`).filter(l => l !== '#');
         }
 
         function addTaskLabelFromSuggestion(label) {
@@ -1256,34 +1097,16 @@
             const labels = readTaskLabelsInput();
             if (!labels.map(l => l.toLowerCase()).includes(normalized.toLowerCase())) labels.push(normalized);
             input.value = labels.join(', ');
-            populateTodoistLabelsSelect(selectedTodoistLabels());
             renderTaskLabelSuggestions();
         }
         window.addTaskLabelFromSuggestion = addTaskLabelFromSuggestion;
-
-        function setMultiSelectValues(selectId, values = []) {
-            const select = document.getElementById(selectId);
-            if (!select) return;
-            const valueSet = new Set((values || []).map(String));
-            Array.from(select.options).forEach(opt => { opt.selected = valueSet.has(String(opt.value)); });
-        }
-
-        function populateTodoistLabelsSelect(selected = []) {
-            const select = document.getElementById('task-todoist-labels');
-            if (!select) return;
-            const labels = getApiIntegrations().todoist.labels || [];
-            select.innerHTML = labels.map(l => `<option value="${escapeHtml(l.name || '')}">${escapeHtml(l.name || '')}</option>`).join('');
-            setMultiSelectValues('task-todoist-labels', selected);
-            renderTaskLabelSuggestions();
-        }
 
         function renderTaskLabelSuggestions() {
             const bar = document.getElementById('task-label-suggestions-bar');
             if (!bar) return;
             const selected = new Set(readTaskLabelsInput().map(l => l.toLowerCase()));
             const internal = Array.from(new Set(tasks.flatMap(t => t.labels || [])));
-            const todoist = (getApiIntegrations().todoist.labels || []).map(l => `#${l.name}`);
-            const suggestions = Array.from(new Set([...todoist, ...internal]))
+            const suggestions = internal
                 .filter(Boolean)
                 .filter(l => !selected.has(String(l).toLowerCase()))
                 .slice(0, 16);
@@ -1294,460 +1117,19 @@
             `).join('') : '';
         }
 
-        function todoistSectionsForProject(projectId = '', todoistOverride = null) {
-            const todoist = todoistOverride || getApiIntegrations().todoist;
-            const targetProject = projectId || todoist.defaultProjectId;
-            return (todoist.sections || []).filter(s => !targetProject || String(s.project_id) === String(targetProject));
-        }
-
-        const todoistStatusNameHints = {
-            backlog: ['backlog', 'pendiente', 'ideas', 'inbox', 'bandeja'],
-            todo: ['por hacer', 'to do', 'todo', 'hacer', 'tareas'],
-            progress: ['en proceso', 'progreso', 'progress', 'doing', 'desarrollo', 'ejecucion'],
-            review: ['revision', 'revisar', 'review', 'validacion', 'qa'],
-            done: ['finalizado', 'hecho', 'done', 'completado', 'terminado'],
-            archived: ['archivado', 'archivo', 'archive']
-        };
-
-        function todoistNormalizeName(value = '') {
-            return String(value)
-                .normalize('NFD')
-                .replace(/[\u0300-\u036f]/g, '')
-                .toLowerCase()
-                .trim();
-        }
-
-        function todoistProjectForSection(sectionId = '') {
-            const section = (getApiIntegrations().todoist.sections || []).find(s => String(s.id) === String(sectionId));
-            return section?.project_id || '';
-        }
-
-        function todoistSectionBelongsToProject(sectionId = '', projectId = '') {
-            if (!sectionId || !projectId) return !!sectionId;
-            return String(todoistProjectForSection(sectionId)) === String(projectId);
-        }
-
-        function todoistSuggestedSectionForStatus(status = 'todo', projectId = '', todoistOverride = null) {
-            const sections = todoistSectionsForProject(projectId, todoistOverride);
-            const hints = todoistStatusNameHints[status] || [];
-            const exact = sections.find(section => hints.includes(todoistNormalizeName(section.name)));
-            if (exact) return exact.id;
-            const fuzzy = sections.find(section => {
-                const name = todoistNormalizeName(section.name);
-                return hints.some(hint => name.includes(hint) || hint.includes(name));
-            });
-            return fuzzy?.id || '';
-        }
-
-        function todoistStatusMapWithSuggestions(projectId = '', todoistOverride = null) {
-            const todoist = todoistOverride || getApiIntegrations().todoist;
-            const saved = todoist.statusSectionMap || {};
-            return ['backlog', 'todo', 'progress', 'review', 'done', 'archived'].reduce((map, status) => {
-                const savedSection = saved[status] || '';
-                map[status] = todoistSectionBelongsToProject(savedSection, projectId)
-                    ? savedSection
-                    : todoistSuggestedSectionForStatus(status, projectId, todoist);
-                return map;
-            }, {});
-        }
-
-        function populateTodoistSectionSelect(selected = '', projectId = '') {
-            const select = document.getElementById('task-todoist-section');
-            if (!select) return;
-            const sections = todoistSectionsForProject(projectId);
-            select.innerHTML = '<option value="">Segun estado Kanban</option>' + sections.map(s => (
-                `<option value="${s.id}" ${String(selected) === String(s.id) ? 'selected' : ''}>${escapeHtml(s.name || '')}</option>`
-            )).join('');
-        }
-
-        function renderTodoistMappingConfig() {
-            const api = getApiIntegrations();
-            const projectSelect = document.getElementById('api-todoist-default-project');
-            const mapContainer = document.getElementById('todoist-section-map-container');
-            const autoSync = document.getElementById('api-todoist-auto-sync');
-            const statuses = [
-                ['backlog', 'Backlog'],
-                ['todo', 'Por hacer'],
-                ['progress', 'En proceso'],
-                ['review', 'Revision'],
-                ['done', 'Finalizado'],
-                ['archived', 'Archivado']
-            ];
-
-            if (autoSync) autoSync.checked = api.todoist.syncEnabled !== false;
-            const currentProjectValue = projectSelect?.value || api.todoist.defaultProjectId || '';
-            if (projectSelect) {
-                projectSelect.innerHTML = '<option value="">Seleccionar proyecto</option>' + (api.todoist.projects || []).map(p => (
-                    `<option value="${p.id}">${escapeHtml(p.name || '')}</option>`
-                )).join('');
-                projectSelect.value = currentProjectValue;
-            }
-            if (mapContainer) {
-                const selectedProjectId = projectSelect?.value || currentProjectValue;
-                const sections = todoistSectionsForProject(selectedProjectId);
-                const sectionMap = todoistStatusMapWithSuggestions(selectedProjectId);
-                mapContainer.innerHTML = statuses.map(([status, label]) => `
-                    <label class="glass-ui p-3 rounded-xl text-[10px] font-black text-slate-600 dark:text-slate-300 uppercase">
-                        ${label}
-                        <select data-status="${status}" class="todoist-status-section-map mt-2 w-full bg-transparent text-slate-900 dark:text-white outline-none">
-                            <option value="">Sin seccion</option>
-                            ${sections.map(s => `<option value="${s.id}" ${String(sectionMap[status] || '') === String(s.id) ? 'selected' : ''}>${escapeHtml(s.name || '')}</option>`).join('')}
-                        </select>
-                    </label>
-                `).join('');
-            }
-        }
-
-        document.addEventListener('change', (e) => {
-            if (e.target?.id === 'api-todoist-default-project') renderTodoistMappingConfig();
-            if (e.target?.id === 'task-todoist-project') populateTodoistSectionSelect(document.getElementById('task-todoist-section')?.value || '', e.target.value);
-            if (e.target?.id === 'edit-project-start' || e.target?.id === 'edit-project-end') {
-                const start = document.getElementById('edit-project-start')?.value;
-                const end = document.getElementById('edit-project-end')?.value;
-                const days = document.getElementById('edit-project-days');
-                if (days && start && end) days.value = getTaskDurationDays(start, end);
-            }
-        });
-
         document.addEventListener('input', (e) => {
-            if (e.target?.id === 'task-labels') {
-                populateTodoistLabelsSelect(selectedTodoistLabels());
-                renderTaskLabelSuggestions();
-            }
+            if (e.target?.id === 'task-labels') renderTaskLabelSuggestions();
         });
 
-        window.addGeneralApiInput = (item = {}) => {
-            const container = document.getElementById('general-api-config-container');
-            if (!container) return;
-            const div = document.createElement('div');
-            div.className = 'grid grid-cols-1 md:grid-cols-[1fr_1.4fr_1fr_auto] gap-2 general-api-item';
-            div.innerHTML = `
-                <input type="text" value="${item.name || ''}" placeholder="Nombre API" class="general-api-name glass-ui text-slate-900 dark:text-white rounded-xl p-3 text-xs outline-none focus:border-indigo-500/50">
-                <input type="url" value="${item.baseUrl || ''}" placeholder="Base URL / endpoint" class="general-api-url glass-ui text-slate-900 dark:text-white rounded-xl p-3 text-xs outline-none focus:border-indigo-500/50">
-                <input type="password" value="${item.token || ''}" placeholder="Bearer token opcional" class="general-api-token glass-ui text-slate-900 dark:text-white rounded-xl p-3 text-xs outline-none focus:border-indigo-500/50">
-                <button type="button" onclick="this.closest('.general-api-item').remove()" class="bg-red-50 dark:bg-red-900/30 text-red-500 p-3 rounded-xl border border-transparent shadow-none">✕</button>
-            `;
-            container.appendChild(div);
-        };
-
+        // Configuración API Básica 
         function renderApiConfigForm() {
-            const api = getApiIntegrations();
-            const todoistEnabled = document.getElementById('api-todoist-enabled');
-            const todoistToken = document.getElementById('api-todoist-token');
-            const todoistAutoSync = document.getElementById('api-todoist-auto-sync');
-            const todoistDefaultProject = document.getElementById('api-todoist-default-project');
-            const todoistSyncPush = document.getElementById('api-todoist-sync-push');
-            const todoistSyncPull = document.getElementById('api-todoist-sync-pull');
-            const todoistSyncSubtasks = document.getElementById('api-todoist-sync-subtasks');
-            const googleEnabled = document.getElementById('api-google-enabled');
-            const googleCalendarId = document.getElementById('api-google-calendar-id');
-            const googleToken = document.getElementById('api-google-token');
-            const googlePublicUrl = document.getElementById('api-google-public-url');
-            const generalContainer = document.getElementById('general-api-config-container');
-
-            if (todoistEnabled) todoistEnabled.checked = !!api.todoist.enabled;
-            if (todoistToken) todoistToken.value = api.todoist.token || '';
-            if (todoistAutoSync) todoistAutoSync.checked = api.todoist.syncEnabled !== false;
-            if (todoistDefaultProject) todoistDefaultProject.value = api.todoist.defaultProjectId || '';
-            if (todoistSyncPush) todoistSyncPush.checked = api.todoist.syncChannels?.pushLocal !== false;
-            if (todoistSyncPull) todoistSyncPull.checked = api.todoist.syncChannels?.pullRemote !== false;
-            if (todoistSyncSubtasks) todoistSyncSubtasks.checked = api.todoist.syncChannels?.subtasks !== false;
-            if (googleEnabled) googleEnabled.checked = !!api.googleCalendar.enabled;
-            if (googleCalendarId) googleCalendarId.value = api.googleCalendar.calendarId || 'primary';
-            if (googleToken) googleToken.value = api.googleCalendar.token || '';
-            if (googlePublicUrl) googlePublicUrl.value = api.googleCalendar.publicEmbedUrl || '';
-            if (generalContainer) {
-                generalContainer.innerHTML = '';
-                (api.general || []).forEach(item => window.addGeneralApiInput(item));
-            }
-            renderTodoistCatalogs();
-            renderTodoistMappingConfig();
-        }
-
-        function readApiConfigForm() {
-            const currentApi = getApiIntegrations();
-            const general = Array.from(document.querySelectorAll('.general-api-item')).map(div => ({
-                name: div.querySelector('.general-api-name')?.value.trim() || '',
-                baseUrl: div.querySelector('.general-api-url')?.value.trim() || '',
-                token: div.querySelector('.general-api-token')?.value.trim() || ''
-            })).filter(item => item.name && item.baseUrl);
-
-            return {
-                todoist: {
-                    ...currentApi.todoist,
-                    enabled: !!document.getElementById('api-todoist-enabled')?.checked,
-                    token: document.getElementById('api-todoist-token')?.value.trim() || '',
-                    syncEnabled: !!document.getElementById('api-todoist-auto-sync')?.checked,
-                    syncChannels: {
-                        pushLocal: document.getElementById('api-todoist-sync-push')?.checked !== false,
-                        pullRemote: document.getElementById('api-todoist-sync-pull')?.checked !== false,
-                        subtasks: document.getElementById('api-todoist-sync-subtasks')?.checked !== false
-                    },
-                    defaultProjectId: document.getElementById('api-todoist-default-project')?.value || currentApi.todoist.defaultProjectId || '',
-                    statusSectionMap: Array.from(document.querySelectorAll('.todoist-status-section-map')).reduce((map, select) => {
-                        map[select.dataset.status] = select.value;
-                        return map;
-                    }, {})
-                },
-                googleCalendar: {
-                    ...currentApi.googleCalendar,
-                    enabled: !!document.getElementById('api-google-enabled')?.checked,
-                    token: document.getElementById('api-google-token')?.value.trim() || '',
-                    calendarId: document.getElementById('api-google-calendar-id')?.value.trim() || 'primary',
-                    publicEmbedUrl: document.getElementById('api-google-public-url')?.value.trim() || currentApi.googleCalendar.publicEmbedUrl || ''
-                },
-                general
-            };
-        }
-
-        function todoistNetworkError(err) {
-            if (err instanceof TypeError && String(err.message || '').toLowerCase().includes('failed to fetch')) {
-                return new Error('No se pudo contactar Todoist desde el navegador. Causas probables: token invalido/revocado, bloqueo CORS del origen file:// o conexion bloqueada. Prueba abrir la app desde http://localhost si la estas usando como archivo local.');
-            }
-            return err;
-        }
-
-        function todoistApiCandidates() {
-            const configured = String(getApiIntegrations().todoist?.apiBasePath || '').trim();
-            const preferred = configured || '/api/v1';
-            return Array.from(new Set([preferred, '/api/v1', '/rest/v2']));
-        }
-
-        async function todoistFetch(path, options = {}) {
-            throw new Error('La integracion Todoist esta desactivada en esta version.');
-            const token = document.getElementById('api-todoist-token')?.value.trim() || getApiIntegrations().todoist.token;
-            if (!token) throw new Error('Falta el token de Todoist.');
-            const bases = todoistApiCandidates();
-            let lastErr = null;
-            for (const base of bases) {
-                let res;
-                try {
-                    res = await fetch(`https://api.todoist.com${base}${path}`, {
-                        ...options,
-                        headers: {
-                            Authorization: `Bearer ${token}`,
-                            'Content-Type': 'application/json',
-                            ...(options.headers || {})
-                        }
-                    });
-                } catch (err) {
-                    lastErr = todoistNetworkError(err);
-                    continue;
-                }
-                const text = await res.text();
-                if (res.ok) {
-                    if (res.status === 204 || !text) return null;
-                    return JSON.parse(text);
-                }
-                if (res.status === 410) {
-                    lastErr = new Error(`Todoist 410: endpoint obsoleto en ${base}. El app intentó migrar automáticamente a /api/v1 y /rest/v2. Revisa token y vuelve a sincronizar catálogos.`);
-                    continue;
-                }
-                if (res.status === 404 && base === '/rest/v2') {
-                    lastErr = new Error(`Todoist ${res.status}: ${text}`);
-                    continue;
-                }
-                throw new Error(`Todoist ${res.status}: ${text}`);
-            }
-            throw lastErr || new Error('No se pudo conectar con los endpoints de Todoist.');
-        }
-
-        async function todoistFetchAll(path) {
-            let cursor = null;
-            const results = [];
-            do {
-                const separator = path.includes('?') ? '&' : '?';
-                const page = await todoistFetch(`${path}${cursor ? `${separator}cursor=${encodeURIComponent(cursor)}` : ''}`);
-                if (Array.isArray(page)) return page;
-                if (Array.isArray(page?.results)) results.push(...page.results);
-                cursor = page?.next_cursor || null;
-            } while (cursor);
-            return results;
-        }
-
-        async function todoistGetSections(projectId = '') {
-            const query = projectId ? `?project_id=${encodeURIComponent(projectId)}` : '';
-            return todoistFetchAll(`/sections${query}`);
-        }
-
-        async function todoistGetTasks(projectId = '') {
-            const query = projectId ? `?project_id=${encodeURIComponent(projectId)}` : '';
-            return todoistFetchAll(`/tasks${query}`);
-        }
-
-        function todoistStatusFromSection(sectionId) {
-            const map = getApiIntegrations().todoist.statusSectionMap || {};
-            const found = Object.entries(map).find(([, id]) => id && String(id) === String(sectionId));
-            if (found) return found[0];
-            const section = (getApiIntegrations().todoist.sections || []).find(s => String(s.id) === String(sectionId));
-            if (section) {
-                const normalized = todoistNormalizeName(section.name);
-                const hinted = Object.entries(todoistStatusNameHints).find(([, hints]) => hints.some(hint => normalized.includes(hint) || hint.includes(normalized)));
-                if (hinted) return hinted[0];
-            }
-            return 'todo';
-        }
-
-        function todoistSectionForStatus(status, explicitSection = '', projectId = '') {
-            if (explicitSection && todoistSectionBelongsToProject(explicitSection, projectId)) return explicitSection;
-            const mapped = (getApiIntegrations().todoist.statusSectionMap || {})[status || 'todo'] || '';
-            if (mapped && todoistSectionBelongsToProject(mapped, projectId)) return mapped;
-            return todoistSuggestedSectionForStatus(status || 'todo', projectId) || undefined;
-        }
-
-        function todoistTaskPayloadFromLocal(task) {
-            const projectId = task.todoistProjectId || getApiIntegrations().todoist.defaultProjectId || undefined;
-            const sectionId = todoistSectionForStatus(task.status, task.todoistSectionId, projectId);
-            const due = task.dateEnd || task.dateStart || undefined;
-            const apiLabels = new Set((getApiIntegrations().todoist.labels || []).map(l => String(l.name || '').toLowerCase()));
-            const syncedLabels = Array.from(new Set([
-                ...(task.todoistLabels || []),
-                ...(task.labels || []).map(l => String(l).replace(/^#/, '')).filter(l => apiLabels.has(String(l).toLowerCase()))
-            ]));
-            const payload = {
-                content: task.title || 'Sin titulo',
-                description: `Responsable: ${task.assignee || ''}`,
-                priority: Number(task.priority || 1),
-                labels: syncedLabels
-            };
-            if (projectId) payload.project_id = projectId;
-            if (sectionId) payload.section_id = sectionId;
-            if (due) payload.due_string = due;
-            if (task.dateEnd) payload.deadline_date = task.dateEnd;
-            return payload;
-        }
-
-        async function updateTodoistTaskFromLocal(task) {
-            const payload = todoistTaskPayloadFromLocal(task);
-            const movePayload = {};
-            if (payload.project_id) movePayload.project_id = payload.project_id;
-            if (payload.section_id) movePayload.section_id = payload.section_id;
-            const updatePayload = { ...payload };
-            delete updatePayload.project_id;
-            delete updatePayload.section_id;
-            const updated = await todoistFetch(`/tasks/${task.todoistTaskId}`, { method: 'POST', body: JSON.stringify(updatePayload) });
-            if (Object.keys(movePayload).length) {
-                await todoistFetch(`/tasks/${task.todoistTaskId}/move`, { method: 'POST', body: JSON.stringify(movePayload) });
-            }
-            return { updated, payload };
-        }
-
-        function localDataFromTodoistTask(todoistTask, existing = {}) {
-            const dueDate = todoistTask.due?.date || todoistTask.due_date || '';
-            const deadlineDate = todoistTask.deadline?.date || todoistTask.deadline_date || dueDate;
-            return {
-                title: todoistTask.content || existing.title || 'Sin titulo',
-                status: todoistStatusFromSection(todoistTask.section_id || existing.todoistSectionId || ''),
-                dateStart: existing.dateStart || dueDate || deadlineDate || '',
-                dateEnd: deadlineDate || dueDate || existing.dateEnd || '',
-                labels: Array.from(new Set([...(existing.labels || []), ...(todoistTask.labels || []).map(l => `#${l}`)])),
-                todoistLabels: todoistTask.labels || [],
-                priority: Number(todoistTask.priority || existing.priority || 1),
-                todoistProjectId: todoistTask.project_id || existing.todoistProjectId || '',
-                todoistSectionId: todoistTask.section_id || existing.todoistSectionId || '',
-                todoistTaskId: todoistTask.id,
-                todoistUpdatedAt: todoistTask.updated_at || new Date().toISOString(),
-                todoistSyncedAt: Date.now()
-            };
-        }
-
-        async function syncSubtasksToTodoist(localTask, parentTodoistId) {
-            const localSubtasks = localTask.subtasks || [];
-            if (!parentTodoistId || !localSubtasks.length) return [];
-            const remoteChildren = await todoistFetchAll(`/tasks?parent_id=${encodeURIComponent(parentTodoistId)}`);
-            const synced = [];
-            for (const st of localSubtasks) {
-                const existing = st.todoistTaskId ? remoteChildren.find(r => String(r.id) === String(st.todoistTaskId)) : null;
-                const payload = { content: st.title, parent_id: parentTodoistId };
-                if (localTask.todoistProjectId) payload.project_id = localTask.todoistProjectId;
-                if (existing) {
-                    await todoistFetch(`/tasks/${existing.id}`, { method: 'POST', body: JSON.stringify(payload) });
-                    synced.push({ ...st, todoistTaskId: existing.id, todoistUpdatedAt: new Date().toISOString() });
-                } else {
-                    const created = await todoistFetch('/tasks', { method: 'POST', body: JSON.stringify(payload) });
-                    synced.push({ ...st, todoistTaskId: created.id, todoistUpdatedAt: created.updated_at || new Date().toISOString() });
-                }
-            }
-            return synced;
-        }
-
-        async function syncRemoteChildrenIntoLocal(localTask) {
-            if (!localTask.todoistTaskId) return localTask.subtasks || [];
-            const remoteChildren = await todoistFetchAll(`/tasks?parent_id=${encodeURIComponent(localTask.todoistTaskId)}`);
-            const current = localTask.subtasks || [];
-            const merged = [...current];
-            remoteChildren.forEach(child => {
-                const index = merged.findIndex(st => String(st.todoistTaskId || '') === String(child.id));
-                const item = {
-                    title: child.content || 'Subtarea Todoist',
-                    done: !!child.checked,
-                    durationDays: current[index]?.durationDays || 1,
-                    todoistTaskId: child.id,
-                    todoistUpdatedAt: child.updated_at || new Date().toISOString()
-                };
-                if (index >= 0) merged[index] = { ...merged[index], ...item };
-                else merged.push(item);
-            });
-            return merged;
-        }
-
-        window.callConfiguredApi = async (apiName, path = '', options = {}) => {
-            const api = getApiIntegrations();
-            const item = (api.general || []).find(x => x.name.toLowerCase() === String(apiName).toLowerCase());
-            if (!item) throw new Error(`API no configurada: ${apiName}`);
-            const url = `${item.baseUrl.replace(/\/$/, '')}${path}`;
-            const res = await fetch(url, {
-                ...options,
-                headers: {
-                    ...(item.token ? { Authorization: `Bearer ${item.token}` } : {}),
-                    'Content-Type': 'application/json',
-                    ...(options.headers || {})
-                }
-            });
-            const text = await res.text();
-            if (!res.ok) throw new Error(`${item.name} ${res.status}: ${text}`);
-            if (res.status === 204 || !text) return null;
-            return JSON.parse(text);
-        };
-
-        window.googleCalendarFetch = async (path = '', options = {}) => {
-            const google = getApiIntegrations().googleCalendar;
-            if (!google.enabled || !google.token) throw new Error('Google Calendar no esta activo o no tiene token OAuth.');
-            const calendarId = encodeURIComponent(google.calendarId || 'primary');
-            const url = `https://www.googleapis.com/calendar/v3/calendars/${calendarId}${path}`;
-            const res = await fetch(url, {
-                ...options,
-                headers: {
-                    Authorization: `Bearer ${google.token}`,
-                    'Content-Type': 'application/json',
-                    ...(options.headers || {})
-                }
-            });
-            const text = await res.text();
-            if (!res.ok) throw new Error(`Google Calendar ${res.status}: ${text}`);
-            if (res.status === 204 || !text) return null;
-            return JSON.parse(text);
-        };
-
-        window.testTodoistConnection = async () => {
-            window.showAlert('La integracion Todoist esta desactivada en esta version.');
-        };
-
-        window.syncTodoistCatalogs = async () => {
-            window.showAlert('La integracion Todoist esta desactivada en esta version.');
-        };
-
-        window.syncCurrentTaskToTodoist = async () => {
-            window.showAlert('La integracion Todoist esta desactivada en esta version.');
-        };
-
-        window.runTodoistBidirectionalSync = async (manual = false) => {
-            if (manual) window.showAlert('La integracion Todoist esta desactivada en esta version.');
-        };
-
-        function startTodoistAutoSync() {
-            if (todoistSyncInterval) clearInterval(todoistSyncInterval);
-            todoistSyncInterval = null;
+            // Actualizar opciones de config de métricas
+            const m = config.metricsConfig || { showStatus: true, showTimeline: true, showWorkload: true, showPriority: true, excludeBacklog: false };
+            document.getElementById('metrics-exclude-backlog').checked = !!m.excludeBacklog;
+            document.getElementById('metrics-show-status').checked = !!m.showStatus;
+            document.getElementById('metrics-show-timeline').checked = !!m.showTimeline;
+            document.getElementById('metrics-show-workload').checked = !!m.showWorkload;
+            document.getElementById('metrics-show-priority').checked = !!m.showPriority;
         }
 
         // --- SISTEMA DINÁMICO DE ENLACES GENERALES Y TAREAS ---
@@ -1790,32 +1172,24 @@
             container.appendChild(div);
         };
 
-        // --- COMPLETAR/DESMARCAR SUBTAREA DESDE TABLERO ---
         window.toggleSubtask = async (taskId, subindex) => {
             const task = tasks.find(t => t.id === taskId);
             if(!task || !task.subtasks) return;
-            
             const newSubtasks = [...task.subtasks];
             newSubtasks[subindex].done = !newSubtasks[subindex].done;
-            
-            // Actualización optimista de UI
-            task.subtasks = newSubtasks; 
-            renderUI(); 
-            
-            try {
-                await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'tasks', taskId), { subtasks: newSubtasks });
-            } catch(err) {
-                window.showAlert("Error al actualizar la subtarea: " + err.message);
-            }
+            task.subtasks = newSubtasks;
+            renderUI();
+            try { await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'tasks', taskId), { subtasks: newSubtasks }); } 
+            catch(err) { window.showAlert("Error al actualizar la subtarea: " + err.message); }
         };
 
-        // Tonos ligeramente más fuertes para día y compatibles en noche
         const ganttStatusMeta = {
             backlog: { label: 'Backlog', color: '#2563eb', tint: 'bg-blue-100 dark:bg-slate-800/60' },
             todo: { label: 'Por hacer', color: '#d97706', tint: 'bg-amber-100 dark:bg-amber-900/40' },
             progress: { label: 'En proceso', color: '#4f46e5', tint: 'bg-indigo-100 dark:bg-indigo-900/40' },
             review: { label: 'Revisión', color: '#9333ea', tint: 'bg-purple-100 dark:bg-purple-900/40' },
-            done: { label: 'Finalizado', color: '#059669', tint: 'bg-emerald-100 dark:bg-emerald-900/40' }
+            done: { label: 'Finalizado', color: '#059669', tint: 'bg-emerald-100 dark:bg-emerald-900/40' },
+            archived: { label: 'Archivado', color: '#64748b', tint: 'bg-slate-100 dark:bg-slate-900/40' }
         };
 
         function escapeHtml(value) {
@@ -1841,10 +1215,7 @@
             return Math.round((startA - startB) / 86400000);
         }
 
-        function ganttTaskStart(task) {
-            return ganttDate(task.dateStart) || ganttDate(task.dateEnd) || new Date();
-        }
-
+        function ganttTaskStart(task) { return ganttDate(task.dateStart) || ganttDate(task.dateEnd) || new Date(); }
         function ganttTaskEnd(task) {
             const start = ganttTaskStart(task);
             const explicitEnd = ganttDate(task.dateEnd);
@@ -1858,24 +1229,23 @@
             if (start && end && end >= start) return ganttDiffDays(end, start) + 1;
             return 1;
         }
+        
+        // --- CÁLCULO DINÁMICO EN EL MODAL ---
+        window.updateProjectDaysCount = () => {
+            const start = document.getElementById('edit-project-start')?.value;
+            const end = document.getElementById('edit-project-end')?.value;
+            if (start && end) {
+                const days = getTaskDurationDays(start, end);
+                const daysInput = document.getElementById('edit-project-days');
+                if(daysInput) daysInput.value = days;
+            }
+        };
 
-        function ganttIsCompact() {
-            return document.getElementById('gantt-density')?.value === 'compact';
-        }
+        function ganttIsCompact() { return document.getElementById('gantt-density')?.value === 'compact'; }
 
         function ganttRowHeight(row) {
-            if (ganttIsCompact()) {
-                if (row.type === 'group') return 34;
-                if (row.type === 'role') return 28;
-                return 32;
-            }
-            if (row.type === 'group') return 58;
-            if (row.type === 'role') return 44;
-            return 52;
-        }
-
-        function ganttStatusColor(status) {
-            return (ganttStatusMeta[status || 'backlog'] || ganttStatusMeta.backlog).color;
+            if (ganttIsCompact()) return row.type === 'group' ? 34 : (row.type === 'role' ? 28 : 32);
+            return row.type === 'group' ? 58 : (row.type === 'role' ? 44 : 52);
         }
 
         function ganttSmartColor(task, role) {
@@ -1885,25 +1255,9 @@
             if (isLate) return '#ef4444';
             if (task.status === 'review') return '#a855f7';
             if (task.status === 'progress') return role?.color || '#6366f1';
-            return ganttStatusColor(task.status);
+            return ganttStatusMeta[task.status || 'backlog'].color;
         }
 
-        function setupGanttScrollSync() {
-            const left = document.querySelector('.gantt-left');
-            const right = document.querySelector('.gantt-right');
-            if (!left || !right || left.dataset.synced === 'true') return;
-            left.dataset.synced = 'true';
-            right.dataset.synced = 'true';
-            let locking = false;
-            const sync = (source, target) => {
-                if (locking) return;
-                locking = true;
-                target.scrollTop = source.scrollTop;
-                requestAnimationFrame(() => { locking = false; });
-            };
-            left.addEventListener('scroll', () => sync(left, right));
-            right.addEventListener('scroll', () => sync(right, left));
-        }
         function ganttTaskProgress(task) {
             if (task.status === 'done') return 100;
             const subtasks = task.subtasks || [];
@@ -1944,20 +1298,6 @@
             return rows;
         }
 
-
-        function ganttIndicatorTasks() {
-            const active = tasks.filter(t => ['backlog', 'todo', 'progress', 'review', 'done'].includes(t.status || 'backlog'));
-            if ((config.ganttIndicatorScope || 'filtered') === 'all') return active;
-            return ganttVisibleTasks();
-        }
-
-        function ganttProgressFromStatus(task) {
-            const statuses = config.ganttProgressStatuses || ['review', 'done'];
-            if (task.status === 'done' && statuses.includes('done')) return 100;
-            if (task.status === 'review' && statuses.includes('review')) return 100;
-            return 0;
-        }
-        
         function renderGanttView() {
             const table = document.getElementById('gantt-table');
             const months = document.getElementById('gantt-months');
@@ -1966,20 +1306,21 @@
             const bars = document.getElementById('gantt-bars');
             const body = document.getElementById('gantt-body');
             const timeline = document.getElementById('gantt-timeline');
-            const todayLine = document.getElementById('gantt-today');
             const summary = document.getElementById('gantt-summary');
             if (!table || !months || !days || !grid || !bars || !body || !timeline || !summary) return;
 
             const visible = ganttVisibleTasks();
             const rows = ganttRows();
-            
-            // Indicador Resumen siempre usa el config base para Duración
+
             const configuredDays = Math.max(1, Number(config.projectDays || getTaskDurationDays(config.projectStartDate, config.projectEndDate) || 30));
-            const indicatorTasks = ganttIndicatorTasks();
-            const advancedCount = indicatorTasks.filter(task => ganttProgressFromStatus(task) === 100).length;
+            
+            // Logica indicadora Gantt
+            const indicatorTasks = (config.ganttIndicatorScope || 'filtered') === 'all' ? tasks.filter(t => ['backlog', 'todo', 'progress', 'review', 'done'].includes(t.status || 'backlog')) : visible;
+            const progressStatuses = config.ganttProgressStatuses || ['review', 'done'];
+            const advancedCount = indicatorTasks.filter(task => (task.status === 'done' && progressStatuses.includes('done')) || (task.status === 'review' && progressStatuses.includes('review'))).length;
             const progressPct = indicatorTasks.length ? Math.round((advancedCount / indicatorTasks.length) * 100) : 0;
             const people = new Set(indicatorTasks.map(t => t.assignee).filter(Boolean)).size;
-            
+
             summary.innerHTML = [
                 ['Tareas', indicatorTasks.length],
                 ['Duración', `${configuredDays} días`],
@@ -1988,29 +1329,25 @@
             ].map(([label, value]) => `<div class="gantt-summary-pill glass-ui"><p class="text-[9px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">${label}</p><strong class="text-lg font-black text-slate-900 dark:text-white">${value}</strong></div>`).join('');
 
             if (!visible.length) {
-                table.innerHTML = '<div class="p-10 text-center text-xs font-black text-slate-500 uppercase">No hay tareas para los filtros actuales</div>';
+                table.innerHTML = '<div class="p-10 text-center text-xs font-black text-slate-500 uppercase">No hay tareas</div>';
                 months.innerHTML = days.innerHTML = grid.innerHTML = bars.innerHTML = '';
                 return;
             }
 
             const starts = visible.map(ganttTaskStart);
-            const minDate = ganttAddDays(new Date(Math.min(...starts)), -2); // Margen a la izquierda
-            
-            // Calcular máximo para que encaje exacto o con padding
+            const minDate = ganttAddDays(new Date(Math.min(...starts)), -2); 
             const configuredEnd = ganttAddDays(new Date(Math.min(...starts)), configuredDays - 1);
             const ends = visible.map(ganttTaskEnd);
-            const maxDate = ganttAddDays(new Date(Math.max(...ends, configuredEnd)), 3); // Padding
-            
+            const maxDate = ganttAddDays(new Date(Math.max(...ends, configuredEnd)), 3); 
+
             const totalDays = Math.max(1, ganttDiffDays(maxDate, minDate) + 1);
             const rightViewport = document.querySelector('.gantt-right')?.clientWidth || 760;
-            
-            // Ajuste especial para que la vista compacta apriete todos los días sin scroll
             const fittedDayWidth = Math.max(2, Math.floor(rightViewport / Math.max(totalDays, 1)));
             const dayWidth = ganttIsCompact() ? fittedDayWidth : 54;
-            
             const totalHeight = rows.reduce((sum, row) => sum + ganttRowHeight(row), 0);
             const dayList = Array.from({ length: totalDays }, (_, index) => ganttAddDays(minDate, index));
             const template = `repeat(${totalDays}, ${dayWidth}px)`;
+            
             months.style.gridTemplateColumns = template;
             days.style.gridTemplateColumns = template;
             grid.style.gridTemplateColumns = template;
@@ -2032,10 +1369,8 @@
                 const heightStyle = `style="min-height:${ganttRowHeight(row)}px"`;
                 if (row.type === 'group') {
                     const meta = ganttStatusMeta[row.status];
-                    const count = visible.filter(t => (t.status || 'backlog') === row.status).length;
                     const statusTasks = visible.filter(t => (t.status || 'backlog') === row.status);
-                    const statusDays = statusTasks.length ? (ganttDiffDays(new Date(Math.max(...statusTasks.map(ganttTaskEnd))), new Date(Math.min(...statusTasks.map(ganttTaskStart)))) + 1) : 0;
-                    return `<div class="gantt-group-row text-[10px] uppercase" ${heightStyle}><div class="gantt-cell"><span class="gantt-group-dot" style="background:${meta.color}"></span>${meta.label}</div><div class="gantt-cell">${count} tareas</div><div class="gantt-cell"><span class="gantt-status-pill" style="background:${meta.color}">Estado</span></div><div class="gantt-cell"><span class="gantt-time-pill">${statusDays}d</span></div></div>`;
+                    return `<div class="gantt-group-row text-[10px] uppercase" ${heightStyle}><div class="gantt-cell"><span class="gantt-group-dot" style="background:${meta.color}"></span>${meta.label}</div><div class="gantt-cell">${statusTasks.length} tareas</div><div class="gantt-cell"><span class="gantt-status-pill" style="background:${meta.color}">Estado</span></div><div class="gantt-cell"><span class="gantt-time-pill">${statusTasks.length ? ganttDiffDays(new Date(Math.max(...statusTasks.map(ganttTaskEnd))), new Date(Math.min(...statusTasks.map(ganttTaskStart)))) + 1 : 0}d</span></div></div>`;
                 }
                 if (row.type === 'role') {
                     const roleTasks = visible.filter(t => (t.status || 'backlog') === row.status && (t.role || 'sin-rol') === row.role.id);
@@ -2044,12 +1379,11 @@
                 const task = row.task;
                 const meta = ganttStatusMeta[task.status || 'backlog'];
                 if (row.type === 'subtask') {
-                    const duration = Math.max(1, Number(row.subtask.durationDays || row.subtask.duration || 1));
+                    const duration = Math.max(1, Number(row.subtask.durationDays || 1));
                     return `<div class="gantt-data-row subtask-row text-[10px]" ${heightStyle}><div class="gantt-cell"><div class="gantt-task-stack"><span class="gantt-task-title gantt-subtask-title">↳ ${escapeHtml(row.subtask.title || 'Subtarea')}</span><span class="gantt-task-meta">Subtarea de ${escapeHtml(task.title)}</span></div></div><div class="gantt-cell">${escapeHtml(task.assignee || 'S/A')}</div><div class="gantt-cell"><span class="gantt-status-pill" style="background:${row.subtask.done ? '#10b981' : meta.color}">${row.subtask.done ? 'Hecha' : 'Pendiente'}</span></div><div class="gantt-cell"><span class="gantt-time-pill">${duration}d</span></div></div>`;
                 }
                 const duration = ganttDiffDays(ganttTaskEnd(task), ganttTaskStart(task)) + 1;
-                const labelText = (task.labels || []).join(' · ') || 'Sin etiquetas';
-                return `<div class="gantt-data-row text-[10px] cursor-pointer" ${heightStyle} onclick="window.editTask('${task.id}')"><div class="gantt-cell" style="border-left-color:${meta.color}"><div class="gantt-task-stack"><span class="gantt-task-title font-black text-slate-800 dark:text-slate-100">${escapeHtml(task.title)}</span><span class="gantt-task-meta">${escapeHtml(labelText)}</span></div></div><div class="gantt-cell">${escapeHtml(task.assignee || 'S/A')}</div><div class="gantt-cell"><span class="gantt-status-pill" style="background:${meta.color}">${meta.label}</span></div><div class="gantt-cell"><span class="gantt-time-pill">${duration}d</span></div></div>`;
+                return `<div class="gantt-data-row text-[10px] cursor-pointer" ${heightStyle} onclick="window.editTask('${task.id}')"><div class="gantt-cell" style="border-left-color:${meta.color}"><div class="gantt-task-stack"><span class="gantt-task-title font-black text-slate-800 dark:text-slate-100">${escapeHtml(task.title)}</span><span class="gantt-task-meta">${escapeHtml((task.labels || []).join(' · ') || 'Sin etiquetas')}</span></div></div><div class="gantt-cell">${escapeHtml(task.assignee || 'S/A')}</div><div class="gantt-cell"><span class="gantt-status-pill" style="background:${meta.color}">${meta.label}</span></div><div class="gantt-cell"><span class="gantt-time-pill">${duration}d</span></div></div>`;
             }).join('');
 
             bars.innerHTML = rows.map((row) => {
@@ -2066,8 +1400,8 @@
                 let color = ganttSmartColor(task, row.role);
                 if (row.type === 'subtask') {
                     const taskDuration = Math.max(1, ganttDiffDays(ganttTaskEnd(task), taskStart) + 1);
-                    const usedBefore = (task.subtasks || []).slice(0, row.index).reduce((sum, st) => sum + Math.max(1, Number(st.durationDays || st.duration || 1)), 0);
-                    const rawDuration = Math.max(1, Number(row.subtask.durationDays || row.subtask.duration || 1));
+                    const usedBefore = (task.subtasks || []).slice(0, row.index).reduce((sum, st) => sum + Math.max(1, Number(st.durationDays || 1)), 0);
+                    const rawDuration = Math.max(1, Number(row.subtask.durationDays || 1));
                     const safeOffset = Math.min(usedBefore, taskDuration - 1);
                     const safeDuration = Math.max(1, Math.min(rawDuration, taskDuration - safeOffset));
                     start = ganttAddDays(taskStart, safeOffset);
@@ -2083,157 +1417,358 @@
                 return `<div class="gantt-chart-row" ${heightStyle}><button type="button" onclick="window.editTask('${task.id}')" class="gantt-bar ${isSubtask ? 'subtask' : 'task-main'} ${overdue ? 'overdue' : ''}" style="left:${left}px;width:${width}px;background:${color};--progress:${progress}%"><span>${escapeHtml(title)}</span></button></div>`;
             }).join('');
 
-            const today = new Date();
-            const todayOffset = ganttDiffDays(today, minDate) * dayWidth + dayWidth / 2;
+            const todayLine = document.getElementById('gantt-today');
+            const todayOffset = ganttDiffDays(new Date(), minDate) * dayWidth + dayWidth / 2;
             todayLine.style.left = `${todayOffset}px`;
             todayLine.style.display = todayOffset >= 0 && todayOffset <= totalDays * dayWidth ? 'block' : 'none';
         }
+        
+        window.renderGanttView = renderGanttView;
 
-        function calendarTaskDates(task) {
-            const start = ganttDate(task.dateStart || task.dateEnd);
-            const end = ganttDate(task.dateEnd || task.dateStart);
-            if (!start && !end) return [];
-            const from = start || end;
-            const to = end || start;
-            const dates = [];
-            const maxDays = Math.min(45, ganttDiffDays(to, from) + 1);
-            for (let i = 0; i < maxDays; i++) {
-                dates.push(ganttAddDays(from, i));
-            }
-            return dates;
-        }
-
-        function calendarDateKey(date) {
-            return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-        }
-
-        function calendarFormatDay(date) {
-            return date.toLocaleDateString('es-PE', { weekday: 'long', day: '2-digit', month: 'short' });
-        }
-
-        function renderCalendarView() {
-            const daysContainer = document.getElementById('calendar-days');
-            const summary = document.getElementById('calendar-summary');
-            const frame = document.getElementById('google-calendar-frame');
-            const openLink = document.getElementById('calendar-open-link');
-            if (!daysContainer || !summary) return;
-
-            const today = new Date();
-            if (!calendarStartDate) {
-                calendarStartDate = ganttAddDays(today, -((today.getDay() + 6) % 7));
-            }
-            const dayList = Array.from({ length: 7 }, (_, i) => ganttAddDays(calendarStartDate, i));
-            const visibleTasks = tasks.filter(t => (t.status || 'backlog') !== 'archived');
-            const taskMap = new Map(dayList.map(d => [calendarDateKey(d), []]));
-
-            visibleTasks.forEach(task => {
-                calendarTaskDates(task).forEach(date => {
-                    const key = calendarDateKey(date);
-                    if (taskMap.has(key)) taskMap.get(key).push(task);
-                });
-            });
-
-            const weekTasks = Array.from(taskMap.values()).flat();
-            const uniqueWeekTasks = new Set(weekTasks.map(t => t.id));
-            const dueToday = taskMap.get(calendarDateKey(today)) || [];
-            const overdue = visibleTasks.filter(t => {
-                const end = ganttTaskEnd(t);
-                return end && end < new Date(today.getFullYear(), today.getMonth(), today.getDate()) && t.status !== 'done';
-            });
-
-            summary.innerHTML = [
-                ['Semana', uniqueWeekTasks.size],
-                ['Hoy', dueToday.length],
-                ['Vencidas', overdue.length],
-                ['Finalizadas', weekTasks.filter(t => t.status === 'done').length]
-            ].map(([label, value]) => `
-                <div class="gantt-summary-pill glass-ui">
-                    <div class="text-[9px] font-black text-slate-500 dark:text-slate-400 uppercase">${label}</div>
-                    <div class="text-2xl font-black text-slate-900 dark:text-white">${value}</div>
-                </div>
-            `).join('');
-
-            daysContainer.innerHTML = dayList.map(date => {
-                const key = calendarDateKey(date);
-                const items = taskMap.get(key) || [];
-                const isToday = key === calendarDateKey(today);
-                return `
-                    <div class="glass-ui rounded-2xl p-4 ${isToday ? 'border-indigo-400 dark:border-amber-400' : ''}">
-                        <div class="flex items-center justify-between gap-3 mb-3">
-                            <h3 class="text-xs font-black text-slate-900 dark:text-white uppercase">${calendarFormatDay(date)}</h3>
-                            <span class="text-[10px] font-black text-slate-500 dark:text-slate-400">${items.length} tareas</span>
-                        </div>
-                        <div class="space-y-2">
-                            ${items.length ? items.map(task => {
-                                const role = roles.find(r => r.id === task.role) || { color: '#64748b', emoji: '•', name: 'Sin rol' };
-                                const status = ganttStatusMeta[task.status || 'backlog'] || ganttStatusMeta.backlog;
-                                return `
-                                    <button type="button" onclick="window.editTask('${task.id}')" class="w-full text-left bg-slate-50/80 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700/50 rounded-xl p-3">
-                                        <div class="flex items-start gap-3">
-                                            <span class="mt-1 w-3 h-3 rounded-full flex-shrink-0" style="background:${role.color}"></span>
-                                            <div class="min-w-0 flex-1">
-                                                <div class="text-xs font-black text-slate-900 dark:text-white truncate">${escapeHtml(task.title || 'Sin titulo')}</div>
-                                                <div class="mt-1 flex flex-wrap gap-1">
-                                                    <span class="text-[8px] font-black uppercase px-1.5 py-0.5 rounded bg-indigo-100 text-indigo-700 border border-indigo-200">Gantt/Kanban</span>
-                                                    <span class="text-[8px] font-black uppercase px-1.5 py-0.5 rounded bg-sky-100 text-sky-700 border border-sky-200">Calendario</span>
-                                                </div>
-                                                <div class="mt-1 flex flex-wrap gap-2 text-[9px] font-black uppercase text-slate-500 dark:text-slate-400">
-                                                    <span>${escapeHtml(task.assignee || 'Sin responsable')}</span>
-                                                    <span style="color:${status.color}">${status.label}</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </button>
-                                `;
-                            }).join('') : '<p class="text-[10px] font-bold text-slate-500 dark:text-slate-400 italic py-2">Sin tareas programadas.</p>'}
-                        </div>
-                    </div>
-                `;
-            }).join('');
-
-            const embedUrl = getApiIntegrations().googleCalendar.publicEmbedUrl || '';
-            if (frame && embedUrl && frame.src !== embedUrl) frame.src = embedUrl;
-            if (openLink) {
-                openLink.href = embedUrl || '#';
-                openLink.classList.toggle('pointer-events-none', !embedUrl);
-                openLink.classList.toggle('opacity-50', !embedUrl);
-            }
-            const statusBox = document.getElementById('google-calendar-inline-status');
-            if (statusBox) statusBox.remove();
-            if (frame) {
-                const parent = frame.parentElement;
-                const hostIsFile = location.protocol === 'file:';
-                let msg = '';
-                if (!embedUrl) {
-                    msg = 'Configura la URL publica de Google Calendar en Ajustes para visualizarlo aqui.';
-                } else if (hostIsFile) {
-                    msg = 'Si no carga en este navegador embebido, abre el app desde http://localhost para evitar restricciones de iframe en file://.';
-                }
-                if (msg && parent) {
-                    const info = document.createElement('p');
-                    info.id = 'google-calendar-inline-status';
-                    info.className = 'mt-2 text-[10px] font-bold text-amber-600 dark:text-amber-300';
-                    info.textContent = msg;
-                    parent.appendChild(info);
-                }
-            }
-        }
-
-        window.shiftCalendarRange = (days) => {
-            const today = new Date();
-            if (!calendarStartDate || days === 0) calendarStartDate = ganttAddDays(today, -((today.getDay() + 6) % 7));
-            else calendarStartDate = ganttAddDays(calendarStartDate, days);
+        let currentCalendarOffset = 0;
+        
+        window.shiftCalendarRange = (offset) => {
+            if (offset === 0) currentCalendarOffset = 0;
+            else currentCalendarOffset += offset;
             renderCalendarView();
         };
 
-        function renderUI() {
+        function renderCalendarView() {
+            const summary = document.getElementById('calendar-summary');
+            const daysContainer = document.getElementById('calendar-days');
+            const iframe = document.getElementById('google-calendar-frame');
+            const openLink = document.getElementById('calendar-open-link');
+
+            // Actualizar URL API Calendar
+            if (iframe && config.calendarUrl) {
+                if (iframe.src !== config.calendarUrl) iframe.src = config.calendarUrl;
+                if (openLink) openLink.href = config.calendarUrl;
+            } else if (iframe && iframe.src !== 'about:blank' && !config.calendarUrl) {
+                iframe.src = 'about:blank';
+                if (openLink) openLink.href = '#';
+            }
+
+            if (!summary || !daysContainer) return;
+            
+            const today = new Date();
+            today.setDate(today.getDate() + currentCalendarOffset);
+            
+            const startOfWeek = new Date(today);
+            const dayOfWeek = startOfWeek.getDay() === 0 ? 6 : startOfWeek.getDay() - 1; // Lunes como inicio
+            startOfWeek.setDate(today.getDate() - dayOfWeek);
+            
+            let daysHtml = '';
+            let tasksThisWeek = 0;
+            let pendingThisWeek = 0;
+            
+            const visible = ganttVisibleTasks();
+            
+            for (let i = 0; i < 7; i++) {
+                const currentDay = new Date(startOfWeek);
+                currentDay.setDate(startOfWeek.getDate() + i);
+                
+                const isTodayStr = currentDay.toDateString() === new Date().toDateString();
+                const dayStr = currentDay.toLocaleDateString('es-PE', { weekday: 'long', day: 'numeric', month: 'short' });
+                
+                const dayTasks = visible.filter(t => {
+                    const start = ganttTaskStart(t);
+                    const end = ganttTaskEnd(t);
+                    if(!start || !end) return false;
+                    
+                    const cDay = new Date(currentDay.getFullYear(), currentDay.getMonth(), currentDay.getDate());
+                    const sDay = new Date(start.getFullYear(), start.getMonth(), start.getDate());
+                    const eDay = new Date(end.getFullYear(), end.getMonth(), end.getDate());
+                    
+                    return cDay >= sDay && cDay <= eDay;
+                });
+                
+                tasksThisWeek += dayTasks.length;
+                pendingThisWeek += dayTasks.filter(t => t.status !== 'done').length;
+                
+                daysHtml += `
+                    <div class="glass-ui p-4 rounded-2xl ${isTodayStr ? 'border-indigo-500 border-2 shadow-lg dark:border-indigo-400' : 'border-slate-200 dark:border-slate-700/50'}">
+                        <h4 class="text-[11px] font-black uppercase text-slate-800 dark:text-slate-200 mb-3">${dayStr} ${isTodayStr ? '<span class="bg-indigo-500 text-white px-2 py-0.5 rounded text-[9px] ml-2">HOY</span>' : ''}</h4>
+                        <div class="space-y-2">
+                            ${dayTasks.length > 0 ? dayTasks.map(t => {
+                                const meta = ganttStatusMeta[t.status || 'backlog'];
+                                return `
+                                    <div class="bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl border border-slate-200 dark:border-slate-700/50 flex justify-between items-center cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors" onclick="window.editTask('${t.id}')">
+                                        <div class="min-w-0 pr-2">
+                                            <p class="text-[10px] font-black text-slate-800 dark:text-slate-200 truncate leading-tight">${escapeHtml(t.title)}</p>
+                                            <p class="text-[9px] text-slate-500 font-bold uppercase mt-1">${escapeHtml(t.assignee || 'S/A')}</p>
+                                        </div>
+                                        <span class="text-[9px] font-black text-white px-2.5 py-1 rounded-full whitespace-nowrap" style="background:${meta.color}">${meta.label}</span>
+                                    </div>
+                                `;
+                            }).join('') : '<p class="text-[10px] text-slate-400 dark:text-slate-500 italic font-bold">Sin tareas programadas</p>'}
+                        </div>
+                    </div>
+                `;
+            }
+            
+            daysContainer.innerHTML = daysHtml;
+            
+            summary.innerHTML = [
+                ['Tareas esta semana', tasksThisWeek],
+                ['Tareas pendientes', pendingThisWeek]
+            ].map(([label, value]) => `<div class="glass-ui p-4 rounded-2xl"><p class="text-[9px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1">${label}</p><strong class="text-xl font-black text-slate-900 dark:text-white">${value}</strong></div>`).join('');
+        }
+
+        // --- SISTEMA AVANZADO DE MÉTRICAS (EXPERT) ---
+        
+        window.toggleMetricsView = () => {
+            const container = document.getElementById('metrics-modal-overlay');
+            if (!container) return;
+            const isHidden = container.classList.contains('hidden');
+            
+            if (isHidden) {
+                container.classList.remove('hidden');
+                populateMetricsUserFilter();
+                window.renderAdvancedMetrics();
+                showAlert('📊 Dashboard Analítico Activado');
+            } else {
+                container.classList.add('hidden');
+            }
+        };
+
+        function populateMetricsUserFilter() {
+            const filter = document.getElementById('metrics-user-filter');
+            if (!filter) return;
+            const currentValue = filter.value;
+            let assignees = new Set();
+            tasks.forEach(t => { if(t.assignee) assignees.add(t.assignee) });
+            
+            let html = `<option value="all">👥 Mostrar Todo el Equipo</option>`;
+            Array.from(assignees).forEach(a => {
+                html += `<option value="${a}" ${currentValue === a ? 'selected' : ''}>👤 Rendimiento de: ${a}</option>`;
+            });
+            filter.innerHTML = html;
+        }
+
+        window.renderAdvancedMetrics = () => {
+            // Destruir gráficos anteriores
+            Object.values(metricsChartsObj).forEach(chart => { if (chart) chart.destroy(); });
+            metricsChartsObj = {};
+
+            const isDark = document.documentElement.classList.contains('dark');
+            Chart.defaults.color = isDark ? '#cbd5e1' : '#475569';
+            Chart.defaults.borderColor = isDark ? 'rgba(71, 85, 105, 0.3)' : 'rgba(203, 213, 225, 0.5)';
+            Chart.defaults.font.family = 'inherit';
+
+            const userFilter = document.getElementById('metrics-user-filter')?.value || 'all';
+            const mc = config.metricsConfig || { showStatus: true, showTimeline: true, showWorkload: true, showPriority: true, excludeBacklog: false };
+            
+            // Ocultar tarjetas según admin config
+            document.getElementById('chart-card-status').style.display = mc.showStatus ? 'block' : 'none';
+            document.getElementById('chart-card-timeline').style.display = mc.showTimeline ? 'block' : 'none';
+            document.getElementById('chart-card-workload').style.display = mc.showWorkload ? 'block' : 'none';
+            document.getElementById('chart-card-priority').style.display = mc.showPriority ? 'block' : 'none';
+
+            // Filtrar Tareas para el Dashboard
+            let dataset = tasks.filter(t => t.status !== 'archived');
+            if (mc.excludeBacklog) dataset = dataset.filter(t => t.status !== 'backlog');
+            if (userFilter !== 'all') dataset = dataset.filter(t => t.assignee === userFilter);
+
+            // CALCULAR KPIs
+            const totalTasks = dataset.length;
+            const doneTasks = dataset.filter(t => t.status === 'done').length;
+            const wipTasks = dataset.filter(t => ['todo', 'progress', 'review'].includes(t.status)).length;
+            const overdueTasks = dataset.filter(t => t.status !== 'done' && ganttTaskEnd(t) < new Date()).length;
+            
+            // Lead Time Estimado (Promedio días desde inicio a fin para completadas)
+            let totalLeadDays = 0;
+            dataset.filter(t => t.status === 'done').forEach(t => {
+                totalLeadDays += (ganttDiffDays(ganttTaskEnd(t), ganttTaskStart(t)) + 1);
+            });
+            const avgLeadTime = doneTasks > 0 ? Math.round(totalLeadDays / doneTasks) : 0;
+            const completionRate = totalTasks > 0 ? Math.round((doneTasks / totalTasks) * 100) : 0;
+
+            // Rango de Proyecto para métricas
+            let projectDaysLeft = "N/A";
+            if (config.projectEndDate) {
+                const endD = new Date(config.projectEndDate + 'T23:59:59'); // Forzar fin de día
+                const today = new Date();
+                const diff = Math.ceil((endD - today) / (1000 * 60 * 60 * 24));
+                projectDaysLeft = diff >= 0 ? `${diff} d.` : `Vencido`;
+            }
+
+            const kpisContainer = document.getElementById('metrics-kpis-container');
+            if (kpisContainer) {
+                const kpis = [
+                    { title: "Total Tareas", value: totalTasks, icon: "📋", color: "text-blue-500" },
+                    { title: "Finalizadas", value: `${doneTasks} (${completionRate}%)`, icon: "✅", color: "text-emerald-500" },
+                    { title: "WIP (Activas)", value: wipTasks, icon: "🚧", color: "text-amber-500" },
+                    { title: "T. Vencidas", value: overdueTasks, icon: "⏰", color: "text-red-500" },
+                    { title: "Avg. Lead Time", value: `${avgLeadTime} días`, icon: "⏱️", color: "text-indigo-500" },
+                    { title: "T. Proyecto", value: projectDaysLeft, icon: "⏳", color: "text-purple-500" }
+                ];
+                kpisContainer.innerHTML = kpis.map(k => `
+                    <div class="glass-ui p-4 rounded-2xl border-l-4" style="border-left-color: currentColor" class="${k.color}">
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="text-[9px] font-black text-slate-500 uppercase tracking-widest">${k.title}</span>
+                            <span class="text-sm opacity-80">${k.icon}</span>
+                        </div>
+                        <h3 class="text-xl font-black text-slate-900 dark:text-white">${k.value}</h3>
+                    </div>
+                `).join('');
+            }
+
+            // DOUGHNUT: Estado
+            if (mc.showStatus) {
+                const statusCounts = {
+                    backlog: dataset.filter(t => t.status === 'backlog').length,
+                    todo: dataset.filter(t => t.status === 'todo').length,
+                    progress: dataset.filter(t => t.status === 'progress').length,
+                    review: dataset.filter(t => t.status === 'review').length,
+                    done: dataset.filter(t => t.status === 'done').length
+                };
+                const ctxStatus = document.getElementById('canvas-metrics-status');
+                if (ctxStatus) {
+                    metricsChartsObj.status = new Chart(ctxStatus, {
+                        type: 'doughnut',
+                        data: {
+                            labels: ['Backlog', 'Por hacer', 'En proceso', 'Revisión', 'Finalizado'],
+                            datasets: [{
+                                data: [statusCounts.backlog, statusCounts.todo, statusCounts.progress, statusCounts.review, statusCounts.done],
+                                backgroundColor: [
+                                    ganttStatusMeta.backlog.color,
+                                    ganttStatusMeta.todo.color,
+                                    ganttStatusMeta.progress.color,
+                                    ganttStatusMeta.review.color,
+                                    ganttStatusMeta.done.color
+                                ],
+                                borderWidth: isDark ? 0 : 2,
+                                borderColor: '#ffffff'
+                            }]
+                        },
+                        options: {
+                            responsive: true, maintainAspectRatio: false,
+                            plugins: { legend: { position: 'right', labels: { font: { size: 10 } } } },
+                            cutout: '65%'
+                        }
+                    });
+                }
+            }
+
+            // LINE: Timeline (Evolución Simulada)
+            if (mc.showTimeline) {
+                const ctxTime = document.getElementById('canvas-metrics-timeline');
+                if (ctxTime) {
+                    const sortedEndDates = dataset.filter(t => t.status === 'done').map(ganttTaskEnd).sort((a,b) => a-b);
+                    const labels = ["Inicio", "Tercio 1", "Tercio 2", "Actualidad"];
+                    // Simulamos tendencia usando divisiones de avance para tener un timeline estable
+                    const progressData = [
+                        0,
+                        Math.round(doneTasks * 0.3),
+                        Math.round(doneTasks * 0.7),
+                        doneTasks
+                    ];
+                    const pendingData = [
+                        totalTasks,
+                        totalTasks - Math.round(doneTasks * 0.3),
+                        totalTasks - Math.round(doneTasks * 0.7),
+                        totalTasks - doneTasks
+                    ];
+
+                    metricsChartsObj.timeline = new Chart(ctxTime, {
+                        type: 'line',
+                        data: {
+                            labels: labels,
+                            datasets: [
+                                { label: 'Completadas', data: progressData, borderColor: '#10b981', backgroundColor: 'rgba(16, 185, 129, 0.2)', tension: 0.4, fill: true },
+                                { label: 'Restantes', data: pendingData, borderColor: '#6366f1', backgroundColor: 'rgba(99, 102, 241, 0.1)', tension: 0.4, fill: true, borderDash: [5, 5] }
+                            ]
+                        },
+                        options: {
+                            responsive: true, maintainAspectRatio: false,
+                            plugins: { legend: { position: 'top', labels: { font: { size: 10 } } } },
+                            scales: { y: { beginAtZero: true } }
+                        }
+                    });
+                }
+            }
+
+            // BAR: Workload (Solo visible lógicamente si están "Todos" o se muestra el detalle del único)
+            if (mc.showWorkload) {
+                const ctxWork = document.getElementById('canvas-metrics-workload');
+                if (ctxWork) {
+                    let assigneesWIP = {};
+                    dataset.forEach(t => {
+                        if (['todo', 'progress', 'review'].includes(t.status)) {
+                            const assignee = t.assignee || 'Sin Asignar';
+                            assigneesWIP[assignee] = (assigneesWIP[assignee] || 0) + 1;
+                        }
+                    });
+                    
+                    const labels = Object.keys(assigneesWIP);
+                    const data = Object.values(assigneesWIP);
+
+                    metricsChartsObj.workload = new Chart(ctxWork, {
+                        type: 'bar',
+                        data: {
+                            labels: labels,
+                            datasets: [{
+                                label: 'Tareas Activas (WIP)',
+                                data: data,
+                                backgroundColor: 'rgba(245, 158, 11, 0.7)',
+                                borderRadius: 6
+                            }]
+                        },
+                        options: {
+                            responsive: true, maintainAspectRatio: false,
+                            plugins: { legend: { display: false } },
+                            scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+                        }
+                    });
+                }
+            }
+
+            // POLAR AREA: Prioridad
+            if (mc.showPriority) {
+                const ctxPri = document.getElementById('canvas-metrics-priority');
+                if (ctxPri) {
+                    const activeDataset = dataset.filter(t => t.status !== 'done'); // Enfocarse en lo pendiente
+                    const priorityCounts = {
+                        "Urgent (P1)": activeDataset.filter(t => Number(t.priority) === 4).length,
+                        "Alta (P2)": activeDataset.filter(t => Number(t.priority) === 3).length,
+                        "Media (P3)": activeDataset.filter(t => Number(t.priority) === 2).length,
+                        "Normal (P4)": activeDataset.filter(t => Number(t.priority) === 1).length
+                    };
+
+                    metricsChartsObj.priority = new Chart(ctxPri, {
+                        type: 'polarArea',
+                        data: {
+                            labels: Object.keys(priorityCounts),
+                            datasets: [{
+                                data: Object.values(priorityCounts),
+                                backgroundColor: [
+                                    'rgba(239, 68, 68, 0.7)',  // P1 - Red
+                                    'rgba(245, 158, 11, 0.7)', // P2 - Orange
+                                    'rgba(59, 130, 246, 0.7)', // P3 - Blue
+                                    'rgba(148, 163, 184, 0.7)' // P4 - Slate
+                                ],
+                                borderWidth: isDark ? 0 : 1
+                            }]
+                        },
+                        options: {
+                            responsive: true, maintainAspectRatio: false,
+                            plugins: { legend: { position: 'right', labels: { font: { size: 10 } } } },
+                            scales: { r: { display: false } }
+                        }
+                    });
+                }
+            }
+        };
+
+        // --- INTERCEPTAR ACTUALIZACIÓN UI PARA MÉTRICAS REALTIME ---
+        const renderUIBase = function() {
             const statuses = ['backlog', 'todo', 'progress', 'review', 'done'];
             const allLabels = new Set();
             const allAssignees = new Set();
 
-            tasks.forEach(t => { 
-                t.labels?.forEach(l => allLabels.add(l)); 
-                if(t.assignee) allAssignees.add(t.assignee); 
+            tasks.forEach(t => {
+                t.labels?.forEach(l => allLabels.add(l));
+                if(t.assignee) allAssignees.add(t.assignee);
             });
 
             statuses.forEach(status => {
@@ -2247,32 +1782,30 @@
                     const assigneeMatch = currentAssigneeFilter === 'all' || t.assignee === currentAssigneeFilter;
                     return statusMatch && labelMatch && assigneeMatch;
                 });
-                
+
                 badge.innerText = colTasks.length;
                 container.innerHTML = '';
 
                 colTasks.forEach(task => {
                     const role = roles.find(r => r.id === task.role) || {color:'#ccc', emoji:'❓'};
                     const card = document.createElement('div');
-                    
                     card.className = `task-card kanban-task-card glass-ui p-4 rounded-[1.25rem] relative overflow-hidden`;
                     card.draggable = true;
                     card.id = `task-${task.id}`;
                     card.ondragstart = (e) => e.dataTransfer.setData("taskId", task.id);
                     card.onclick = () => window.editTask(task.id);
-                    
+
                     const priorityClass = Number(task.priority || 1) === 4 ? 'bg-red-100 text-red-700 border-red-200' : (Number(task.priority || 1) === 3 ? 'bg-orange-100 text-orange-700 border-orange-200' : (Number(task.priority || 1) === 2 ? 'bg-amber-100 text-amber-700 border-amber-200' : 'bg-slate-100 text-slate-600 border-slate-200'));
-                    const priorityTag = `<span class="text-[8px] font-black mr-1 px-2 py-1 rounded-md uppercase border cursor-default ${priorityClass}">${todoistPriorityLabel(task.priority)}</span>`;
-                    const mergedLabels = Array.from(new Set([...(task.labels || []), ...(task.todoistLabels || []).map(l => `#${l}`)]));
-                    const tags = priorityTag + mergedLabels.map(l => `<span class="text-[8px] font-black text-slate-700 dark:text-slate-200 mr-1 bg-slate-100 dark:bg-slate-700/50 backdrop-blur-sm px-2 py-1 rounded-md uppercase border border-slate-200 dark:border-slate-600/30 cursor-default">${escapeHtml(l)}</span>`).join('');
+                    const pMap = {4:'P1', 3:'P2', 2:'P3', 1:'P4'};
+                    const priorityTag = `<span class="text-[8px] font-black mr-1 px-2 py-1 rounded-md uppercase border cursor-default ${priorityClass}">${pMap[task.priority || 1] || 'P4'}</span>`;
                     
-                    // Renderizado de múltiples enlaces
+                    const tags = priorityTag + (task.labels || []).map(l => `<span class="text-[8px] font-black text-slate-700 dark:text-slate-200 mr-1 bg-slate-100 dark:bg-slate-700/50 backdrop-blur-sm px-2 py-1 rounded-md uppercase border border-slate-200 dark:border-slate-600/30 cursor-default">${escapeHtml(l)}</span>`).join('');
+
                     const taskLinks = task.links || (task.link ? [task.link] : []);
                     const linksHtml = taskLinks.map((l, idx) => `
                         <button type="button" onclick="event.stopPropagation(); window.open('${l}', '_blank')" class="mt-2 w-full py-2 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white text-[9px] font-black rounded-xl border border-slate-200 dark:border-slate-600/50 uppercase shadow-sm flex items-center justify-center gap-2">📂 Link ${taskLinks.length > 1 ? idx+1 : 'Drive'}</button>
                     `).join('');
 
-                    // Renderizado de múltiples subtareas animadas
                     const subtasks = task.subtasks || [];
                     let subtasksHtml = '';
                     if (subtasks.length > 0) {
@@ -2281,7 +1814,7 @@
                         subtasksHtml = `
                             <div class="mt-4 mb-2">
                                 <div class="flex justify-between items-center mb-1.5">
-                                    <span class="text-[9px] font-black text-slate-500 uppercase tracking-widest">Tareas del Grupo (${doneCount}/${subtasks.length})</span>
+                                    <span class="text-[9px] font-black text-slate-500 uppercase tracking-widest">Tareas (${doneCount}/${subtasks.length})</span>
                                     <span class="text-[9px] font-black text-indigo-500 dark:text-amber-400">${Math.round(progress)}%</span>
                                 </div>
                                 <div class="w-full bg-slate-200 dark:bg-slate-700 h-1.5 rounded-full mb-3 overflow-hidden">
@@ -2293,7 +1826,7 @@
                                             <div class="w-4 h-4 rounded-[4px] border ${st.done ? 'bg-indigo-500 border-indigo-500 dark:bg-amber-500 dark:border-amber-500 text-white' : 'bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-500'} flex items-center justify-center transition-colors flex-shrink-0">
                                                 ${st.done ? '<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>' : ''}
                                             </div>
-                                            <span class="kanban-subtask-title text-[10px] font-bold ${st.done ? 'line-through text-slate-400 dark:text-slate-500' : 'text-slate-700 dark:text-slate-200'} transition-all" title="${escapeHtml(st.title || '')}">${escapeHtml(st.title || '')}</span><span class="ml-auto text-[9px] font-black text-slate-400 dark:text-slate-500 flex-shrink-0">${st.durationDays || 1}d</span>
+                                            <span class="kanban-subtask-title text-[10px] font-bold ${st.done ? 'line-through text-slate-400 dark:text-slate-500' : 'text-slate-700 dark:text-slate-200'} transition-all" title="${escapeHtml(st.title || '')}">${escapeHtml(st.title || '')}</span>
                                         </div>
                                     `).join('')}
                                 </div>
@@ -2305,9 +1838,9 @@
                     if (task.status === 'review') {
                         validationButtons = `
                             <div class="mt-4 pt-3 border-t border-slate-200 dark:border-slate-600/30 flex justify-between gap-2">
-                                <button type="button" onclick="event.stopPropagation(); window.startValidation('${task.id}', 'valid')" class="flex-1 py-2 bg-emerald-50 dark:bg-emerald-900/40 border border-emerald-200 dark:border-emerald-700/30 text-emerald-700 dark:text-emerald-400 text-[10px] font-black rounded-xl text-center" title="Válido">✅ Validar</button>
-                                <button type="button" onclick="event.stopPropagation(); window.startValidation('${task.id}', 'improve')" class="flex-1 py-2 bg-amber-50 dark:bg-amber-900/40 border border-amber-200 dark:border-amber-700/30 text-amber-700 dark:text-amber-400 text-[10px] font-black rounded-xl text-center" title="Mejorable">⚠️</button>
-                                <button type="button" onclick="event.stopPropagation(); window.startValidation('${task.id}', 'fix')" class="flex-1 py-2 bg-red-50 dark:bg-red-900/40 border border-red-200 dark:border-red-700/30 text-red-700 dark:text-red-400 text-[10px] font-black rounded-xl text-center" title="Por corrección">❌</button>
+                                <button type="button" onclick="event.stopPropagation(); window.startValidation('${task.id}', 'valid')" class="flex-1 py-2 bg-emerald-50 dark:bg-emerald-900/40 border border-emerald-200 dark:border-emerald-700/30 text-emerald-700 dark:text-emerald-400 text-[10px] font-black rounded-xl text-center">✅ Validar</button>
+                                <button type="button" onclick="event.stopPropagation(); window.startValidation('${task.id}', 'improve')" class="flex-1 py-2 bg-amber-50 dark:bg-amber-900/40 border border-amber-200 dark:border-amber-700/30 text-amber-700 dark:text-amber-400 text-[10px] font-black rounded-xl text-center">⚠️</button>
+                                <button type="button" onclick="event.stopPropagation(); window.startValidation('${task.id}', 'fix')" class="flex-1 py-2 bg-red-50 dark:bg-red-900/40 border border-red-200 dark:border-red-700/30 text-red-700 dark:text-red-400 text-[10px] font-black rounded-xl text-center">❌</button>
                             </div>
                         `;
                     }
@@ -2350,7 +1883,16 @@
             if (currentView === 'calendar') renderCalendarView();
             updateFilterUI(Array.from(allLabels));
             updateSuggestions(Array.from(allAssignees), Array.from(allLabels));
-        }
+        };
+
+        window.renderUI = function() {
+            renderUIBase.call(this);
+            // Actualización Automática del Dashboard si está visible
+            const metricsOverlay = document.getElementById('metrics-modal-overlay');
+            if (metricsOverlay && !metricsOverlay.classList.contains('hidden')) {
+                window.renderAdvancedMetrics();
+            }
+        };
 
         function setLoaderError(msg, detail = "") {
             const loaderText = document.getElementById('loader-text');
@@ -2359,9 +1901,7 @@
             loaderText.innerText = msg;
             loaderText.classList.add('text-red-500');
             document.getElementById('loader-error-help').classList.remove('hidden');
-            if (detail) {
-                document.getElementById('detailed-error').innerText = detail;
-            }
+            if (detail) document.getElementById('detailed-error').innerText = detail;
         }
 
         async function init() {
@@ -2386,10 +1926,7 @@
                         }
                     }
                 });
-            } catch (err) {
-                console.error("Falla en Init:", err);
-                setLoaderError("ERROR DE CONEXIÓN", err.message);
-            }
+            } catch (err) { setLoaderError("ERROR DE CONEXIÓN", err.message); }
         }
 
         function startSyncOnlyUsers() {
@@ -2400,18 +1937,14 @@
         }
 
         function startSync() {
-            const loadingOverlay = document.getElementById('loading-overlay');
-            if(loadingOverlay) loadingOverlay.classList.remove('hidden');
-            const loaderText = document.getElementById('loader-text');
-            if(loaderText) loaderText.innerText = "Sincronizando datos...";
+            document.getElementById('loading-overlay').classList.remove('hidden');
             document.getElementById('display-user').innerText = `👤 ${currentUser.toUpperCase()}`;
-            
+
             startPresenceHeartbeat();
-            checkAdminAccess(); // Revisar si es admin
+            checkAdminAccess(); 
 
             onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'roles'), (snap) => {
                 roles = snap.docs.map(d => ({id: d.id, ...d.data()}));
-                if (roles.length === 0) seedRoles();
                 updateRoleSelects();
                 renderRoleManager();
                 renderUI();
@@ -2433,52 +1966,30 @@
             });
 
             onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'config', 'master'), (snap) => {
-                if (snap.exists()) { 
-                    config = { ...config, ...snap.data() }; 
+                if (snap.exists()) {
+                    config = { ...config, ...snap.data() };
                     if (config.projectStartDate && config.projectEndDate) config.projectDays = getTaskDurationDays(config.projectStartDate, config.projectEndDate);
-                    updateStatusUI(); 
-                    document.getElementById('btn-infopucp').href = config.infoPucpLink || '#';
-                    
-                    // Renderizar botones dinámicos en el header
+                    updateStatusUI();
+
                     const dynamicLinksContainer = document.getElementById('dynamic-quick-links');
                     if (dynamicLinksContainer) {
                         const customLinks = config.customLinks || [];
                         const htmlLinks = customLinks.map(l => `<a href="${l.url}" target="_blank" class="glass-ui text-slate-700 dark:text-slate-200 px-5 py-2.5 rounded-full text-[10px] font-black uppercase inline-block btn-global-hover">${l.title} 🔗</a>`).join('');
-                        
-                        dynamicLinksContainer.innerHTML = `
-                            <a id="btn-infopucp" href="${config.infoPucpLink || '#'}" target="_blank" class="glass-ui text-slate-700 dark:text-slate-200 px-5 py-2.5 rounded-full text-[10px] font-black uppercase inline-block btn-global-hover">INFOPUCP 🎓</a>
-                            ${htmlLinks}
-                        `;
+                        dynamicLinksContainer.innerHTML = `<a id="btn-infopucp" href="${config.infoPucpLink || '#'}" target="_blank" class="glass-ui text-slate-700 dark:text-slate-200 px-5 py-2.5 rounded-full text-[10px] font-black uppercase inline-block btn-global-hover">INFOPUCP 🎓</a>${htmlLinks}`;
                     }
-                    renderTodoistCatalogs();
-                    startTodoistAutoSync();
                     if (currentView === 'calendar') renderCalendarView();
-                } else { 
-                    setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'config', 'master'), { available: true, link: '#', infoPucpLink: '#', customLinks: [], apiIntegrations: getApiIntegrations() });
+                } else {
+                    setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'config', 'master'), { available: true, link: '#', infoPucpLink: '#', calendarUrl: '', chatWebhook: '', customLinks: [], metricsConfig: config.metricsConfig });
                 }
-            }, (err) => console.error("Config Sync Error:", err));
-        }
-
-        async function seedRoles() {
-            const defaults = [
-                { name: 'Arquitecto ETL', color: '#f97316', emoji: '🟠' },
-                { name: 'Modelador', color: '#3b82f6', emoji: '🔵' },
-                { name: 'DAX Expert', color: '#a855f7', emoji: '🟣' },
-                { name: 'Analista Visual', color: '#10b981', emoji: '🟢' }
-            ];
-            for (const r of defaults) { await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'roles'), r); }
+            });
         }
 
         window.toggleRegisterView = (show) => {
             const loginV = document.getElementById('login-view');
             const regV = document.getElementById('register-view');
             const passV = document.getElementById('password-view');
-            
-            if (show) {
-                loginV.classList.add('hidden'); passV.classList.add('hidden'); regV.classList.remove('hidden');
-            } else {
-                regV.classList.add('hidden'); passV.classList.add('hidden'); loginV.classList.remove('hidden');
-            }
+            if (show) { loginV.classList.add('hidden'); passV.classList.add('hidden'); regV.classList.remove('hidden'); } 
+            else { regV.classList.add('hidden'); passV.classList.add('hidden'); loginV.classList.remove('hidden'); }
         };
 
         window.hidePasswordView = () => {
@@ -2488,7 +1999,6 @@
         };
 
         let pendingLoginUser = null;
-
         window.checkUserBeforeLogin = (name) => {
             if (!name) return;
             const existingUser = registeredUsers.find(u => u.name.toLowerCase() === name.toLowerCase());
@@ -2496,7 +2006,7 @@
                 pendingLoginUser = existingUser;
                 document.getElementById('login-name-display').innerText = existingUser.name;
                 document.getElementById('login-avatar').innerText = existingUser.name.substring(0, 2).toUpperCase();
-                
+
                 const helpMsg = document.getElementById('password-help-msg');
                 if (existingUser.password) helpMsg.classList.add('hidden');
                 else helpMsg.classList.remove('hidden');
@@ -2505,17 +2015,13 @@
                 document.getElementById('register-view').classList.add('hidden');
                 document.getElementById('password-view').classList.remove('hidden');
                 setTimeout(() => document.getElementById('login-pass').focus(), 100);
-            } else {
-                window.showAlert("Ese usuario no existe. Regístralo haciendo clic en 'Nuevo'.");
-            }
+            } else { window.showAlert("Ese usuario no existe. Regístralo haciendo clic en 'Nuevo'."); }
         };
 
         window.executeLogin = async () => {
             if (!pendingLoginUser) return;
             const passInput = document.getElementById('login-pass').value.trim();
-            
             if (!/^\d{6}$/.test(passInput)) { window.showAlert("La contraseña debe tener exactamente 6 números."); return; }
-
             try {
                 if (pendingLoginUser.password) {
                     if (pendingLoginUser.password !== passInput) { window.showAlert("Contraseña incorrecta."); return; }
@@ -2524,7 +2030,6 @@
                     await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', pendingLoginUser.id), { password: passInput, isOnline: true, lastActive: Date.now() });
                     window.showAlert("¡Clave configurada exitosamente!");
                 }
-
                 currentUser = pendingLoginUser.name;
                 localStorage.setItem('bi_kanban_user', currentUser);
                 document.getElementById('auth-overlay').classList.add('hidden');
@@ -2536,19 +2041,11 @@
         window.registerNewUser = async () => {
             const name = document.getElementById('reg-name').value.trim();
             const pass = document.getElementById('reg-pass').value.trim();
-
             if (!name) { window.showAlert("Ingresa tu nombre completo."); return; }
             if (!/^\d{6}$/.test(pass)) { window.showAlert("La contraseña debe tener 6 números."); return; }
-            
-            if (registeredUsers.find(u => u.name.toLowerCase() === name.toLowerCase())) {
-                window.showAlert("Este usuario ya existe."); return;
-            }
-
+            if (registeredUsers.find(u => u.name.toLowerCase() === name.toLowerCase())) { window.showAlert("Este usuario ya existe."); return; }
             try {
-                await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'users'), {
-                    name: name, password: pass, registeredAt: Date.now(), isOnline: true, lastActive: Date.now(), notifications: []
-                });
-                
+                await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'users'), { name: name, password: pass, registeredAt: Date.now(), isOnline: true, lastActive: Date.now(), notifications: [] });
                 currentUser = name;
                 localStorage.setItem('bi_kanban_user', currentUser);
                 document.getElementById('auth-overlay').classList.add('hidden');
@@ -2562,31 +2059,23 @@
         window.renderAuthList = () => {
             const container = document.getElementById('auth-existing-list');
             if(!container) return;
-            container.innerHTML = registeredUsers.map(u => `
-                <button onclick="window.checkUserBeforeLogin('${u.name}');" class="glass-ui p-3 rounded-2xl text-[10px] font-black text-slate-800 dark:text-slate-300 truncate uppercase shadow-sm">
-                    ${u.name}
-                </button>
-            `).join('') || '<p class="col-span-2 text-[9px] text-slate-500 italic text-center py-4">No hay responsables</p>';
+            container.innerHTML = registeredUsers.map(u => `<button onclick="window.checkUserBeforeLogin('${u.name}');" class="glass-ui p-3 rounded-2xl text-[10px] font-black text-slate-800 dark:text-slate-300 truncate uppercase shadow-sm">${u.name}</button>`).join('') || '<p class="col-span-2 text-[9px] text-slate-500 italic text-center py-4">No hay responsables</p>';
         };
 
         const commentInput = document.getElementById('comment-input');
         const mentionDropdown = document.getElementById('mention-dropdown');
-        
         if (commentInput && mentionDropdown) {
             commentInput.addEventListener('input', (e) => {
                 const text = e.target.value;
                 const cursorPos = e.target.selectionStart;
                 const textBeforeCursor = text.slice(0, cursorPos);
                 const match = textBeforeCursor.match(/@([a-zA-ZáéíóúÁÉÍÓÚñÑ]*)$/);
-                
                 if (match) {
                     const search = match[1].toLowerCase();
                     const filteredUsers = registeredUsers.filter(u => u.name !== currentUser && u.name.toLowerCase().includes(search));
-                    
                     if (filteredUsers.length > 0) {
                         mentionDropdown.innerHTML = filteredUsers.map(u => `
-                            <div class="px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700/50 cursor-pointer border-b border-slate-200 dark:border-slate-600/50 last:border-0 transition-colors"
-                                 onclick="window.insertMention('${u.name}')">
+                            <div class="px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700/50 cursor-pointer border-b border-slate-200 dark:border-slate-600/50 last:border-0 transition-colors" onclick="window.insertMention('${u.name}')">
                                 <p class="text-[11px] font-black text-slate-800 dark:text-slate-200">@${u.name}</p>
                             </div>
                         `).join('');
@@ -2594,10 +2083,7 @@
                     } else { mentionDropdown.classList.add('hidden'); }
                 } else { mentionDropdown.classList.add('hidden'); }
             });
-            
-            document.addEventListener('click', (e) => {
-                if(e.target !== commentInput && !mentionDropdown.contains(e.target)) mentionDropdown.classList.add('hidden');
-            });
+            document.addEventListener('click', (e) => { if(e.target !== commentInput && !mentionDropdown.contains(e.target)) mentionDropdown.classList.add('hidden'); });
         }
 
         window.insertMention = (name) => {
@@ -2609,34 +2095,38 @@
             commentInput.focus();
         };
 
-        window.deleteUser = async (id) => {
-            if (confirm("¿Eliminar este responsable?")) await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', id));
-        };
+        window.deleteUser = async (id) => { if (confirm("¿Eliminar este responsable?")) await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', id)); };
 
-        // --- GUARDAR ENLACES DINÁMICOS GENERALES ---
         window.saveConfigLinks = async () => {
             const customLinks = Array.from(document.querySelectorAll('.custom-link-item')).map(div => ({
                 title: div.querySelector('.custom-link-title').value.trim(),
                 url: div.querySelector('.custom-link-url').value.trim()
             })).filter(l => l.title && l.url);
 
-            await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'config', 'master'), { 
+            await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'config', 'master'), {
                 link: document.getElementById('edit-drive-link').value,
                 infoPucpLink: document.getElementById('edit-pucp-link').value,
+                calendarUrl: document.getElementById('edit-calendar-url').value,
+                chatWebhook: document.getElementById('edit-chat-webhook').value,
                 projectStartDate: document.getElementById('edit-project-start')?.value || '',
                 projectEndDate: document.getElementById('edit-project-end')?.value || '',
                 projectDays: Math.max(1, Number(document.getElementById('edit-project-days')?.value || getTaskDurationDays(document.getElementById('edit-project-start')?.value, document.getElementById('edit-project-end')?.value) || config.projectDays || 30)),
                 ganttIndicatorScope: document.getElementById('edit-gantt-scope')?.value || config.ganttIndicatorScope || 'filtered',
                 ganttProgressStatuses: ['review', 'done'].filter(status => document.getElementById(status === 'review' ? 'edit-progress-review' : 'edit-progress-done')?.checked),
                 customLinks: customLinks,
-                apiIntegrations: readApiConfigForm()
+                metricsConfig: {
+                    excludeBacklog: document.getElementById('metrics-exclude-backlog').checked,
+                    showStatus: document.getElementById('metrics-show-status').checked,
+                    showTimeline: document.getElementById('metrics-show-timeline').checked,
+                    showWorkload: document.getElementById('metrics-show-workload').checked,
+                    showPriority: document.getElementById('metrics-show-priority').checked,
+                }
             });
             window.closeFileEditModal();
+            renderUI(); // Forzar actualización de Gantt/Métricas inmediatamente después de guardar
         };
 
-        window.toggleMasterFileStatus = async () => {
-            await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'config', 'master'), { available: !config.available });
-        };
+        window.toggleMasterFileStatus = async () => { await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'config', 'master'), { available: !config.available }); };
 
         window.editTask = (id) => {
             const task = tasks.find(t => t.id === id);
@@ -2648,28 +2138,19 @@
             document.getElementById('task-status').value = task.status || 'backlog';
             document.getElementById('task-date-start').value = task.dateStart || '';
             document.getElementById('task-date-end').value = task.dateEnd || '';
-            document.getElementById('task-labels').value = Array.from(new Set([...(task.labels || []), ...(task.todoistLabels || []).map(l => `#${l}`)])).join(', ');
-            populateTodoistProjectSelect(task.todoistProjectId || '');
-            populateTodoistSectionSelect(task.todoistSectionId || '', task.todoistProjectId || '');
-            populateTodoistLabelsSelect(task.todoistLabels || []);
+            document.getElementById('task-labels').value = (task.labels || []).join(', ');
+            renderTaskLabelSuggestions();
             document.getElementById('task-priority').value = String(task.priority || 1);
-            document.getElementById('task-todoist-id').value = task.todoistTaskId || '';
-            const todoistStatus = document.getElementById('task-todoist-status');
-            if (todoistStatus && task.todoistSyncedAt) {
-                todoistStatus.innerText = `Ultima sincronizacion Todoist: ${new Date(task.todoistSyncedAt).toLocaleString()}`;
-            }
-            
-            // Llenar enlaces múltiples o migrar el único antiguo
+
             const linksContainer = document.getElementById('task-links-container');
             linksContainer.innerHTML = '';
             const taskLinks = task.links || (task.link ? [task.link] : []);
             taskLinks.forEach(l => window.addLinkInput(l));
 
-            // Llenar subtareas
             const subtasksContainer = document.getElementById('task-subtasks-container');
             subtasksContainer.innerHTML = '';
             const subtasks = task.subtasks || [];
-            subtasks.forEach(st => window.addSubtaskInput(st.title, st.done, st.durationDays || st.duration || 1));
+            subtasks.forEach(st => window.addSubtaskInput(st.title, st.done, st.durationDays || 1));
 
             document.getElementById('btn-delete-task').classList.remove('hidden');
             document.getElementById('btn-archive-task').classList.toggle('hidden', task.status === 'archived');
@@ -2699,52 +2180,32 @@
                     const pendingModel = tasks.filter(t => (t.title.toLowerCase().includes('modelo') || t.title.toLowerCase().includes('relación')) && t.status !== 'done');
                     if (pendingModel.length > 0) { window.showAlert(`Bloqueo: Finaliza el Modelo de Datos antes del DAX.`); return; }
                 }
-                const api = getApiIntegrations();
-                const nextSectionId = todoistSectionForStatus(newStatus, '', task.todoistProjectId || api.todoist.defaultProjectId || '') || '';
-                const nextData = { status: newStatus, todoistSectionId: nextSectionId, timestamp: Date.now() };
+                const nextData = { status: newStatus, timestamp: Date.now() };
                 await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'tasks', taskId), nextData);
 
-                if (api.todoist.enabled && api.todoist.token && task.todoistTaskId && api.todoist.syncChannels?.pushLocal !== false) {
-                    try {
-                        const { updated, payload } = await updateTodoistTaskFromLocal({ ...task, ...nextData });
-                        await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'tasks', taskId), {
-                            todoistProjectId: payload.project_id || task.todoistProjectId || '',
-                            todoistSectionId: payload.section_id || nextSectionId,
-                            todoistUpdatedAt: updated?.updated_at || new Date().toISOString(),
-                            todoistSyncedAt: Date.now()
-                        });
-                    } catch (err) {
-                        console.error('Todoist status sync error', err);
-                        window.showAlert('La tarea cambio de columna, pero no se pudo actualizar Todoist: ' + err.message);
-                    }
+                // --- ALERTA GOOGLE CHAT POR CAMBIO DE ESTADO IMPORTANTE ---
+                if (newStatus === 'done' || newStatus === 'review') {
+                    window.sendGoogleChatAlert(task.title, `movido la tarea a ${newStatus.toUpperCase()}`, currentUser);
                 }
             }
         };
 
-        // --- SISTEMA DE SEGURIDAD PARA ELIMINAR TAREAS ---
         window.deleteCurrentTask = async () => {
             const id = document.getElementById('edit-id').value;
             if (!id) return;
-            
             const task = tasks.find(t => t.id === id);
             if (!task) return;
-
             const isAdmin = currentUser && currentUser.toUpperCase() === 'ADMIN';
             const isOwner = task.assignee === currentUser;
-
-            // Bloquear si no es Admin y no es el dueño asignado
             if (!isAdmin && !isOwner) {
                 window.showAlert(`Seguridad: Solo el responsable asignado (${task.assignee || 'Nadie'}) o el ADMIN pueden eliminar esta tarea.`);
                 return;
             }
-
-            if (confirm("¿Eliminar actividad permanentemente?")) { 
+            if (confirm("¿Eliminar actividad permanentemente?")) {
                 try {
-                    await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'tasks', id)); 
-                    window.closeModal(); 
-                } catch (err) {
-                    window.showAlert("Error al eliminar: " + err.message);
-                }
+                    await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'tasks', id));
+                    window.closeModal();
+                } catch (err) { window.showAlert("Error al eliminar: " + err.message); }
             }
         };
 
@@ -2759,7 +2220,7 @@
             if (!id || !text) return;
             const task = tasks.find(t => t.id === id);
             const newComments = [...(task.comments || []), { user: currentUser, text, date: new Date().toLocaleString() }];
-            
+
             const lowerText = text.toLowerCase();
             for (const u of registeredUsers) {
                 if (u.name !== currentUser) {
@@ -2775,10 +2236,7 @@
             const me = registeredUsers.find(u => u.name === currentUser);
             if (me && me.notifications) {
                 let changed = false;
-                const myNotifs = me.notifications.map(n => {
-                    if (n.taskId === id && !n.read) { changed = true; return { ...n, read: true }; }
-                    return n;
-                });
+                const myNotifs = me.notifications.map(n => { if (n.taskId === id && !n.read) { changed = true; return { ...n, read: true }; } return n; });
                 if (changed) updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', me.id), { notifications: myNotifs });
             }
 
@@ -2787,62 +2245,36 @@
             renderComments(newComments);
         };
 
-        // --- BLOQUEO DE ENTRADA AL DRIVE SI ESTÁ EN USO ---
         window.openFileLinkWithInternalLog = async () => {
-            if (!config.available) {
-                window.showAlert("El archivo maestro está EN USO por otro usuario. No puedes ingresar en este momento.");
-                return;
-            }
+            if (!config.available) { window.showAlert("El archivo maestro está EN USO por otro usuario. No puedes ingresar en este momento."); return; }
             if (!config.link || config.link === '#') return;
-            
             const now = new Date();
-            await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'accessLogs'), { 
-                user: currentUser, action: 'Abrió Drive Maestro', timestamp: Date.now(), date: now.toLocaleDateString(), time: now.toLocaleTimeString()
-            });
+            await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'accessLogs'), { user: currentUser, action: 'Abrió Drive Maestro', timestamp: Date.now(), date: now.toLocaleDateString(), time: now.toLocaleTimeString() });
             window.open(config.link, '_blank');
         };
 
-        window.downloadAccessLogs = () => {
-            onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'accessLogs'), (snap) => {
-                let log = "REPORTE DE AUDITORÍA CLOUD\n=========================\n\n";
-                snap.docs.map(d => d.data()).sort((a,b) => b.timestamp - a.timestamp).forEach(d => { log += `[${d.date} ${d.time}] USUARIO: ${d.user}\nACCION: ${d.action}\n-------------------------\n`; });
-                const a = document.createElement('a');
-                a.href = URL.createObjectURL(new Blob([log], { type: 'text/plain' }));
-                a.download = `Auditoria_Kanban_BI.txt`;
-                a.click();
-            }, { once: true });
-        };
-
-        window.openModal = () => { 
-            document.getElementById('task-form').reset(); 
-            document.getElementById('edit-id').value = ''; 
+        window.openModal = () => {
+            document.getElementById('task-form').reset();
+            document.getElementById('edit-id').value = '';
             document.getElementById('task-status').value = 'backlog';
             document.getElementById('task-assignee').value = currentUser;
-            populateTodoistProjectSelect('');
-            populateTodoistSectionSelect('');
-            populateTodoistLabelsSelect([]);
-            renderTaskLabelSuggestions();
             document.getElementById('task-priority').value = '1';
-            document.getElementById('task-todoist-id').value = '';
             const today = new Date();
             document.getElementById('task-date-start').value = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
-            
-            // Vaciar contenedores de subtablas y enlaces
             document.getElementById('task-links-container').innerHTML = '';
             document.getElementById('task-subtasks-container').innerHTML = '';
-
-            document.getElementById('modal-overlay').classList.remove('hidden'); 
-            renderComments([]); 
+            renderTaskLabelSuggestions();
+            document.getElementById('modal-overlay').classList.remove('hidden');
+            renderComments([]);
         };
-        
+
         window.closeModal = () => document.getElementById('modal-overlay').classList.add('hidden');
-        
         window.openRoleModal = () => {
             if (currentUser?.toUpperCase() !== 'ADMIN') return window.showAlert("Acceso denegado: Solo el ADMIN puede configurar los roles.");
             document.getElementById('role-modal-overlay').classList.remove('hidden');
         };
         window.closeRoleModal = () => document.getElementById('role-modal-overlay').classList.add('hidden');
-        
+
         window.switchView = (view) => {
             currentView = view;
             document.getElementById('kanban-view').classList.toggle('hidden', view !== 'kanban');
@@ -2862,19 +2294,21 @@
         window.setFilter = (t) => { currentFilter = t; renderUI(); };
         window.showAlert = (m) => { document.getElementById('alert-message').innerText = m; document.getElementById('alert-overlay').classList.remove('hidden'); };
         window.closeAlert = () => document.getElementById('alert-overlay').classList.add('hidden');
-        
-        window.openFileEditModal = () => { 
+
+        window.openFileEditModal = () => {
             if (currentUser?.toUpperCase() !== 'ADMIN') return window.showAlert("Acceso denegado: Solo el ADMIN puede acceder a la configuración del proyecto.");
-            
-            document.getElementById('edit-drive-link').value = config.link || ''; 
+
+            document.getElementById('edit-drive-link').value = config.link || '';
             document.getElementById('edit-pucp-link').value = config.infoPucpLink || '';
-            const projectDaysInput = document.getElementById('edit-project-days');
-            if (projectDaysInput) projectDaysInput.value = config.projectDays || 30;
+            document.getElementById('edit-calendar-url').value = config.calendarUrl || '';
+            document.getElementById('edit-chat-webhook').value = config.chatWebhook || '';
+
             const projectStartInput = document.getElementById('edit-project-start');
             const projectEndInput = document.getElementById('edit-project-end');
             if (projectStartInput) projectStartInput.value = config.projectStartDate || '';
             if (projectEndInput) projectEndInput.value = config.projectEndDate || '';
-            if (projectDaysInput && config.projectStartDate && config.projectEndDate) projectDaysInput.value = getTaskDurationDays(config.projectStartDate, config.projectEndDate);
+            window.updateProjectDaysCount();
+
             const ganttScopeInput = document.getElementById('edit-gantt-scope');
             if (ganttScopeInput) ganttScopeInput.value = config.ganttIndicatorScope || 'filtered';
             const progressStatuses = config.ganttProgressStatuses || ['review', 'done'];
@@ -2883,14 +2317,13 @@
             if (progressReview) progressReview.checked = progressStatuses.includes('review');
             if (progressDone) progressDone.checked = progressStatuses.includes('done');
             renderApiConfigForm();
-            
-            // Cargar enlaces dinámicos en el modal de configuración
+
             const customLinksConfigContainer = document.getElementById('custom-links-config-container');
             customLinksConfigContainer.innerHTML = '';
             const customLinks = config.customLinks || [];
             customLinks.forEach(l => window.addCustomLinkInput(l.title, l.url));
 
-            document.getElementById('file-modal-overlay').classList.remove('hidden'); 
+            document.getElementById('file-modal-overlay').classList.remove('hidden');
         };
         window.closeFileEditModal = () => document.getElementById('file-modal-overlay').classList.add('hidden');
 
@@ -2914,13 +2347,10 @@
                 detail = document.getElementById('validation-detail').value.trim();
                 if (!detail) { window.showAlert("Debes ingresar un motivo."); return; }
             }
-
             const task = tasks.find(t => t.id === taskId);
             if (!task) return;
-
             const prefix = type === 'improve' ? '⚠️ Mejorable' : (type === 'fix' ? '❌ Por corrección' : '✅ Válido');
             const newComments = [...(task.comments || []), { user: currentUser, text: `[Validación: ${prefix}] ${detail}`, date: new Date().toLocaleString() }];
-            
             try {
                 await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'tasks', taskId), { comments: newComments });
                 if(isModal) window.closeValidationModal();
@@ -2939,17 +2369,14 @@
             } catch (err) { window.showAlert("Error: " + err.message); }
         };
 
-        window.deleteRole = async (id) => { 
+        window.deleteRole = async (id) => {
             if (!id) return;
             if (confirm("¿Estás seguro de que deseas eliminar este rol permanentemente?")) {
-                try {
-                    await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'roles', id));
-                } catch (err) {
-                    window.showAlert("Error al eliminar el rol: " + err.message);
-                }
-            } 
+                try { await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'roles', id)); } 
+                catch (err) { window.showAlert("Error al eliminar el rol: " + err.message); }
+            }
         };
-        
+
         function parseDateLocal(dateStr) {
             if(!dateStr) return new Date();
             const [y, m, d] = dateStr.split('-').map(Number);
@@ -2960,11 +2387,8 @@
         if (taskForm) {
             taskForm.addEventListener('submit', async (e) => {
                 e.preventDefault();
-                
                 try {
                     const id = document.getElementById('edit-id').value;
-                    
-                    // --- VALIDACIÓN LIMITANTE DEL PROYECTO ---
                     const configuredDays = Math.max(1, Number(config.projectDays || getTaskDurationDays(config.projectStartDate, config.projectEndDate) || 30));
                     let earliestStart = config.projectStartDate ? parseDateLocal(config.projectStartDate).getTime() : null;
                     tasks.forEach(t => {
@@ -2973,42 +2397,32 @@
                             if (!earliestStart || d < earliestStart) earliestStart = d;
                         }
                     });
-                    
+
                     const formDateStartRaw = document.getElementById('task-date-start').value;
                     const currentTaskStart = parseDateLocal(formDateStartRaw).getTime();
-                    if (!earliestStart || currentTaskStart < earliestStart) {
-                        earliestStart = currentTaskStart;
-                    }
-                    
+                    if (!earliestStart || currentTaskStart < earliestStart) { earliestStart = currentTaskStart; }
+
                     const maxAllowedEndMs = config.projectEndDate ? parseDateLocal(config.projectEndDate).getTime() : earliestStart + ((configuredDays - 1) * 86400000);
                     const formDateEndRaw = document.getElementById('task-date-end').value || formDateStartRaw;
                     const currentTaskEndMs = parseDateLocal(formDateEndRaw).getTime();
-                    
+
                     if (currentTaskEndMs > maxAllowedEndMs) {
                         const maxDateObj = new Date(maxAllowedEndMs);
                         const maxDateStr = `${maxDateObj.getFullYear()}-${String(maxDateObj.getMonth() + 1).padStart(2, '0')}-${String(maxDateObj.getDate()).padStart(2, '0')}`;
                         window.showAlert(`Vigencia de Proyecto Excedida: El proyecto dura un máximo de ${configuredDays} días. La fecha fin de la tarea no puede superar el límite del ${maxDateStr}.`);
-                        return; // Bloquear guardado
+                        return;
                     }
-                    // ------------------------------------------
 
                     const labels = readTaskLabelsInput();
-
-                    // Extraer Links Dinámicos
                     const linksContainer = document.getElementById('task-links-container');
                     const links = Array.from(linksContainer.querySelectorAll('.link-input')).map(i => i.value.trim()).filter(v => v);
-                    
-                    // Extraer Subtareas Dinámicas
+
                     const subtasksContainer = document.getElementById('task-subtasks-container');
                     const subtasks = Array.from(subtasksContainer.querySelectorAll('.subtask-item')).map(div => {
                         const titleInput = div.querySelector('.subtask-title-input');
                         const cbInput = div.querySelector('.subtask-done-cb');
                         const durationInput = div.querySelector('.subtask-duration-input');
-                        return {
-                            title: titleInput ? titleInput.value.trim() : '',
-                            done: cbInput ? cbInput.checked : false,
-                            durationDays: Math.max(1, Number(durationInput ? durationInput.value : 1) || 1)
-                        };
+                        return { title: titleInput ? titleInput.value.trim() : '', done: cbInput ? cbInput.checked : false, durationDays: Math.max(1, Number(durationInput ? durationInput.value : 1) || 1) };
                     }).filter(st => st.title);
 
                     const parentDuration = getTaskDurationDays(document.getElementById('task-date-start').value, document.getElementById('task-date-end').value);
@@ -3020,23 +2434,17 @@
 
                     const existingTask = tasks.find(t => t.id === id) || {};
                     const data = {
-                        title: document.getElementById('task-title').value, 
+                        title: document.getElementById('task-title').value,
                         role: document.getElementById('task-role').value,
-                        assignee: document.getElementById('task-assignee').value, 
+                        assignee: document.getElementById('task-assignee').value,
                         status: document.getElementById('task-status').value || 'backlog',
-                        dateStart: document.getElementById('task-date-start').value, 
+                        dateStart: document.getElementById('task-date-start').value,
                         dateEnd: document.getElementById('task-date-end').value,
-                        labels: labels, 
-                        links: links, 
+                        labels: labels,
+                        links: links,
                         subtasks: subtasks,
-                        todoistProjectId: existingTask.todoistProjectId || '',
-                        todoistSectionId: existingTask.todoistSectionId || '',
-                        todoistLabels: existingTask.todoistLabels || [],
                         priority: Number(document.getElementById('task-priority')?.value || 1),
-                        todoistTaskId: existingTask.todoistTaskId || '',
-                        todoistSyncedAt: existingTask.todoistSyncedAt || null,
-                        todoistUpdatedAt: existingTask.todoistUpdatedAt || null,
-                        updatedBy: currentUser, 
+                        updatedBy: currentUser,
                         timestamp: Date.now()
                     };
 
@@ -3046,29 +2454,21 @@
 
                     if (data.status === 'done' && (roleName.includes('dax') || titleLower.includes('dax'))) {
                         const pendingModel = tasks.filter(t => t.id !== id && (t.title.toLowerCase().includes('modelo') || t.title.toLowerCase().includes('relación')) && t.status !== 'done');
-                        if (pendingModel.length > 0) {
-                            window.showAlert(`Bloqueo: Finaliza el Modelo de Datos antes del DAX.`);
-                            return;
-                        }
+                        if (pendingModel.length > 0) { window.showAlert(`Bloqueo: Finaliza el Modelo de Datos antes del DAX.`); return; }
                     }
 
-                    if (id) {
-                        await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'tasks', id), data);
-                    } else {
-                        data.comments = [];
-                        await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'tasks'), data);
+                    if (id) { 
+                        await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'tasks', id), data); 
+                    } else { 
+                        data.comments = []; 
+                        await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'tasks'), data); 
+                        // --- ALERTA DE NUEVA TAREA A GOOGLE CHAT ---
+                        window.sendGoogleChatAlert(data.title, 'creado una nueva tarea', currentUser);
                     }
                     window.closeModal();
-                } catch (err) {
-                    console.error("Error capturado al guardar: ", err);
-                    window.showAlert("Error al guardar tarea: " + err.message);
-                }
+                } catch (err) { window.showAlert("Error al guardar tarea: " + err.message); }
             });
         }
-
-        window.renderUI = renderUI;
-        window.renderGanttView = renderGanttView;
-        window.renderCalendarView = renderCalendarView;
 
         init();
     </script>
