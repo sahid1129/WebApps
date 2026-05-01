@@ -7,6 +7,8 @@
     <link rel="icon" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">📅</text></svg>'>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- SCRIPT DE EMAILJS -->
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
     <script>
         // CONFIGURACIÓN CRÍTICA: Activar modo oscuro por clase en Tailwind
         tailwind.config = {
@@ -389,9 +391,9 @@
                     <h2 class="text-3xl font-black text-slate-900 dark:text-white tracking-tighter">Dashboard de Métricas 📊</h2>
                 </div>
                 <div class="flex items-center gap-4 w-full sm:w-auto">
-                    <!-- BOTÓN ENVÍO DE REPORTE API/WEBHOOK -->
+                    <!-- BOTÓN ENVÍO DE REPORTE EMAILJS -->
                     <button onclick="window.sendProgressReport()" class="px-5 py-3 bg-emerald-600/90 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-md hover:scale-105 transition-transform flex items-center gap-2">
-                        📤 Enviar Reporte
+                        📤 Enviar Reporte por Correo
                     </button>
                     <select id="metrics-user-filter" onchange="renderAdvancedMetrics()" class="glass-ui text-slate-700 dark:text-slate-200 text-[11px] font-black uppercase rounded-xl px-4 py-3 outline-none cursor-pointer hover:text-indigo-600 w-full sm:w-auto">
                         <option value="all">👥 Mostrar Todo el Equipo</option>
@@ -730,18 +732,28 @@
                     </div>
                 </div>
 
-                <!-- SECCIÓN: REPORTES POR EMAIL / WEBHOOK -->
+                <!-- SECCIÓN: EMAILJS CONFIG -->
                 <div class="bg-emerald-50/50 dark:bg-emerald-900/20 backdrop-blur-sm p-6 rounded-2xl border border-emerald-200 dark:border-emerald-800/50">
-                    <h4 class="text-[10px] font-black text-emerald-700 dark:text-emerald-400 uppercase mb-2 tracking-widest flex items-center gap-2"><span class="text-base">📧</span> Reportes de Avance (API/Email)</h4>
-                    <p class="text-[9px] text-slate-600 dark:text-slate-400 mb-4 font-bold uppercase tracking-wide">Configura un Webhook (Ej. Zapier, Make o Apps Script) que dispare correos electrónicos con los KPIs del proyecto en JSON.</p>
+                    <h4 class="text-[10px] font-black text-emerald-700 dark:text-emerald-400 uppercase mb-2 tracking-widest flex items-center gap-2"><span class="text-base">📧</span> Reportes Automáticos EmailJS</h4>
+                    <p class="text-[9px] text-slate-600 dark:text-slate-400 mb-4 font-bold uppercase tracking-wide">Configura tus credenciales de EmailJS para el envío automático a las 9:00 AM o envío manual.</p>
                     <div class="space-y-4">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase mb-1">Service ID</label>
+                                <input type="text" id="edit-emailjs-service" class="w-full glass-ui text-slate-900 dark:text-white rounded-xl p-3 text-xs font-bold outline-none focus:border-emerald-500/50" placeholder="Ej: service_xxxxxx">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase mb-1">Template ID</label>
+                                <input type="text" id="edit-emailjs-template" class="w-full glass-ui text-slate-900 dark:text-white rounded-xl p-3 text-xs font-bold outline-none focus:border-emerald-500/50" placeholder="Ej: template_xxxxxx">
+                            </div>
+                        </div>
                         <div>
-                            <label class="block text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase mb-1">Webhook URL de Reportes 🔗</label>
-                            <input type="url" id="edit-report-webhook" class="w-full glass-ui text-slate-900 dark:text-white rounded-xl p-3 text-xs font-bold outline-none focus:border-indigo-500/50" placeholder="https://script.google.com/macros/s/...">
+                            <label class="block text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase mb-1">Public Key</label>
+                            <input type="text" id="edit-emailjs-key" class="w-full glass-ui text-slate-900 dark:text-white rounded-xl p-3 text-xs font-bold outline-none focus:border-emerald-500/50" placeholder="Ej: xXxXxXxXxXxXxXx">
                         </div>
                         <div>
                             <label class="block text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase mb-1">Correos Destinatarios (Separados por coma) ✉️</label>
-                            <input type="text" id="edit-report-emails" class="w-full glass-ui text-slate-900 dark:text-white rounded-xl p-3 text-xs font-bold outline-none focus:border-indigo-500/50" placeholder="ejemplo@gmail.com, jefe@gmail.com">
+                            <input type="text" id="edit-report-emails" class="w-full glass-ui text-slate-900 dark:text-white rounded-xl p-3 text-xs font-bold outline-none focus:border-emerald-500/50" placeholder="ejemplo@gmail.com, jefe@gmail.com">
                         </div>
                     </div>
                 </div>
@@ -871,8 +883,14 @@
             infoPucpLink: '#',
             calendarUrl: '',
             chatWebhook: '',
-            reportWebhook: '',
+            
+            // EMAILJS CONFIGS
+            emailjsService: '',
+            emailjsTemplate: '',
+            emailjsKey: '',
             reportEmails: '',
+            lastAutoReportDate: '',
+
             customLinks: [],
             projectDays: 30,
             projectStartDate: '',
@@ -892,7 +910,32 @@
         let currentAssigneeFilter = 'all';
         let currentView = 'kanban';
         let heartbeatInterval = null;
-        let metricsChartsObj = {}; // Almacenar instancias de Chart.js
+        let autoReportInterval = null;
+        let metricsChartsObj = {};
+
+        // --- SISTEMA CRON AUTOMÁTICO PARA EMAILJS ---
+        // Verifica si ya son las 9:00 AM y si no se ha enviado el correo hoy.
+        async function checkAndSendAutoReport() {
+            if (!config.emailjsService || !config.emailjsTemplate || !config.emailjsKey || !config.reportEmails) return;
+            
+            const now = new Date();
+            // Verifica que sea entre las 9:00 y las 9:05 AM
+            if (now.getHours() === 9 && now.getMinutes() >= 0 && now.getMinutes() <= 5) {
+                const todayStr = now.toISOString().split('T')[0]; // Ej: 2024-05-01
+                
+                if (config.lastAutoReportDate !== todayStr) {
+                    try {
+                        // Bloqueo optimista
+                        await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'config', 'master'), { lastAutoReportDate: todayStr });
+                        // El que logró actualizarlo, dispara el correo
+                        await window.sendProgressReport(true); 
+                        console.log("Correo automático enviado con éxito.");
+                    } catch (e) {
+                        console.log("Otro cliente ya envió el reporte automático.");
+                    }
+                }
+            }
+        }
 
         window.toggleDarkMode = () => {
             const html = document.documentElement;
@@ -1022,30 +1065,25 @@
             document.getElementById('notif-dropdown').classList.add('hidden');
         };
 
-        // --- SISTEMA DE ALERTA API A GOOGLE CHAT ---
         window.sendGoogleChatAlert = async (taskTitle, actionDesc, author) => {
             if (!config.chatWebhook) return;
             try {
                 await fetch(config.chatWebhook, {
-                    method: 'POST',
-                    mode: 'no-cors',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        text: `🔔 *Aviso del Tablero SAID*\nEl usuario *${author}* ha ${actionDesc}:\n> 📌 Tarea: *${taskTitle}*`
-                    })
+                    method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text: `🔔 *Aviso del Tablero SAID*\nEl usuario *${author}* ha ${actionDesc}:\n> 📌 Tarea: *${taskTitle}*` })
                 });
-            } catch (err) {
-                console.error("No se pudo conectar con el webhook de Google Chat:", err);
-            }
+            } catch (err) { console.error("No se pudo conectar con Chat:", err); }
         };
 
-        // --- SISTEMA DE REPORTES DE AVANCE API (EMAIL/MAKE/ZAPIER) ---
-        window.sendProgressReport = async () => {
-            if (!config.reportWebhook) {
-                return window.showAlert("❌ No se ha configurado la URL del Webhook de Reportes (En configuración de Admin).");
+        // --- SISTEMA DE REPORTES INTEGRADO CON EMAILJS ---
+        window.sendProgressReport = async (isAuto = false) => {
+            if (!config.emailjsService || !config.emailjsTemplate || !config.emailjsKey) {
+                if(!isAuto) window.showAlert("❌ No se ha configurado EmailJS en el panel de administrador (Service ID, Template ID y Public Key).");
+                return;
             }
             if (!config.reportEmails || config.reportEmails.trim() === '') {
-                return window.showAlert("❌ Falta configurar los Correos Destinatarios en la configuración del proyecto.");
+                if(!isAuto) window.showAlert("❌ Faltan los correos destinatarios en la configuración del proyecto.");
+                return;
             }
             
             // Recolectar datos y métricas
@@ -1056,38 +1094,47 @@
             const overdueTasks = activeTasks.filter(t => t.status !== 'done' && ganttTaskEnd(t) < new Date()).length;
             const completionRate = totalTasks > 0 ? Math.round((doneTasks / totalTasks) * 100) : 0;
             
-            // Limpiar correos
+            let totalLeadDays = 0;
+            activeTasks.filter(t => t.status === 'done').forEach(t => { totalLeadDays += (ganttDiffDays(ganttTaskEnd(t), ganttTaskStart(t)) + 1); });
+            const avgLeadTime = doneTasks > 0 ? Math.round(totalLeadDays / doneTasks) : 0;
+
+            const priorityCounts = {
+                p1: activeTasks.filter(t => t.status !== 'done' && Number(t.priority) === 4).length,
+                p2: activeTasks.filter(t => t.status !== 'done' && Number(t.priority) === 3).length,
+                p3: activeTasks.filter(t => t.status !== 'done' && Number(t.priority) === 2).length,
+                p4: activeTasks.filter(t => t.status !== 'done' && Number(t.priority) === 1).length
+            };
+            
             const cleanEmails = config.reportEmails.split(',').map(e => e.trim()).filter(e => e).join(',');
 
-            const payload = {
-                action: "progress_report",
-                systemName: "BI Kanban Cloud",
-                senderName: currentUser,
-                timestamp: new Date().toISOString(),
-                targetEmails: cleanEmails,
-                metrics: {
-                    totalTasks: totalTasks,
-                    doneTasks: doneTasks,
-                    activeWipTasks: wipTasks,
-                    overdueTasks: overdueTasks,
-                    completionPercentage: completionRate
-                }
+            // Inicializar SDK de EmailJS con la llave pública
+            emailjs.init(config.emailjsKey.trim());
+
+            // Preparar parámetros exactos que se inyectarán en la plantilla
+            const templateParams = {
+                to_emails: cleanEmails,
+                senderName: isAuto ? "Sistema Automático Kanban" : currentUser,
+                date: new Date().toLocaleDateString('es-PE'),
+                time: new Date().toLocaleTimeString('es-PE'),
+                totalTasks: totalTasks,
+                doneTasks: doneTasks,
+                wipTasks: wipTasks,
+                overdueTasks: overdueTasks,
+                completionPercentage: completionRate,
+                avgLeadTime: avgLeadTime,
+                priority1: priorityCounts.p1,
+                priority2: priorityCounts.p2,
+                priority3: priorityCounts.p3,
+                priority4: priorityCounts.p4
             };
             
             try {
-                // EVADIR CORS PREFLIGHT USANDO URLSearchParams
-                // Los datos se envían como si fueran un formulario tradicional HTML
-                const formData = new URLSearchParams();
-                formData.append('payload', JSON.stringify(payload));
-
-                await fetch(config.reportWebhook.trim(), {
-                    method: 'POST',
-                    mode: 'no-cors',
-                    body: formData
-                });
-                window.showAlert("✅ Petición de reporte automático enviada a tu correo.");
+                if(!isAuto) window.showAlert("⏳ Enviando correos, por favor espera...");
+                await emailjs.send(config.emailjsService.trim(), config.emailjsTemplate.trim(), templateParams);
+                if(!isAuto) window.showAlert("✅ Reporte enviado con éxito a todos los correos.");
             } catch (err) {
-                window.showAlert("⚠️ Se intentó enviar la petición, pero hubo un error local: " + err.message);
+                console.error("Error EmailJS:", err);
+                if(!isAuto) window.showAlert("⚠️ Error al enviar correo: " + (err.text || err.message || "Verifica tus credenciales."));
             }
         };
 
@@ -1127,7 +1174,6 @@
 
             const listL = document.getElementById('label-suggestions');
             if(listL) {
-                // Solo se usan etiquetas locales puras
                 const mergedLabels = Array.from(new Set(labels));
                 listL.innerHTML = mergedLabels.map(l => `<option value="${l}">`).join('');
             }
@@ -1153,10 +1199,7 @@
             });
         }
 
-        window.setAssigneeFilter = (val) => {
-            currentAssigneeFilter = val;
-            renderUI();
-        };
+        window.setAssigneeFilter = (val) => { currentAssigneeFilter = val; renderUI(); };
 
         function renderComments(comments) {
             const list = document.getElementById('comments-list');
@@ -1210,7 +1253,6 @@
             if (e.target?.id === 'task-labels') renderTaskLabelSuggestions();
         });
 
-        // Configuración API Básica 
         function renderApiConfigForm() {
             const m = config.metricsConfig || { showStatus: true, showTimeline: true, showWorkload: true, showPriority: true, excludeBacklog: false };
             document.getElementById('metrics-exclude-backlog').checked = !!m.excludeBacklog;
@@ -1220,7 +1262,6 @@
             document.getElementById('metrics-show-priority').checked = !!m.showPriority;
         }
 
-        // --- SISTEMA DINÁMICO DE ENLACES GENERALES Y TAREAS ---
         window.addCustomLinkInput = (title = '', url = '') => {
             const container = document.getElementById('custom-links-config-container');
             const div = document.createElement('div');
@@ -1280,36 +1321,21 @@
             archived: { label: 'Archivado', color: '#64748b', tint: 'bg-slate-100 dark:bg-slate-900/40' }
         };
 
-        function escapeHtml(value) {
-            return String(value ?? '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[char]));
-        }
-
-        function ganttDate(value) {
+        function escapeHtml(value) { return String(value ?? '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[char])); }
+        function ganttDate(value) { 
             if (!value) return null;
             const parts = String(value).split('-').map(Number);
             if (parts.length !== 3 || parts.some(Number.isNaN)) return null;
             return new Date(parts[0], parts[1] - 1, parts[2]);
         }
-
-        function ganttAddDays(date, days) {
-            const next = new Date(date);
-            next.setDate(next.getDate() + days);
-            return next;
-        }
-
-        function ganttDiffDays(a, b) {
+        function ganttAddDays(date, days) { const next = new Date(date); next.setDate(next.getDate() + days); return next; }
+        function ganttDiffDays(a, b) { 
             const startA = new Date(a.getFullYear(), a.getMonth(), a.getDate());
             const startB = new Date(b.getFullYear(), b.getMonth(), b.getDate());
-            return Math.round((startA - startB) / 86400000);
+            return Math.round((startA - startB) / 86400000); 
         }
-
         function ganttTaskStart(task) { return ganttDate(task.dateStart) || ganttDate(task.dateEnd) || new Date(); }
-        function ganttTaskEnd(task) {
-            const start = ganttTaskStart(task);
-            const explicitEnd = ganttDate(task.dateEnd);
-            return explicitEnd && explicitEnd >= start ? explicitEnd : start;
-        }
-
+        function ganttTaskEnd(task) { const s=ganttTaskStart(task); const e=ganttDate(task.dateEnd); return e&&e>=s?e:s; }
         function getTaskDurationDays(startValue, endValue) {
             const start = ganttDate(startValue);
             const end = ganttDate(endValue);
@@ -1317,46 +1343,22 @@
             if (start && end && end >= start) return ganttDiffDays(end, start) + 1;
             return 1;
         }
-        
-        // --- CÁLCULO DINÁMICO EN EL MODAL ---
-        window.updateProjectDaysCount = () => {
-            const start = document.getElementById('edit-project-start')?.value;
-            const end = document.getElementById('edit-project-end')?.value;
-            if (start && end) {
-                const days = getTaskDurationDays(start, end);
-                const daysInput = document.getElementById('edit-project-days');
-                if(daysInput) daysInput.value = days;
-            }
+
+        window.updateProjectDaysCount = () => { 
+            const s=document.getElementById('edit-project-start')?.value; 
+            const e=document.getElementById('edit-project-end')?.value; 
+            if(s&&e) { 
+                const d=getTaskDurationDays(s,e); 
+                const input=document.getElementById('edit-project-days'); 
+                if(input) input.value=d; 
+            } 
         };
 
         function ganttIsCompact() { return document.getElementById('gantt-density')?.value === 'compact'; }
-
-        function ganttRowHeight(row) {
-            if (ganttIsCompact()) return row.type === 'group' ? 34 : (row.type === 'role' ? 28 : 32);
-            return row.type === 'group' ? 58 : (row.type === 'role' ? 44 : 52);
-        }
-
-        function ganttSmartColor(task, role) {
-            if (task.status === 'done') return '#10b981';
-            const end = ganttTaskEnd(task);
-            const isLate = task.status !== 'done' && end < new Date();
-            if (isLate) return '#ef4444';
-            if (task.status === 'review') return '#a855f7';
-            if (task.status === 'progress') return role?.color || '#6366f1';
-            return ganttStatusMeta[task.status || 'backlog'].color;
-        }
-
-        function ganttTaskProgress(task) {
-            if (task.status === 'done') return 100;
-            const subtasks = task.subtasks || [];
-            if (subtasks.length) return Math.round((subtasks.filter(st => st.done).length / subtasks.length) * 100);
-            if (task.status === 'review') return 80;
-            if (task.status === 'progress') return 50;
-            if (task.status === 'todo') return 15;
-            return 0;
-        }
-
-        function ganttVisibleTasks() {
+        function ganttRowHeight(row) { return ganttIsCompact()?(row.type==='group'?34:(row.type==='role'?28:32)):(row.type==='group'?58:(row.type==='role'?44:52)); }
+        function ganttSmartColor(task, role) { if(task.status==='done')return'#10b981'; const end=ganttTaskEnd(task); if(task.status!=='done'&&end<new Date())return'#ef4444'; if(task.status==='review')return'#a855f7'; if(task.status==='progress')return role?.color||'#6366f1'; return ganttStatusMeta[task.status||'backlog'].color; }
+        function ganttTaskProgress(task) { if(task.status==='done')return 100; const s=task.subtasks||[]; if(s.length)return Math.round((s.filter(st=>st.done).length/s.length)*100); if(task.status==='review')return 80; if(task.status==='progress')return 50; if(task.status==='todo')return 15; return 0; }
+        function ganttVisibleTasks() { 
             return tasks.filter(t => {
                 const activeStatus = ['backlog', 'todo', 'progress', 'review', 'done'].includes(t.status || 'backlog');
                 const labelMatch = currentFilter === 'all' || (t.labels && t.labels.includes(currentFilter));
@@ -1402,7 +1404,6 @@
 
             const configuredDays = Math.max(1, Number(config.projectDays || getTaskDurationDays(config.projectStartDate, config.projectEndDate) || 30));
             
-            // Logica indicadora Gantt
             const indicatorTasks = (config.ganttIndicatorScope || 'filtered') === 'all' ? tasks.filter(t => ['backlog', 'todo', 'progress', 'review', 'done'].includes(t.status || 'backlog')) : visible;
             const progressStatuses = config.ganttProgressStatuses || ['review', 'done'];
             const advancedCount = indicatorTasks.filter(task => (task.status === 'done' && progressStatuses.includes('done')) || (task.status === 'review' && progressStatuses.includes('review'))).length;
@@ -1510,10 +1511,7 @@
             todayLine.style.left = `${todayOffset}px`;
             todayLine.style.display = todayOffset >= 0 && todayOffset <= totalDays * dayWidth ? 'block' : 'none';
         }
-        
         window.renderGanttView = renderGanttView;
-
-        // --- SISTEMA DE GESTIÓN DE CALENDARIOS (FRACCIONADO Y PRIVADOS) ---
 
         window.toggleCalendarPanel = () => {
             if (currentView !== 'kanban') {
@@ -1575,13 +1573,10 @@
                 }
             }
 
-            // AUTO-FIX MEJORADO: Extraer el 'src=' incluso si pegan el iframe completo o si no tiene 'embed'
             if (srcUrl) {
-                // Si el usuario pegó todo el <iframe src="...">
                 const iframeSrcMatch = srcUrl.match(/src="([^"]+)"/);
                 if (iframeSrcMatch) srcUrl = iframeSrcMatch[1];
                 
-                // Si pegó un enlace normal de calendario (no embed)
                 if (srcUrl.includes('calendar.google.com') && !srcUrl.includes('embed')) {
                     const matchCid = srcUrl.match(/src=([^&]+)/) || srcUrl.match(/cid=([^&]+)/);
                     if (matchCid) {
@@ -1592,7 +1587,7 @@
 
             if (srcUrl && srcUrl.startsWith('http')) {
                 if (iframe.src !== srcUrl) iframe.src = srcUrl;
-                iframe.style.opacity = '0.85'; // Fusión con el panel transparente
+                iframe.style.opacity = '0.85'; 
                 iframe.style.pointerEvents = 'auto';
                 if (emptyMsg) emptyMsg.style.opacity = '0';
             } else {
@@ -1633,18 +1628,12 @@
             }
         };
 
-
-        // --- SISTEMA AVANZADO DE MÉTRICAS (EXPERT) ---
-        
         window.toggleMetricsView = () => {
             const container = document.getElementById('metrics-modal-overlay');
-            if (!container) return;
-            const isHidden = container.classList.contains('hidden');
-            
-            if (isHidden) {
-                container.classList.remove('hidden');
-                populateMetricsUserFilter();
-                window.renderAdvancedMetrics();
+            if (container.classList.contains('hidden')) { 
+                container.classList.remove('hidden'); 
+                populateMetricsUserFilter(); 
+                window.renderAdvancedMetrics(); 
             } else {
                 container.classList.add('hidden');
             }
@@ -1665,7 +1654,6 @@
         }
 
         window.renderAdvancedMetrics = () => {
-            // Destruir gráficos anteriores
             Object.values(metricsChartsObj).forEach(chart => { if (chart) chart.destroy(); });
             metricsChartsObj = {};
 
@@ -1677,24 +1665,20 @@
             const userFilter = document.getElementById('metrics-user-filter')?.value || 'all';
             const mc = config.metricsConfig || { showStatus: true, showTimeline: true, showWorkload: true, showPriority: true, excludeBacklog: false };
             
-            // Ocultar tarjetas según admin config
             document.getElementById('chart-card-status').style.display = mc.showStatus ? 'block' : 'none';
             document.getElementById('chart-card-timeline').style.display = mc.showTimeline ? 'block' : 'none';
             document.getElementById('chart-card-workload').style.display = mc.showWorkload ? 'block' : 'none';
             document.getElementById('chart-card-priority').style.display = mc.showPriority ? 'block' : 'none';
 
-            // Filtrar Tareas para el Dashboard
             let dataset = tasks.filter(t => t.status !== 'archived');
             if (mc.excludeBacklog) dataset = dataset.filter(t => t.status !== 'backlog');
             if (userFilter !== 'all') dataset = dataset.filter(t => t.assignee === userFilter);
 
-            // CALCULAR KPIs
             const totalTasks = dataset.length;
             const doneTasks = dataset.filter(t => t.status === 'done').length;
             const wipTasks = dataset.filter(t => ['todo', 'progress', 'review'].includes(t.status)).length;
             const overdueTasks = dataset.filter(t => t.status !== 'done' && ganttTaskEnd(t) < new Date()).length;
             
-            // Lead Time Estimado (Promedio días desde inicio a fin para completadas)
             let totalLeadDays = 0;
             dataset.filter(t => t.status === 'done').forEach(t => {
                 totalLeadDays += (ganttDiffDays(ganttTaskEnd(t), ganttTaskStart(t)) + 1);
@@ -1702,10 +1686,9 @@
             const avgLeadTime = doneTasks > 0 ? Math.round(totalLeadDays / doneTasks) : 0;
             const completionRate = totalTasks > 0 ? Math.round((doneTasks / totalTasks) * 100) : 0;
 
-            // Rango de Proyecto para métricas
             let projectDaysLeft = "N/A";
             if (config.projectEndDate) {
-                const endD = new Date(config.projectEndDate + 'T23:59:59'); // Forzar fin de día
+                const endD = new Date(config.projectEndDate + 'T23:59:59');
                 const today = new Date();
                 const diff = Math.ceil((endD - today) / (1000 * 60 * 60 * 24));
                 projectDaysLeft = diff >= 0 ? `${diff} d.` : `Vencido`;
@@ -1732,7 +1715,6 @@
                 `).join('');
             }
 
-            // DOUGHNUT: Estado
             if (mc.showStatus) {
                 const statusCounts = {
                     backlog: dataset.filter(t => t.status === 'backlog').length,
@@ -1769,25 +1751,12 @@
                 }
             }
 
-            // LINE: Timeline (Evolución Simulada)
             if (mc.showTimeline) {
                 const ctxTime = document.getElementById('canvas-metrics-timeline');
                 if (ctxTime) {
-                    const sortedEndDates = dataset.filter(t => t.status === 'done').map(ganttTaskEnd).sort((a,b) => a-b);
                     const labels = ["Inicio", "Tercio 1", "Tercio 2", "Actualidad"];
-                    // Simulamos tendencia usando divisiones de avance para tener un timeline estable
-                    const progressData = [
-                        0,
-                        Math.round(doneTasks * 0.3),
-                        Math.round(doneTasks * 0.7),
-                        doneTasks
-                    ];
-                    const pendingData = [
-                        totalTasks,
-                        totalTasks - Math.round(doneTasks * 0.3),
-                        totalTasks - Math.round(doneTasks * 0.7),
-                        totalTasks - doneTasks
-                    ];
+                    const progressData = [0, Math.round(doneTasks * 0.3), Math.round(doneTasks * 0.7), doneTasks];
+                    const pendingData = [totalTasks, totalTasks - Math.round(doneTasks * 0.3), totalTasks - Math.round(doneTasks * 0.7), totalTasks - doneTasks];
 
                     metricsChartsObj.timeline = new Chart(ctxTime, {
                         type: 'line',
@@ -1807,7 +1776,6 @@
                 }
             }
 
-            // BAR: Workload (Solo visible lógicamente si están "Todos" o se muestra el detalle del único)
             if (mc.showWorkload) {
                 const ctxWork = document.getElementById('canvas-metrics-workload');
                 if (ctxWork) {
@@ -1842,11 +1810,10 @@
                 }
             }
 
-            // POLAR AREA: Prioridad
             if (mc.showPriority) {
                 const ctxPri = document.getElementById('canvas-metrics-priority');
                 if (ctxPri) {
-                    const activeDataset = dataset.filter(t => t.status !== 'done'); // Enfocarse en lo pendiente
+                    const activeDataset = dataset.filter(t => t.status !== 'done');
                     const priorityCounts = {
                         "Urgent (P1)": activeDataset.filter(t => Number(t.priority) === 4).length,
                         "Alta (P2)": activeDataset.filter(t => Number(t.priority) === 3).length,
@@ -1861,10 +1828,10 @@
                             datasets: [{
                                 data: Object.values(priorityCounts),
                                 backgroundColor: [
-                                    'rgba(239, 68, 68, 0.7)',  // P1 - Red
-                                    'rgba(245, 158, 11, 0.7)', // P2 - Orange
-                                    'rgba(59, 130, 246, 0.7)', // P3 - Blue
-                                    'rgba(148, 163, 184, 0.7)' // P4 - Slate
+                                    'rgba(239, 68, 68, 0.7)', 
+                                    'rgba(245, 158, 11, 0.7)',
+                                    'rgba(59, 130, 246, 0.7)',
+                                    'rgba(148, 163, 184, 0.7)'
                                 ],
                                 borderWidth: isDark ? 0 : 1
                             }]
@@ -1879,7 +1846,6 @@
             }
         };
 
-        // --- INTERCEPTAR ACTUALIZACIÓN UI PARA MÉTRICAS REALTIME ---
         const renderUIBase = function() {
             const statuses = ['backlog', 'todo', 'progress', 'review', 'done'];
             const allLabels = new Set();
@@ -2006,7 +1972,6 @@
 
         window.renderUI = function() {
             renderUIBase.call(this);
-            // Actualización Automática del Dashboard si está visible
             const metricsOverlay = document.getElementById('metrics-modal-overlay');
             if (metricsOverlay && !metricsOverlay.classList.contains('hidden')) {
                 window.renderAdvancedMetrics();
@@ -2034,14 +1999,14 @@
                 onAuthStateChanged(auth, (user) => {
                     if (user) {
                         const savedUser = localStorage.getItem('bi_kanban_user');
-                        if (savedUser) {
-                            currentUser = savedUser;
-                            document.getElementById('auth-overlay').classList.add('hidden');
-                            startSync();
-                        } else {
-                            document.getElementById('loading-overlay').classList.add('hidden');
-                            document.getElementById('auth-overlay').classList.remove('hidden');
-                            startSyncOnlyUsers();
+                        if (savedUser) { 
+                            currentUser = savedUser; 
+                            document.getElementById('auth-overlay').classList.add('hidden'); 
+                            startSync(); 
+                        } else { 
+                            document.getElementById('loading-overlay').classList.add('hidden'); 
+                            document.getElementById('auth-overlay').classList.remove('hidden'); 
+                            startSyncOnlyUsers(); 
                         }
                     }
                 });
@@ -2061,6 +2026,9 @@
 
             startPresenceHeartbeat();
             checkAdminAccess(); 
+
+            if(autoReportInterval) clearInterval(autoReportInterval);
+            autoReportInterval = setInterval(checkAndSendAutoReport, 60000); 
 
             onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'roles'), (snap) => {
                 roles = snap.docs.map(d => ({id: d.id, ...d.data()}));
@@ -2099,10 +2067,81 @@
                     }
                     updateCalendarSelector();
                 } else {
-                    setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'config', 'master'), { available: true, link: '#', infoPucpLink: '#', calendarUrl: '', chatWebhook: '', reportWebhook: '', reportEmails: '', customLinks: [], metricsConfig: config.metricsConfig });
+                    setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'config', 'master'), { available: true, link: '#', infoPucpLink: '#', calendarUrl: '', chatWebhook: '', emailjsService: '', emailjsTemplate: '', emailjsKey: '', reportEmails: '', customLinks: [], metricsConfig: config.metricsConfig });
                 }
             });
         }
+
+        window.saveConfigLinks = async () => {
+            const customLinks = Array.from(document.querySelectorAll('.custom-link-item')).map(div => ({
+                title: div.querySelector('.custom-link-title').value.trim(),
+                url: div.querySelector('.custom-link-url').value.trim()
+            })).filter(l => l.title && l.url);
+
+            await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'config', 'master'), {
+                link: document.getElementById('edit-drive-link').value,
+                infoPucpLink: document.getElementById('edit-pucp-link').value,
+                calendarUrl: document.getElementById('edit-calendar-url').value,
+                chatWebhook: document.getElementById('edit-chat-webhook').value,
+                
+                emailjsService: document.getElementById('edit-emailjs-service').value,
+                emailjsTemplate: document.getElementById('edit-emailjs-template').value,
+                emailjsKey: document.getElementById('edit-emailjs-key').value,
+                reportEmails: document.getElementById('edit-report-emails').value,
+
+                projectStartDate: document.getElementById('edit-project-start')?.value || '',
+                projectEndDate: document.getElementById('edit-project-end')?.value || '',
+                projectDays: Math.max(1, Number(document.getElementById('edit-project-days')?.value || getTaskDurationDays(document.getElementById('edit-project-start')?.value, document.getElementById('edit-project-end')?.value) || config.projectDays || 30)),
+                ganttIndicatorScope: document.getElementById('edit-gantt-scope')?.value || config.ganttIndicatorScope || 'filtered',
+                ganttProgressStatuses: ['review', 'done'].filter(status => document.getElementById(status === 'review' ? 'edit-progress-review' : 'edit-progress-done')?.checked),
+                customLinks: customLinks,
+                metricsConfig: {
+                    excludeBacklog: document.getElementById('metrics-exclude-backlog').checked,
+                    showStatus: document.getElementById('metrics-show-status').checked,
+                    showTimeline: document.getElementById('metrics-show-timeline').checked,
+                    showWorkload: document.getElementById('metrics-show-workload').checked,
+                    showPriority: document.getElementById('metrics-show-priority').checked,
+                }
+            });
+            window.closeFileEditModal();
+            renderUI();
+        };
+
+        window.openFileEditModal = () => {
+            if (currentUser?.toUpperCase() !== 'ADMIN') return window.showAlert("Solo el ADMIN puede acceder a la configuración.");
+
+            document.getElementById('edit-drive-link').value = config.link || '';
+            document.getElementById('edit-pucp-link').value = config.infoPucpLink || '';
+            document.getElementById('edit-calendar-url').value = config.calendarUrl || '';
+            document.getElementById('edit-chat-webhook').value = config.chatWebhook || '';
+            
+            document.getElementById('edit-emailjs-service').value = config.emailjsService || '';
+            document.getElementById('edit-emailjs-template').value = config.emailjsTemplate || '';
+            document.getElementById('edit-emailjs-key').value = config.emailjsKey || '';
+            document.getElementById('edit-report-emails').value = config.reportEmails || '';
+
+            const projectStartInput = document.getElementById('edit-project-start');
+            const projectEndInput = document.getElementById('edit-project-end');
+            if (projectStartInput) projectStartInput.value = config.projectStartDate || '';
+            if (projectEndInput) projectEndInput.value = config.projectEndDate || '';
+            window.updateProjectDaysCount();
+
+            const ganttScopeInput = document.getElementById('edit-gantt-scope');
+            if (ganttScopeInput) ganttScopeInput.value = config.ganttIndicatorScope || 'filtered';
+            const progressStatuses = config.ganttProgressStatuses || ['review', 'done'];
+            const progressReview = document.getElementById('edit-progress-review');
+            const progressDone = document.getElementById('edit-progress-done');
+            if (progressReview) progressReview.checked = progressStatuses.includes('review');
+            if (progressDone) progressDone.checked = progressStatuses.includes('done');
+            renderApiConfigForm();
+
+            const customLinksConfigContainer = document.getElementById('custom-links-config-container');
+            customLinksConfigContainer.innerHTML = '';
+            const customLinks = config.customLinks || [];
+            customLinks.forEach(l => window.addCustomLinkInput(l.title, l.url));
+
+            document.getElementById('file-modal-overlay').classList.remove('hidden');
+        };
 
         window.toggleRegisterView = (show) => {
             const loginV = document.getElementById('login-view');
@@ -2165,7 +2204,6 @@
             if (!/^\d{6}$/.test(pass)) { window.showAlert("La contraseña debe tener 6 números."); return; }
             if (registeredUsers.find(u => u.name.toLowerCase() === name.toLowerCase())) { window.showAlert("Este usuario ya existe."); return; }
             try {
-                // Se agregan los personalCalendars como array vacio al crear cuenta
                 await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'users'), { name: name, password: pass, registeredAt: Date.now(), isOnline: true, lastActive: Date.now(), notifications: [], personalCalendars: [] });
                 currentUser = name;
                 localStorage.setItem('bi_kanban_user', currentUser);
@@ -2180,75 +2218,10 @@
         window.renderAuthList = () => {
             const container = document.getElementById('auth-existing-list');
             if(!container) return;
-            container.innerHTML = registeredUsers.map(u => `<button onclick="window.checkUserBeforeLogin('${u.name}');" class="glass-ui p-3 rounded-2xl text-[10px] font-black text-slate-800 dark:text-slate-300 truncate uppercase shadow-sm">${u.name}</button>`).join('') || '<p class="col-span-2 text-[9px] text-slate-500 italic text-center py-4">No hay responsables</p>';
-        };
-
-        const commentInput = document.getElementById('comment-input');
-        const mentionDropdown = document.getElementById('mention-dropdown');
-        if (commentInput && mentionDropdown) {
-            commentInput.addEventListener('input', (e) => {
-                const text = e.target.value;
-                const cursorPos = e.target.selectionStart;
-                const textBeforeCursor = text.slice(0, cursorPos);
-                const match = textBeforeCursor.match(/@([a-zA-ZáéíóúÁÉÍÓÚñÑ]*)$/);
-                if (match) {
-                    const search = match[1].toLowerCase();
-                    const filteredUsers = registeredUsers.filter(u => u.name !== currentUser && u.name.toLowerCase().includes(search));
-                    if (filteredUsers.length > 0) {
-                        mentionDropdown.innerHTML = filteredUsers.map(u => `
-                            <div class="px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700/50 cursor-pointer border-b border-slate-200 dark:border-slate-600/50 last:border-0 transition-colors" onclick="window.insertMention('${u.name}')">
-                                <p class="text-[11px] font-black text-slate-800 dark:text-slate-200">@${u.name}</p>
-                            </div>
-                        `).join('');
-                        mentionDropdown.classList.remove('hidden');
-                    } else { mentionDropdown.classList.add('hidden'); }
-                } else { mentionDropdown.classList.add('hidden'); }
-            });
-            document.addEventListener('click', (e) => { if(e.target !== commentInput && !mentionDropdown.contains(e.target)) mentionDropdown.classList.add('hidden'); });
-        }
-
-        window.insertMention = (name) => {
-            const cursorPos = commentInput.selectionStart;
-            const text = commentInput.value;
-            const newText = text.slice(0, text.slice(0, cursorPos).lastIndexOf('@')) + `@${name} ` + text.slice(cursorPos);
-            commentInput.value = newText;
-            mentionDropdown.classList.add('hidden');
-            commentInput.focus();
+            container.innerHTML = registeredUsers.map(u => `<button onclick="window.checkUserBeforeLogin('${u.name}');" class="glass-ui p-3 rounded-2xl text-[10px] font-black text-slate-800 dark:text-slate-300 truncate uppercase shadow-sm hover:scale-105 transition-transform">${u.name}</button>`).join('') || '<p class="col-span-2 text-[9px] text-slate-500 italic text-center py-4">No hay responsables</p>';
         };
 
         window.deleteUser = async (id) => { if (confirm("¿Eliminar este responsable?")) await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', id)); };
-
-        window.saveConfigLinks = async () => {
-            const customLinks = Array.from(document.querySelectorAll('.custom-link-item')).map(div => ({
-                title: div.querySelector('.custom-link-title').value.trim(),
-                url: div.querySelector('.custom-link-url').value.trim()
-            })).filter(l => l.title && l.url);
-
-            await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'config', 'master'), {
-                link: document.getElementById('edit-drive-link').value,
-                infoPucpLink: document.getElementById('edit-pucp-link').value,
-                calendarUrl: document.getElementById('edit-calendar-url').value,
-                chatWebhook: document.getElementById('edit-chat-webhook').value,
-                reportWebhook: document.getElementById('edit-report-webhook').value,
-                reportEmails: document.getElementById('edit-report-emails').value,
-                projectStartDate: document.getElementById('edit-project-start')?.value || '',
-                projectEndDate: document.getElementById('edit-project-end')?.value || '',
-                projectDays: Math.max(1, Number(document.getElementById('edit-project-days')?.value || getTaskDurationDays(document.getElementById('edit-project-start')?.value, document.getElementById('edit-project-end')?.value) || config.projectDays || 30)),
-                ganttIndicatorScope: document.getElementById('edit-gantt-scope')?.value || config.ganttIndicatorScope || 'filtered',
-                ganttProgressStatuses: ['review', 'done'].filter(status => document.getElementById(status === 'review' ? 'edit-progress-review' : 'edit-progress-done')?.checked),
-                customLinks: customLinks,
-                metricsConfig: {
-                    excludeBacklog: document.getElementById('metrics-exclude-backlog').checked,
-                    showStatus: document.getElementById('metrics-show-status').checked,
-                    showTimeline: document.getElementById('metrics-show-timeline').checked,
-                    showWorkload: document.getElementById('metrics-show-workload').checked,
-                    showPriority: document.getElementById('metrics-show-priority').checked,
-                }
-            });
-            window.closeFileEditModal();
-            renderUI(); // Forzar actualización de Gantt/Métricas inmediatamente después de guardar
-        };
-
         window.toggleMasterFileStatus = async () => { await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'config', 'master'), { available: !config.available }); };
 
         window.editTask = (id) => {
@@ -2306,7 +2279,6 @@
                 const nextData = { status: newStatus, timestamp: Date.now() };
                 await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'tasks', taskId), nextData);
 
-                // --- ALERTA GOOGLE CHAT POR CAMBIO DE ESTADO IMPORTANTE ---
                 if (newStatus === 'done' || newStatus === 'review') {
                     window.sendGoogleChatAlert(task.title, `movido la tarea a ${newStatus.toUpperCase()}`, currentUser);
                 }
@@ -2368,6 +2340,39 @@
             renderComments(newComments);
         };
 
+        const commentInput = document.getElementById('comment-input');
+        const mentionDropdown = document.getElementById('mention-dropdown');
+        if (commentInput && mentionDropdown) {
+            commentInput.addEventListener('input', (e) => {
+                const text = e.target.value;
+                const cursorPos = e.target.selectionStart;
+                const textBeforeCursor = text.slice(0, cursorPos);
+                const match = textBeforeCursor.match(/@([a-zA-ZáéíóúÁÉÍÓÚñÑ]*)$/);
+                if (match) {
+                    const search = match[1].toLowerCase();
+                    const filteredUsers = registeredUsers.filter(u => u.name !== currentUser && u.name.toLowerCase().includes(search));
+                    if (filteredUsers.length > 0) {
+                        mentionDropdown.innerHTML = filteredUsers.map(u => `
+                            <div class="px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700/50 cursor-pointer border-b border-slate-200 dark:border-slate-600/50 last:border-0 transition-colors" onclick="window.insertMention('${u.name}')">
+                                <p class="text-[11px] font-black text-slate-800 dark:text-slate-200">@${u.name}</p>
+                            </div>
+                        `).join('');
+                        mentionDropdown.classList.remove('hidden');
+                    } else { mentionDropdown.classList.add('hidden'); }
+                } else { mentionDropdown.classList.add('hidden'); }
+            });
+            document.addEventListener('click', (e) => { if(e.target !== commentInput && !mentionDropdown.contains(e.target)) mentionDropdown.classList.add('hidden'); });
+        }
+
+        window.insertMention = (name) => {
+            const cursorPos = commentInput.selectionStart;
+            const text = commentInput.value;
+            const newText = text.slice(0, text.slice(0, cursorPos).lastIndexOf('@')) + `@${name} ` + text.slice(cursorPos);
+            commentInput.value = newText;
+            mentionDropdown.classList.add('hidden');
+            commentInput.focus();
+        };
+
         window.openFileLinkWithInternalLog = async () => {
             if (!config.available) { window.showAlert("El archivo maestro está EN USO por otro usuario. No puedes ingresar en este momento."); return; }
             if (!config.link || config.link === '#') return;
@@ -2401,12 +2406,10 @@
         window.switchView = (view) => {
             currentView = view;
             
-            // Logica del fraccionado: Kanban siempre se queda visible estructuralmente, pero se esconde si vas al gantt/historial
             document.getElementById('kanban-container').classList.toggle('hidden', view !== 'kanban');
             document.getElementById('gantt-view').classList.toggle('hidden', view !== 'gantt');
             document.getElementById('archive-view').classList.toggle('hidden', view !== 'archive');
             
-            // Ocultar calendario panel si cambiamos de vista (excepto si estamos en kanban y abrimos el panel)
             if (view !== 'kanban') {
                 document.getElementById('calendar-side-panel').classList.add('hidden');
             }
@@ -2418,7 +2421,6 @@
             document.getElementById('view-gantt').className = `flex-1 px-6 py-2 rounded-xl text-xs font-black transition-all ${view === 'gantt' ? active : inactive} uppercase`;
             document.getElementById('view-archive').className = `flex-1 px-6 py-2 rounded-xl text-xs font-black transition-all ${view === 'archive' ? active : inactive} uppercase`;
             
-            // El estado del botón de calendario depende del panel lateral
             const calBtn = document.getElementById('view-calendar');
             if (view !== 'calendar') {
                  calBtn.className = `flex-1 px-6 py-2 rounded-xl text-xs font-black transition-all ${!document.getElementById('calendar-side-panel').classList.contains('hidden') ? active : inactive} uppercase`;
@@ -2426,43 +2428,12 @@
 
             if (view === 'gantt') renderGanttView();
         };
+
         window.allowDrop = (e) => { e.preventDefault(); e.currentTarget.classList.add('drag-over'); };
         window.setFilter = (t) => { currentFilter = t; renderUI(); };
         window.showAlert = (m) => { document.getElementById('alert-message').innerText = m; document.getElementById('alert-overlay').classList.remove('hidden'); };
         window.closeAlert = () => document.getElementById('alert-overlay').classList.add('hidden');
 
-        window.openFileEditModal = () => {
-            if (currentUser?.toUpperCase() !== 'ADMIN') return window.showAlert("Acceso denegado: Solo el ADMIN puede acceder a la configuración del proyecto.");
-
-            document.getElementById('edit-drive-link').value = config.link || '';
-            document.getElementById('edit-pucp-link').value = config.infoPucpLink || '';
-            document.getElementById('edit-calendar-url').value = config.calendarUrl || '';
-            document.getElementById('edit-chat-webhook').value = config.chatWebhook || '';
-            document.getElementById('edit-report-webhook').value = config.reportWebhook || '';
-            document.getElementById('edit-report-emails').value = config.reportEmails || '';
-
-            const projectStartInput = document.getElementById('edit-project-start');
-            const projectEndInput = document.getElementById('edit-project-end');
-            if (projectStartInput) projectStartInput.value = config.projectStartDate || '';
-            if (projectEndInput) projectEndInput.value = config.projectEndDate || '';
-            window.updateProjectDaysCount();
-
-            const ganttScopeInput = document.getElementById('edit-gantt-scope');
-            if (ganttScopeInput) ganttScopeInput.value = config.ganttIndicatorScope || 'filtered';
-            const progressStatuses = config.ganttProgressStatuses || ['review', 'done'];
-            const progressReview = document.getElementById('edit-progress-review');
-            const progressDone = document.getElementById('edit-progress-done');
-            if (progressReview) progressReview.checked = progressStatuses.includes('review');
-            if (progressDone) progressDone.checked = progressStatuses.includes('done');
-            renderApiConfigForm();
-
-            const customLinksConfigContainer = document.getElementById('custom-links-config-container');
-            customLinksConfigContainer.innerHTML = '';
-            const customLinks = config.customLinks || [];
-            customLinks.forEach(l => window.addCustomLinkInput(l.title, l.url));
-
-            document.getElementById('file-modal-overlay').classList.remove('hidden');
-        };
         window.closeFileEditModal = () => document.getElementById('file-modal-overlay').classList.add('hidden');
 
         window.startValidation = (taskId, type) => {
@@ -2600,7 +2571,6 @@
                     } else { 
                         data.comments = []; 
                         await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'tasks'), data); 
-                        // --- ALERTA DE NUEVA TAREA A GOOGLE CHAT ---
                         window.sendGoogleChatAlert(data.title, 'creado una nueva tarea', currentUser);
                     }
                     window.closeModal();
