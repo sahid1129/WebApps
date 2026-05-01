@@ -24,8 +24,9 @@
         /* TRANSICIÓN BASE Y FONDOS MULTICOLOR INTACTOS */
         body {
             transition: background-color 0.4s, color 0.4s;
-            background-color: #ffffff; /* Fondo modo día blanco limpio */
-            background-image: none !important; /* Se remueve degradado en modo claro */
+            background-color: #f8fafc;
+            background-image: radial-gradient(at 0% 0%, hsla(210, 80%, 94%, 1) 0px, transparent 50%),
+                              radial-gradient(at 100% 0%, hsla(270, 70%, 95%, 1) 0px, transparent 50%) !important;
             color: #1e293b;
         }
 
@@ -53,11 +54,11 @@
         }
 
         /* --- COLORES POTENCIADOS 50% MODO DÍA --- */
-        #col-backlog { background-color: #dbeafe !important; border-color: #93c5fd !important; }
-        #col-todo { background-color: #fef3c7 !important; border-color: #fcd34d !important; }
-        #col-progress { background-color: #e0e7ff !important; border-color: #a5b4fc !important; }
-        #col-review { background-color: #f3e8ff !important; border-color: #d8b4fe !important; }
-        #col-done { background-color: #d1fae5 !important; border-color: #6ee7b7 !important; }
+        #col-backlog { background-color: #bfdbfe !important; border-color: #60a5fa !important; }
+        #col-todo { background-color: #fde68a !important; border-color: #fbbf24 !important; }
+        #col-progress { background-color: #c7d2fe !important; border-color: #818cf8 !important; }
+        #col-review { background-color: #e9d5ff !important; border-color: #c084fc !important; }
+        #col-done { background-color: #a7f3d0 !important; border-color: #34d399 !important; }
 
         html.dark #col-backlog { background-color: rgba(30, 41, 59, 0.6) !important; border-color: #475569 !important; }
         html.dark #col-todo { background-color: rgba(120, 53, 15, 0.4) !important; border-color: rgba(180, 83, 9, 0.5) !important; }
@@ -347,17 +348,17 @@
             </div>
 
             <!-- Panel Derecho Glass -->
-            <div id="file-status-panel" class="glass-ui p-4 rounded-full flex flex-col sm:flex-row items-center gap-6 w-full xl:w-auto relative z-10">
-                <div class="flex items-center gap-3 pl-2">
+            <div id="file-status-panel" class="glass-ui p-4 rounded-full flex flex-col sm:flex-row items-center gap-6 w-full xl:w-auto relative z-10 transition-all">
+                <div id="master-file-ui-1" class="flex items-center gap-3 pl-2">
                     <div id="status-indicator" class="w-3.5 h-3.5 rounded-full bg-red-500 border-2 border-white/50 dark:border-slate-700"></div>
                     <div>
                         <p class="text-[9px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-0.5">Archivo Maestro</p>
                         <h4 id="status-text" class="text-[11px] font-black text-red-500 dark:text-red-400 uppercase">EN USO ⛔</h4>
                     </div>
                 </div>
-                <div class="flex flex-wrap items-center gap-2 border-l-2 pl-4 border-slate-200 dark:border-slate-700/50">
-                    <button onclick="toggleMasterFileStatus()" class="text-indigo-700 bg-indigo-50 dark:bg-transparent dark:text-slate-300 px-4 py-2 rounded-xl text-[9px] font-black uppercase border border-transparent">🔄 Estado</button>
-                    <button id="btn-open-drive" onclick="openFileLinkWithInternalLog()" class="bg-indigo-600/90 dark:bg-indigo-500/80 text-white px-4 py-2 rounded-xl flex items-center gap-2 border border-indigo-500/50 transition-all"><span class="text-[9px] font-black uppercase">📂 Archivo Maestro </span></button>
+                <div id="master-file-ui-buttons" class="flex flex-wrap items-center gap-2 border-l-2 pl-4 border-slate-200 dark:border-slate-700/50 transition-all">
+                    <button id="master-file-ui-2" onclick="toggleMasterFileStatus()" class="text-indigo-700 bg-indigo-50 dark:bg-transparent dark:text-slate-300 px-4 py-2 rounded-xl text-[9px] font-black uppercase border border-transparent">🔄 Estado</button>
+                    <button id="master-file-ui-3" onclick="openFileLinkWithInternalLog()" class="bg-indigo-600/90 dark:bg-indigo-500/80 text-white px-4 py-2 rounded-xl flex items-center gap-2 border border-indigo-500/50 transition-all"><span class="text-[9px] font-black uppercase">📂 Archivo Maestro </span></button>
                     
                     <!-- BOTÓN CRONOGRAMA DINÁMICO -->
                     <button id="btn-view-schedule" onclick="openScheduleModal()" class="hidden bg-amber-500/90 dark:bg-amber-600/80 text-white px-4 py-2 rounded-xl flex items-center gap-2 border border-amber-500/50 transition-all"><span class="text-[9px] font-black uppercase">📅 Cronograma</span></button>
@@ -656,25 +657,10 @@
                         <div id="task-label-suggestions-bar" class="mt-2 flex flex-wrap gap-1.5"></div>
                     </div>
 
-                    <!-- SECCIÓN: ARCHIVOS ADJUNTOS (FIREBASE STORAGE) -->
-                    <div class="pt-2">
-                        <label class="flex justify-between items-center text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase mb-2 border-b border-slate-200 dark:border-slate-700/50 pb-2">
-                            <span>Archivos Adjuntos 📎</span>
-                            <div class="flex items-center gap-2">
-                                <span id="upload-status" class="text-[9px] text-indigo-500 font-bold hidden"><span class="loader-ring align-middle mr-1"></span> Subiendo...</span>
-                                <label class="text-emerald-600 dark:text-emerald-400 hover:scale-105 transition-transform bg-transparent cursor-pointer no-yellow-hover font-bold">
-                                    ➕ Subir Archivo
-                                    <input type="file" id="task-file-input" class="hidden" multiple onchange="window.handleFileUpload(event)">
-                                </label>
-                            </div>
-                        </label>
-                        <div id="task-files-container" class="mt-3 flex flex-col gap-2"></div>
-                    </div>
-
                     <!-- SECCIÓN: MÚLTIPLES ENLACES EXTERNOS -->
                     <div class="pt-2">
                         <label class="flex justify-between items-center text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase mb-2 border-b border-slate-200 dark:border-slate-700/50 pb-2">
-                            <span>Enlaces Web Adicionales 🔗</span>
+                            <span>Enlaces Web y de Archivos (Drive) 🔗</span>
                             <button type="button" onclick="window.addLinkInput()" class="text-indigo-600 dark:text-amber-400 hover:scale-105 transition-transform bg-transparent border-0 p-0 shadow-none no-yellow-hover">➕ Añadir Enlace</button>
                         </label>
                         <div id="task-links-container" class="space-y-2 mt-2"></div>
@@ -692,7 +678,7 @@
             </div>
 
             <!-- Panel Derecho del Modal (Comentarios) -->
-            <div id="comments-section" class="w-full lg:w-80 bg-slate-50/50 dark:bg-slate-900/50 backdrop-blur-md p-6 flex flex-col border-l border-slate-200 dark:border-slate-700/50 relative overflow-y-auto">
+            <div id="comments-section" class="w-full lg:w-80 bg-slate-50/50 dark:bg-slate-900/50 backdrop-blur-md p-6 flex flex-col border-l border-slate-200 dark:border-slate-700/50 relative overflow-y-auto transition-all duration-300">
                 <h4 class="text-xs font-black text-slate-600 dark:text-slate-400 uppercase mb-6 tracking-widest flex items-center gap-2"><span class="text-lg">💬</span> Notas</h4>
                 <div id="comments-list" class="flex-1 overflow-y-auto space-y-4 mb-6 text-xs custom-scrollbar pr-2 min-h-[150px]"></div>
 
@@ -745,6 +731,14 @@
             <h3 class="text-2xl font-black text-slate-900 dark:text-white mb-6">Configuración de Proyecto</h3>
             <div class="space-y-8">
                 
+                <!-- SECCIÓN: HABILITAR ARCHIVO MAESTRO -->
+                <div class="bg-slate-50/50 dark:bg-slate-900/50 backdrop-blur-sm p-6 rounded-2xl border border-slate-200 dark:border-slate-700/50">
+                    <h4 class="text-[10px] font-black text-indigo-700 dark:text-amber-400 uppercase mb-4 tracking-widest flex items-center gap-2">Visibilidad de Herramientas ⚙️</h4>
+                    <label class="glass-ui p-3 rounded-xl flex items-center gap-3 text-[10px] font-black text-slate-600 dark:text-slate-300 uppercase cursor-pointer">
+                        <input type="checkbox" id="edit-show-master-file" class="w-4 h-4 cursor-pointer"> Habilitar Botón y Estado de Archivo Maestro
+                    </label>
+                </div>
+
                 <!-- SECCIÓN: RANGO DE PROYECTO -->
                 <div class="bg-indigo-50/50 dark:bg-indigo-900/20 backdrop-blur-sm p-6 rounded-2xl border border-indigo-200 dark:border-indigo-800/50">
                     <h4 class="text-[10px] font-black text-indigo-700 dark:text-indigo-400 uppercase mb-4 tracking-widest flex items-center gap-2"><span class="text-base">📆</span> Rango y Tiempo del Proyecto</h4>
@@ -785,10 +779,16 @@
                             <label class="block text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase mb-1">Google Chat Webhook (Para alertas en el chat) 💬</label>
                             <input type="url" id="edit-chat-webhook" class="w-full glass-ui text-slate-900 dark:text-white rounded-xl p-3 text-xs font-bold outline-none focus:border-indigo-500/50" placeholder="https://chat.googleapis.com/v1/spaces/.../messages?...">
                         </div>
-                        <!-- NUEVO: CRONOGRAMA IMAGEN -->
+                        
+                        <!-- NUEVO: CRONOGRAMA IMAGEN BASE64 -->
                         <div class="border-t border-slate-200 dark:border-slate-700/50 pt-4 mt-2">
-                            <label class="block text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase mb-1 flex items-center gap-2">URL Imagen del Cronograma/Plazos 🖼️ <input type="checkbox" id="edit-schedule-image-enable" class="w-3 h-3"></label>
-                            <input type="url" id="edit-schedule-image-url" class="w-full glass-ui text-slate-900 dark:text-white rounded-xl p-3 text-xs font-bold outline-none focus:border-indigo-500/50" placeholder="https://mi-imagen.com/cronograma.jpg">
+                            <label class="block text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase mb-1 flex items-center gap-2">Imagen del Cronograma/Plazos 🖼️ <input type="checkbox" id="edit-schedule-image-enable" class="w-3 h-3 cursor-pointer" title="Habilitar visualización de cronograma"></label>
+                            <div class="flex flex-col gap-2 mt-2">
+                                <label class="text-[10px] font-bold text-slate-500 uppercase">1. Subir desde el equipo (Se guardará directamente en base de datos):</label>
+                                <input type="file" id="edit-schedule-image-file" accept="image/*" class="w-full glass-ui text-slate-900 dark:text-white rounded-xl p-2 text-xs font-bold outline-none focus:border-indigo-500/50 cursor-pointer" onchange="window.handleScheduleImage(event)">
+                                <label class="text-[10px] font-bold text-slate-500 uppercase mt-2">2. O pegar una URL directa:</label>
+                                <input type="text" id="edit-schedule-image-url" class="w-full glass-ui text-slate-900 dark:text-white rounded-xl p-3 text-xs font-bold outline-none focus:border-indigo-500/50" placeholder="https://mi-imagen.com/cronograma.jpg o texto Base64">
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -932,7 +932,7 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, setDoc, updateDoc, deleteDoc, collection, onSnapshot, addDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-        import { getStorage, ref, uploadBytesResumable, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js";
+        // NOTA: Se eliminó el import de Storage a petición.
 
         const firebaseConfig = {
             apiKey: "AIzaSyCNsvuEiZkJHZM2ct4XTIVZC1rgNOWRb_c",
@@ -946,7 +946,7 @@
 
         const appId = "pucp-bi-kanban-v2";
 
-        let app, auth, db, storage;
+        let app, auth, db;
         let currentUser = null;
         let tasks = [];
         let roles = [];
@@ -968,6 +968,7 @@
             
             scheduleImageUrl: '',
             scheduleImageEnable: false,
+            showMasterFile: true, // Nuevo: Visualización de Archivo Maestro
 
             customLinks: [],
             projectDays: 30,
@@ -990,8 +991,6 @@
         let heartbeatInterval = null;
         let autoReportInterval = null;
         let metricsChartsObj = {};
-        
-        let tempTaskFiles = []; // Para manejar archivos en el modal antes de guardar
         let isModalCalendarOpen = false;
 
         // --- SISTEMA INTELIGENTE DE DETECCIÓN DE LINKS ---
@@ -1011,96 +1010,43 @@
             if (lower.includes('zoom.us')) return { name: "Zoom", icon: "📹", url };
             if (lower.includes('meet.google.com')) return { name: "Meet", icon: "🎥", url };
             
-            return { name: "Pág Web", icon: "🌐", url };
+            return { name: "Enlace Web", icon: "🌐", url };
         }
 
-        // --- DETECCIÓN DE EMOJIS POR EXTENSIÓN ---
-        function getFileEmoji(filename) {
-            const extMatch = filename.match(/\.([^.]+)$/);
-            const ext = extMatch ? extMatch[1].toLowerCase() : '';
-            const map = {
-                'pdf': '📄', 'zip': '🗜️', 'rar': '🗜️', '7z': '🗜️', 'tar': '🗜️',
-                'png': '🖼️', 'jpg': '🖼️', 'jpeg': '🖼️', 'gif': '🖼️', 'svg': '🖼️', 'webp': '🖼️',
-                'doc': '📝', 'docx': '📝', 'txt': '📝', 'rtf': '📝',
-                'xls': '📊', 'xlsx': '📊', 'csv': '📊',
-                'ppt': '🎦', 'pptx': '🎦',
-                'mp4': '🎬', 'mov': '🎬', 'avi': '🎬',
-                'mp3': '🎵', 'wav': '🎵',
-                'json': '⚙️', 'xml': '⚙️'
-            };
-            return map[ext] || '📎';
-        }
-
-        // --- MANEJO DE ARCHIVOS FIREBASE STORAGE ---
-        window.handleFileUpload = async (event) => {
-            const files = event.target.files;
-            if (!files || files.length === 0) return;
-            
-            const statusIndicator = document.getElementById('upload-status');
-            statusIndicator.classList.remove('hidden');
-            
-            const taskId = document.getElementById('edit-id').value || `temp_${Date.now()}`;
-
-            for (let i = 0; i < files.length; i++) {
-                const file = files[i];
-                const storagePath = `artifacts/${appId}/tasks/${taskId}/${Date.now()}_${file.name}`;
-                const fileRef = ref(storage, storagePath);
-                
-                try {
-                    const snapshot = await uploadBytesResumable(fileRef, file);
-                    const downloadURL = await getDownloadURL(snapshot.ref);
-                    
-                    tempTaskFiles.push({
-                        name: file.name,
-                        url: downloadURL,
-                        path: storagePath,
-                        size: file.size,
-                        uploadedAt: Date.now()
-                    });
-                } catch (error) {
-                    console.error("Error al subir:", error);
-                    window.showAlert(`Error subiendo ${file.name}: ${error.message}`);
-                }
-            }
-            
-            statusIndicator.classList.add('hidden');
-            renderTaskFiles();
-            event.target.value = ''; // Reset
-        };
-
-        window.removeTaskFile = async (index) => {
-            const file = tempTaskFiles[index];
+        // --- MANEJO DE IMAGEN PARA CRONOGRAMA A BASE64 ---
+        window.handleScheduleImage = (event) => {
+            const file = event.target.files[0];
             if (!file) return;
-            // Opcional: Eliminar físicamente del Storage para ahorrar espacio
-            try {
-                if (file.path) await deleteObject(ref(storage, file.path));
-            } catch(e) { console.warn("No se pudo eliminar de storage", e); }
-            
-            tempTaskFiles.splice(index, 1);
-            renderTaskFiles();
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const img = new Image();
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    // Reducir la imagen para que encaje correctamente en Firestore
+                    const MAX_WIDTH = 1200;
+                    const MAX_HEIGHT = 1200;
+                    let width = img.width;
+                    let height = img.height;
+                    
+                    if (width > height) {
+                        if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; }
+                    } else {
+                        if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; }
+                    }
+                    
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+                    
+                    // Convertir a JPEG comprimido
+                    const dataUrl = canvas.toDataURL('image/jpeg', 0.65); 
+                    document.getElementById('edit-schedule-image-url').value = dataUrl;
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
         };
-
-        function renderTaskFiles() {
-            const container = document.getElementById('task-files-container');
-            if(!container) return;
-            
-            container.innerHTML = tempTaskFiles.map((file, idx) => {
-                const emoji = getFileEmoji(file.name);
-                const kb = Math.round(file.size / 1024);
-                return `
-                    <div class="flex items-center justify-between glass-ui p-2 rounded-xl border border-slate-200 dark:border-slate-700/50 bg-slate-50 dark:bg-slate-800/50">
-                        <div class="flex items-center gap-2 overflow-hidden flex-1">
-                            <span class="text-lg leading-none">${emoji}</span>
-                            <div class="flex flex-col overflow-hidden">
-                                <a href="${file.url}" target="_blank" class="text-[10px] font-black text-indigo-700 dark:text-indigo-400 hover:underline truncate" title="${escapeHtml(file.name)}">${escapeHtml(file.name)}</a>
-                                <span class="text-[8px] text-slate-500 uppercase font-bold">${kb} KB</span>
-                            </div>
-                        </div>
-                        <button type="button" onclick="window.removeTaskFile(${idx})" class="text-red-500 hover:bg-red-100 dark:hover:bg-red-900/30 p-1.5 rounded-lg transition-colors ml-2">❌</button>
-                    </div>
-                `;
-            }).join('');
-        }
 
 
         // --- SISTEMA CRON AUTOMÁTICO PARA EMAILJS ---
@@ -1203,7 +1149,7 @@
         function updateStatusUI() {
             const ind = document.getElementById('status-indicator');
             const txt = document.getElementById('status-text');
-            const btnDrive = document.getElementById('btn-open-drive');
+            const btnDrive = document.getElementById('master-file-ui-3'); // botón Archivo Maestro
             const btnSchedule = document.getElementById('btn-view-schedule');
             
             if(!ind || !txt) return;
@@ -1218,6 +1164,21 @@
             }
             if (btnSchedule) {
                 btnSchedule.classList.toggle('hidden', !config.scheduleImageEnable || !config.scheduleImageUrl);
+            }
+
+            // Ocultar/Mostrar el grupo del archivo maestro según configuración
+            const showMaster = config.showMasterFile !== false;
+            document.getElementById('master-file-ui-1').style.display = showMaster ? 'flex' : 'none';
+            document.getElementById('master-file-ui-2').style.display = showMaster ? 'block' : 'none';
+            if(btnDrive) btnDrive.style.display = showMaster ? 'flex' : 'none';
+
+            const leftBorderContainer = document.getElementById('master-file-ui-buttons');
+            if (leftBorderContainer) {
+                if (!showMaster) {
+                    leftBorderContainer.classList.remove('border-l-2', 'pl-4');
+                } else {
+                    leftBorderContainer.classList.add('border-l-2', 'pl-4');
+                }
             }
         }
 
@@ -1466,7 +1427,7 @@
             const div = document.createElement('div');
             div.className = 'flex gap-2 items-center';
             div.innerHTML = `
-                <input type="url" value="${val}" placeholder="https://mi-enlace.com" class="link-input flex-1 glass-ui text-slate-900 dark:text-white rounded-xl p-3 text-sm outline-none focus:border-indigo-500/50 transition-colors">
+                <input type="url" value="${val}" placeholder="https://drive.google.com/..." class="link-input flex-1 glass-ui text-slate-900 dark:text-white rounded-xl p-3 text-sm outline-none focus:border-indigo-500/50 transition-colors">
                 <button type="button" onclick="this.parentElement.remove()" class="bg-red-50 dark:bg-red-900/30 text-red-500 hover:text-red-700 hover:bg-red-100 p-3 rounded-xl border border-transparent shadow-none transition-colors">❌</button>
             `;
             container.appendChild(div);
@@ -1742,13 +1703,33 @@
         window.toggleModalCalendar = () => {
             isModalCalendarOpen = !isModalCalendarOpen;
             const calSection = document.getElementById('modal-calendar-section');
+            const modalContainer = document.getElementById('task-modal-container');
+            const commentsSection = document.getElementById('comments-section');
+
             if (isModalCalendarOpen) {
                 calSection.classList.remove('hidden');
                 calSection.classList.add('flex');
+                
+                // Hacer la ventana principal mucho más ancha para acaparar todo
+                modalContainer.classList.remove('max-w-5xl');
+                modalContainer.classList.add('max-w-[96vw]', 'xl:max-w-[90rem]');
+                
+                // Minimizar sección de notas para ceder el máximo de espacio a la Tarea y Calendario
+                commentsSection.classList.remove('lg:w-80', 'p-6');
+                commentsSection.classList.add('lg:w-60', 'p-4');
+                
                 updateModalCalendarSelector();
             } else {
                 calSection.classList.add('hidden');
                 calSection.classList.remove('flex');
+                
+                // Restaurar tamaño de la ventana
+                modalContainer.classList.add('max-w-5xl');
+                modalContainer.classList.remove('max-w-[96vw]', 'xl:max-w-[90rem]');
+                
+                // Restaurar el tamaño de la sección de notas a la normalidad
+                commentsSection.classList.add('lg:w-80', 'p-6');
+                commentsSection.classList.remove('lg:w-60', 'p-4');
             }
         };
 
@@ -2189,16 +2170,6 @@
                         return `<button type="button" onclick="event.stopPropagation(); window.open('${sLink.url}', '_blank')" class="mt-2 w-full py-2 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white text-[9px] font-black rounded-xl border border-slate-200 dark:border-slate-600/50 uppercase shadow-sm flex items-center justify-center gap-2">${sLink.icon} ${sLink.name} ${taskLinks.length > 1 ? idx+1 : ''}</button>`;
                     }).join('');
                     
-                    // Renderizar chips de archivos si hay
-                    const taskFiles = task.files || [];
-                    let filesHtml = '';
-                    if (taskFiles.length > 0) {
-                        filesHtml = `<div class="mt-2 flex flex-wrap gap-1.5">` + taskFiles.map(f => {
-                            const e = getFileEmoji(f.name);
-                            return `<span class="text-[9px] bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-2 py-1 rounded-md text-slate-600 dark:text-slate-300 font-bold max-w-[120px] truncate" title="${escapeHtml(f.name)}">${e} ${escapeHtml(f.name)}</span>`;
-                        }).join('') + `</div>`;
-                    }
-
                     const subtasks = task.subtasks || [];
                     let subtasksHtml = '';
                     if (subtasks.length > 0) {
@@ -2243,7 +2214,6 @@
                         <div class="kanban-card-tags mb-2 flex flex-wrap gap-1 mt-1">${tags}</div>
                         <h3 class="task-title-clamp kanban-task-title font-black text-slate-900 dark:text-slate-100 text-[13px] mb-1 leading-snug" title="${escapeHtml(task.title || '')}">${escapeHtml(task.title || 'Sin titulo')}</h3>
                         ${subtasksHtml}
-                        ${filesHtml}
                         <div class="mt-2 space-y-1">${linksHtml}</div>
                         ${validationButtons}
                         <div class="flex items-center justify-between pt-4 mt-3 border-t border-slate-200 dark:border-slate-600/30 cursor-default">
@@ -2302,7 +2272,6 @@
                 app = initializeApp(firebaseConfig);
                 auth = getAuth(app);
                 db = getFirestore(app);
-                storage = getStorage(app); // Inicializar storage
 
                 await signInAnonymously(auth).catch(err => { throw new Error("AUTH_ERROR: " + err.message); });
 
@@ -2381,7 +2350,7 @@
                     }
                     updateCalendarSelector();
                 } else {
-                    setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'config', 'master'), { available: true, link: '#', infoPucpLink: '#', calendarUrl: '', chatWebhook: '', emailjsService: '', emailjsTemplate: '', emailjsKey: '', reportEmails: '', reportTime: '09:00', reportSender: '', scheduleImageUrl: '', scheduleImageEnable: false, customLinks: [], metricsConfig: config.metricsConfig });
+                    setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'config', 'master'), { available: true, link: '#', infoPucpLink: '#', calendarUrl: '', chatWebhook: '', emailjsService: '', emailjsTemplate: '', emailjsKey: '', reportEmails: '', reportTime: '09:00', reportSender: '', scheduleImageUrl: '', scheduleImageEnable: false, showMasterFile: true, customLinks: [], metricsConfig: config.metricsConfig });
                 }
             });
         }
@@ -2399,6 +2368,7 @@
                 chatWebhook: document.getElementById('edit-chat-webhook').value,
                 scheduleImageUrl: document.getElementById('edit-schedule-image-url').value,
                 scheduleImageEnable: document.getElementById('edit-schedule-image-enable').checked,
+                showMasterFile: document.getElementById('edit-show-master-file').checked,
                 
                 emailjsService: document.getElementById('edit-emailjs-service').value,
                 emailjsTemplate: document.getElementById('edit-emailjs-template').value,
@@ -2434,6 +2404,7 @@
             document.getElementById('edit-chat-webhook').value = config.chatWebhook || '';
             document.getElementById('edit-schedule-image-url').value = config.scheduleImageUrl || '';
             document.getElementById('edit-schedule-image-enable').checked = !!config.scheduleImageEnable;
+            document.getElementById('edit-show-master-file').checked = config.showMasterFile !== false;
             
             document.getElementById('edit-emailjs-service').value = config.emailjsService || '';
             document.getElementById('edit-emailjs-template').value = config.emailjsTemplate || '';
@@ -2564,10 +2535,6 @@
             linksContainer.innerHTML = '';
             const taskLinks = task.links || (task.link ? [task.link] : []);
             taskLinks.forEach(l => window.addLinkInput(l));
-            
-            // Archivos adjuntos
-            tempTaskFiles = task.files ? [...task.files] : [];
-            renderTaskFiles();
 
             const subtasksContainer = document.getElementById('task-subtasks-container');
             subtasksContainer.innerHTML = '';
@@ -2628,12 +2595,6 @@
             }
             if (confirm("¿Eliminar actividad permanentemente?")) {
                 try {
-                    // Limpiar storage de archivos de la tarea
-                    if(task.files && task.files.length > 0) {
-                        for(const file of task.files) {
-                            try { await deleteObject(ref(storage, file.path)); } catch(e){}
-                        }
-                    }
                     await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'tasks', id));
                     window.closeModal();
                 } catch (err) { window.showAlert("Error al eliminar: " + err.message); }
@@ -2720,12 +2681,7 @@
         window.openModal = () => {
             document.getElementById('task-form').reset();
             
-            // Generar ID temporal o dejar en blanco para que firebase lo asigne, 
-            // pero lo necesitamos para la ruta de storage si suben antes de guardar.
-            const newId = `temp_` + Date.now();
             document.getElementById('edit-id').value = ''; 
-            document.getElementById('task-title').setAttribute('data-temp-id', newId); // Guardamos para storage
-            
             document.getElementById('task-status').value = 'backlog';
             document.getElementById('task-assignee').value = currentUser;
             document.getElementById('task-priority').value = '1';
@@ -2734,9 +2690,6 @@
             document.getElementById('task-links-container').innerHTML = '';
             document.getElementById('task-subtasks-container').innerHTML = '';
             renderTaskLabelSuggestions();
-            
-            tempTaskFiles = [];
-            renderTaskFiles();
             
             document.getElementById('modal-overlay').classList.remove('hidden');
             renderComments([]);
@@ -2900,7 +2853,6 @@
                         dateEnd: document.getElementById('task-date-end').value,
                         labels: labels,
                         links: links,
-                        files: tempTaskFiles, // Vinculamos los archivos
                         subtasks: subtasks,
                         priority: Number(document.getElementById('task-priority')?.value || 1),
                         updatedBy: currentUser,
@@ -2921,6 +2873,7 @@
                     } else { 
                         data.comments = []; 
                         await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'tasks'), data); 
+                        // --- ALERTA DE NUEVA TAREA A GOOGLE CHAT ---
                         window.sendGoogleChatAlert(data.title, 'creado una nueva tarea', currentUser);
                     }
                     window.closeModal();
