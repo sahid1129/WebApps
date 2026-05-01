@@ -479,20 +479,26 @@
             </div>
         </div>
 
-        <!-- PANEL LATERAL DE CALENDARIO FRACCIONADO (Derecha, estático) -->
-        <div id="calendar-side-panel" class="hidden glass-ui rounded-[2rem] shadow-xl flex-col w-[350px] lg:w-[450px] h-[75vh] flex-shrink-0 sticky top-4 overflow-hidden transition-all duration-300 mb-8 border border-slate-200 dark:border-slate-700/50">
-            <div class="p-4 border-b border-slate-200 dark:border-slate-700/50 flex flex-col gap-3 bg-slate-50/50 dark:bg-slate-800/50">
+        <!-- PANEL LATERAL DE CALENDARIO FRACCIONADO (Derecha, estático y muy transparente) -->
+        <div id="calendar-side-panel" class="hidden glass-ui !bg-white/30 dark:!bg-slate-800/40 backdrop-blur-xl rounded-[2rem] shadow-xl flex-col w-[350px] lg:w-[450px] h-[75vh] flex-shrink-0 sticky top-4 overflow-hidden transition-all duration-300 mb-8 border border-white/40 dark:border-slate-700/50">
+            <div class="p-4 border-b border-slate-200/50 dark:border-slate-700/50 flex flex-col gap-3 bg-white/40 dark:bg-slate-800/50 backdrop-blur-md">
                 <div class="flex justify-between items-center">
                     <h3 class="text-[11px] font-black text-indigo-700 dark:text-amber-400 uppercase tracking-widest flex items-center gap-2"><span class="text-lg">📅</span> Calendarios</h3>
-                    <button onclick="window.openPersonalCalModal()" class="text-[10px] font-black glass-ui px-3 py-2 rounded-lg hover:text-indigo-600 transition-colors uppercase border border-transparent shadow-sm">⚙️ Mis Calendarios</button>
+                    <button onclick="window.openPersonalCalModal()" class="text-[10px] font-black glass-ui !bg-white/50 dark:!bg-slate-800/60 px-3 py-2 rounded-lg hover:text-indigo-800 transition-colors uppercase border border-transparent shadow-sm">⚙️ Mis Calendarios</button>
                 </div>
-                <select id="calendar-selector" onchange="window.changeCalendarSource()" class="w-full glass-ui text-slate-800 dark:text-white rounded-xl p-3 text-xs font-bold outline-none focus:border-indigo-500/50 cursor-pointer">
+                <select id="calendar-selector" onchange="window.changeCalendarSource()" class="w-full glass-ui !bg-white/60 dark:!bg-slate-800/60 text-slate-800 dark:text-white rounded-xl p-3 text-xs font-bold outline-none focus:border-indigo-500/50 cursor-pointer">
                     <option value="master">🌐 Calendario Maestro (General)</option>
                     <!-- Las opciones de los 5 calendarios personales se llenan aquí -->
                 </select>
             </div>
-            <div class="flex-1 bg-white dark:bg-slate-900 p-0 relative">
-                <iframe id="side-calendar-frame" title="Google Calendar" src="about:blank" class="w-full h-full border-0 absolute inset-0"></iframe>
+            <!-- CONTENEDOR FLEX DEL IFRAME PARA FORZAR TAMAÑO -->
+            <div class="flex-1 w-full h-full flex flex-col relative overflow-hidden bg-transparent rounded-b-[2rem]">
+                <div id="calendar-empty-msg" class="text-center p-6 m-auto absolute inset-0 flex flex-col items-center justify-center z-10 transition-opacity duration-300">
+                    <p class="text-4xl mb-3">🗓️</p>
+                    <p class="text-slate-600 dark:text-slate-300 font-black text-[10px] uppercase tracking-widest leading-relaxed">Calendario No Configurado<br>o Enlace Inválido</p>
+                </div>
+                <!-- IFRAME SEPARADO DEL FONDO Y SIN MIX-BLEND -->
+                <iframe id="side-calendar-frame" title="Google Calendar" src="about:blank" class="w-full h-full flex-1 border-0 absolute inset-0 z-20 transition-opacity duration-300 rounded-b-[2rem]" style="min-height: 100%; opacity: 0.85;"></iframe>
             </div>
         </div>
     </div>
@@ -661,7 +667,7 @@
     <div id="personal-cal-modal" class="fixed inset-0 hidden flex items-center justify-center p-4 z-[260] glass-overlay">
         <div class="glass-ui !bg-white/95 dark:!bg-slate-800/90 rounded-[2rem] shadow-2xl p-8 max-w-lg w-full cursor-default">
             <h3 class="text-xl font-black text-slate-900 dark:text-white mb-2 uppercase tracking-tight">Mis Calendarios Privados 🔒</h3>
-            <p class="text-[10px] text-slate-500 dark:text-slate-400 mb-6 font-bold uppercase">Agrega las URLs de incrustación de tus Google Calendars. Solo tú podrás verlos (Máximo 5).</p>
+            <p class="text-[10px] text-slate-500 dark:text-slate-400 mb-6 font-bold uppercase">Agrega las URLs de tus Google Calendars. (Nota: Para que carguen en el sistema, debes usar la <b>URL de incrustación</b> o asegurarte que tu calendario sea Público).</p>
             <div class="space-y-3" id="personal-cal-inputs">
                 <input type="url" id="pcal-input-0" placeholder="Ej. https://calendar.google.com/calendar/embed?src=..." class="w-full glass-ui text-slate-900 dark:text-white rounded-xl p-3 text-xs outline-none focus:border-indigo-500/50 transition-colors">
                 <input type="url" id="pcal-input-1" placeholder="Ej. https://calendar.google.com/calendar/embed?src=..." class="w-full glass-ui text-slate-900 dark:text-white rounded-xl p-3 text-xs outline-none focus:border-indigo-500/50 transition-colors">
@@ -727,11 +733,11 @@
                 <!-- SECCIÓN: REPORTES POR EMAIL / WEBHOOK -->
                 <div class="bg-emerald-50/50 dark:bg-emerald-900/20 backdrop-blur-sm p-6 rounded-2xl border border-emerald-200 dark:border-emerald-800/50">
                     <h4 class="text-[10px] font-black text-emerald-700 dark:text-emerald-400 uppercase mb-2 tracking-widest flex items-center gap-2"><span class="text-base">📧</span> Reportes de Avance (API/Email)</h4>
-                    <p class="text-[9px] text-slate-600 dark:text-slate-400 mb-4 font-bold uppercase tracking-wide">Configura un Webhook (Ej. Zapier o Make) que dispare correos electrónicos con los KPIs del proyecto en JSON.</p>
+                    <p class="text-[9px] text-slate-600 dark:text-slate-400 mb-4 font-bold uppercase tracking-wide">Configura un Webhook (Ej. Zapier, Make o Apps Script) que dispare correos electrónicos con los KPIs del proyecto en JSON.</p>
                     <div class="space-y-4">
                         <div>
                             <label class="block text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase mb-1">Webhook URL de Reportes 🔗</label>
-                            <input type="url" id="edit-report-webhook" class="w-full glass-ui text-slate-900 dark:text-white rounded-xl p-3 text-xs font-bold outline-none focus:border-indigo-500/50" placeholder="https://hook.make.com/...">
+                            <input type="url" id="edit-report-webhook" class="w-full glass-ui text-slate-900 dark:text-white rounded-xl p-3 text-xs font-bold outline-none focus:border-indigo-500/50" placeholder="https://script.google.com/macros/s/...">
                         </div>
                         <div>
                             <label class="block text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase mb-1">Correos Destinatarios (Separados por coma) ✉️</label>
@@ -827,8 +833,8 @@
         </div>
     </div>
 
-    <!-- SISTEMA DE ALERTAS -->
-    <div id="alert-overlay" class="fixed inset-0 hidden flex items-center justify-center p-4 z-[220] glass-overlay">
+    <!-- SISTEMA DE ALERTAS (Z-INDEX SUPERIOR PARA MOSTRARSE SIEMPRE) -->
+    <div id="alert-overlay" class="fixed inset-0 hidden flex items-center justify-center p-4 z-[999] glass-overlay">
         <div class="glass-ui !bg-white/95 dark:!bg-slate-800/95 rounded-[2rem] shadow-2xl p-10 max-w-sm text-center border-t-[8px] border-indigo-500 relative overflow-hidden cursor-default">
             <div class="w-20 h-20 bg-indigo-100/50 dark:bg-indigo-900/30 backdrop-blur-sm text-indigo-600 rounded-full flex items-center justify-center text-4xl mx-auto mb-4 border border-indigo-200/50 dark:border-indigo-800/50">🔔</div>
             <h4 class="text-2xl font-black text-slate-900 dark:text-white mb-2">Aviso del Sistema</h4>
@@ -1036,7 +1042,10 @@
         // --- SISTEMA DE REPORTES DE AVANCE API (EMAIL/MAKE/ZAPIER) ---
         window.sendProgressReport = async () => {
             if (!config.reportWebhook) {
-                return window.showAlert("No se ha configurado la URL del Webhook de Reportes (En configuración de Admin).");
+                return window.showAlert("❌ No se ha configurado la URL del Webhook de Reportes (En configuración de Admin).");
+            }
+            if (!config.reportEmails || config.reportEmails.trim() === '') {
+                return window.showAlert("❌ Falta configurar los Correos Destinatarios en la configuración del proyecto.");
             }
             
             // Recolectar datos y métricas
@@ -1047,12 +1056,15 @@
             const overdueTasks = activeTasks.filter(t => t.status !== 'done' && ganttTaskEnd(t) < new Date()).length;
             const completionRate = totalTasks > 0 ? Math.round((doneTasks / totalTasks) * 100) : 0;
             
+            // Limpiar correos
+            const cleanEmails = config.reportEmails.split(',').map(e => e.trim()).filter(e => e).join(',');
+
             const payload = {
                 action: "progress_report",
                 systemName: "BI Kanban Cloud",
                 senderName: currentUser,
                 timestamp: new Date().toISOString(),
-                targetEmails: config.reportEmails || "",
+                targetEmails: cleanEmails,
                 metrics: {
                     totalTasks: totalTasks,
                     doneTasks: doneTasks,
@@ -1063,16 +1075,19 @@
             };
             
             try {
-                // Modo no-cors para evitar bloqueos por políticas del navegador web hacia webhooks tipo Make/Zapier
-                await fetch(config.reportWebhook, {
+                // EVADIR CORS PREFLIGHT USANDO URLSearchParams
+                // Los datos se envían como si fueran un formulario tradicional HTML
+                const formData = new URLSearchParams();
+                formData.append('payload', JSON.stringify(payload));
+
+                await fetch(config.reportWebhook.trim(), {
                     method: 'POST',
                     mode: 'no-cors',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
+                    body: formData
                 });
-                window.showAlert("✅ Petición de reporte automático enviada exitosamente a tu integrador de API/Email.");
+                window.showAlert("✅ Petición de reporte automático enviada a tu correo.");
             } catch (err) {
-                window.showAlert("❌ Error de red al intentar enviar reporte: " + err.message);
+                window.showAlert("⚠️ Se intentó enviar la petición, pero hubo un error local: " + err.message);
             }
         };
 
@@ -1544,19 +1559,47 @@
         window.changeCalendarSource = () => {
             const selector = document.getElementById('calendar-selector');
             const iframe = document.getElementById('side-calendar-frame');
+            const emptyMsg = document.getElementById('calendar-empty-msg');
             if (!selector || !iframe) return;
             
             const val = selector.value;
+            let srcUrl = '';
+
             if (val === 'master') {
-                iframe.src = config.calendarUrl || 'about:blank';
+                srcUrl = config.calendarUrl || '';
             } else if (val.startsWith('pcal-')) {
                 const idx = parseInt(val.split('-')[1]);
                 const me = registeredUsers.find(u => u.name === currentUser);
                 if (me && me.personalCalendars && me.personalCalendars[idx]) {
-                    iframe.src = me.personalCalendars[idx];
-                } else {
-                    iframe.src = 'about:blank';
+                    srcUrl = me.personalCalendars[idx];
                 }
+            }
+
+            // AUTO-FIX MEJORADO: Extraer el 'src=' incluso si pegan el iframe completo o si no tiene 'embed'
+            if (srcUrl) {
+                // Si el usuario pegó todo el <iframe src="...">
+                const iframeSrcMatch = srcUrl.match(/src="([^"]+)"/);
+                if (iframeSrcMatch) srcUrl = iframeSrcMatch[1];
+                
+                // Si pegó un enlace normal de calendario (no embed)
+                if (srcUrl.includes('calendar.google.com') && !srcUrl.includes('embed')) {
+                    const matchCid = srcUrl.match(/src=([^&]+)/) || srcUrl.match(/cid=([^&]+)/);
+                    if (matchCid) {
+                        srcUrl = `https://calendar.google.com/calendar/embed?src=${matchCid[1]}`;
+                    }
+                }
+            }
+
+            if (srcUrl && srcUrl.startsWith('http')) {
+                if (iframe.src !== srcUrl) iframe.src = srcUrl;
+                iframe.style.opacity = '0.85'; // Fusión con el panel transparente
+                iframe.style.pointerEvents = 'auto';
+                if (emptyMsg) emptyMsg.style.opacity = '0';
+            } else {
+                iframe.src = 'about:blank';
+                iframe.style.opacity = '0';
+                iframe.style.pointerEvents = 'none';
+                if (emptyMsg) emptyMsg.style.opacity = '1';
             }
         };
 
