@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SAHID KANBAN - Cloud</title>
-    <link rel="icon" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">🧑‍💻</text></svg>'>
+    <title>KAN BAN Personal - Cloud</title>
+    <link rel="icon" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">📅</text></svg>'>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- SCRIPT DE EMAILJS -->
@@ -747,13 +747,25 @@
                                 <input type="text" id="edit-emailjs-template" class="w-full glass-ui text-slate-900 dark:text-white rounded-xl p-3 text-xs font-bold outline-none focus:border-emerald-500/50" placeholder="Ej: template_xxxxxx">
                             </div>
                         </div>
-                        <div>
-                            <label class="block text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase mb-1">Public Key</label>
-                            <input type="text" id="edit-emailjs-key" class="w-full glass-ui text-slate-900 dark:text-white rounded-xl p-3 text-xs font-bold outline-none focus:border-emerald-500/50" placeholder="Ej: xXxXxXxXxXxXxXx">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase mb-1">Public Key</label>
+                                <input type="text" id="edit-emailjs-key" class="w-full glass-ui text-slate-900 dark:text-white rounded-xl p-3 text-xs font-bold outline-none focus:border-emerald-500/50" placeholder="Ej: xXxXxXxXxXxXxXx">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase mb-1">Correos (Separados por coma) ✉️</label>
+                                <input type="text" id="edit-report-emails" class="w-full glass-ui text-slate-900 dark:text-white rounded-xl p-3 text-xs font-bold outline-none focus:border-emerald-500/50" placeholder="ejemplo@gmail.com, jefe@gmail.com">
+                            </div>
                         </div>
-                        <div>
-                            <label class="block text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase mb-1">Correos Destinatarios (Separados por coma) ✉️</label>
-                            <input type="text" id="edit-report-emails" class="w-full glass-ui text-slate-900 dark:text-white rounded-xl p-3 text-xs font-bold outline-none focus:border-emerald-500/50" placeholder="ejemplo@gmail.com, jefe@gmail.com">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-emerald-200/50 dark:border-emerald-700/50 pt-4 mt-2">
+                            <div>
+                                <label class="block text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase mb-1">Hora de Envío Automático ⏰</label>
+                                <input type="time" id="edit-report-time" class="w-full glass-ui text-slate-900 dark:text-white rounded-xl p-3 text-xs font-bold outline-none focus:border-emerald-500/50">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase mb-1">Remitente del Correo 🏷️</label>
+                                <input type="text" id="edit-report-sender" class="w-full glass-ui text-slate-900 dark:text-white rounded-xl p-3 text-xs font-bold outline-none focus:border-emerald-500/50" placeholder="Ej: Sistema Kanban Automático">
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -889,6 +901,8 @@
             emailjsTemplate: '',
             emailjsKey: '',
             reportEmails: '',
+            reportTime: '09:00', // Nueva configuración: Hora por defecto
+            reportSender: '',    // Nueva configuración: Nombre remitente por defecto
             lastAutoReportDate: '',
 
             customLinks: [],
@@ -914,13 +928,20 @@
         let metricsChartsObj = {};
 
         // --- SISTEMA CRON AUTOMÁTICO PARA EMAILJS ---
-        // Verifica si ya son las 9:00 AM y si no se ha enviado el correo hoy.
+        // Verifica si ya es la hora configurada (o 5 minutos después máximo)
         async function checkAndSendAutoReport() {
             if (!config.emailjsService || !config.emailjsTemplate || !config.emailjsKey || !config.reportEmails) return;
             
             const now = new Date();
-            // Verifica que sea entre las 9:00 y las 9:05 AM
-            if (now.getHours() === 9 && now.getMinutes() >= 0 && now.getMinutes() <= 5) {
+            const targetTimeStr = config.reportTime || '09:00';
+            const [targetHours, targetMinutes] = targetTimeStr.split(':').map(Number);
+            
+            // Convertir a minutos absolutos para hacer la comparación de ventana más segura
+            const currentMins = now.getHours() * 60 + now.getMinutes();
+            const targetMins = targetHours * 60 + targetMinutes;
+            
+            // Verifica que sea exactamente la hora configurada o hasta 5 minutos después
+            if (currentMins >= targetMins && currentMins <= targetMins + 5) {
                 const todayStr = now.toISOString().split('T')[0]; // Ej: 2024-05-01
                 
                 if (config.lastAutoReportDate !== todayStr) {
@@ -929,7 +950,7 @@
                         await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'config', 'master'), { lastAutoReportDate: todayStr });
                         // El que logró actualizarlo, dispara el correo
                         await window.sendProgressReport(true); 
-                        console.log("Correo automático enviado con éxito.");
+                        console.log("Correo automático enviado con éxito a las " + targetTimeStr);
                     } catch (e) {
                         console.log("Otro cliente ya envió el reporte automático.");
                     }
@@ -1107,13 +1128,19 @@
             
             const cleanEmails = config.reportEmails.split(',').map(e => e.trim()).filter(e => e).join(',');
 
+            // Definir quién envía el correo. (Prioriza el nombre personalizado del admin, luego la automatización o el nombre del usuario real).
+            let finalSenderName = config.reportSender || '';
+            if (finalSenderName.trim() === '') {
+                finalSenderName = isAuto ? "Sistema Kanban Automático" : currentUser;
+            }
+
             // Inicializar SDK de EmailJS con la llave pública
             emailjs.init(config.emailjsKey.trim());
 
             // Preparar parámetros exactos que se inyectarán en la plantilla
             const templateParams = {
                 to_emails: cleanEmails,
-                senderName: isAuto ? "Sistema Automático Kanban" : currentUser,
+                senderName: finalSenderName,
                 date: new Date().toLocaleDateString('es-PE'),
                 time: new Date().toLocaleTimeString('es-PE'),
                 totalTasks: totalTasks,
@@ -2067,7 +2094,7 @@
                     }
                     updateCalendarSelector();
                 } else {
-                    setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'config', 'master'), { available: true, link: '#', infoPucpLink: '#', calendarUrl: '', chatWebhook: '', emailjsService: '', emailjsTemplate: '', emailjsKey: '', reportEmails: '', customLinks: [], metricsConfig: config.metricsConfig });
+                    setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'config', 'master'), { available: true, link: '#', infoPucpLink: '#', calendarUrl: '', chatWebhook: '', emailjsService: '', emailjsTemplate: '', emailjsKey: '', reportEmails: '', reportTime: '09:00', reportSender: '', customLinks: [], metricsConfig: config.metricsConfig });
                 }
             });
         }
@@ -2088,6 +2115,8 @@
                 emailjsTemplate: document.getElementById('edit-emailjs-template').value,
                 emailjsKey: document.getElementById('edit-emailjs-key').value,
                 reportEmails: document.getElementById('edit-report-emails').value,
+                reportTime: document.getElementById('edit-report-time').value || '09:00',
+                reportSender: document.getElementById('edit-report-sender').value || '',
 
                 projectStartDate: document.getElementById('edit-project-start')?.value || '',
                 projectEndDate: document.getElementById('edit-project-end')?.value || '',
@@ -2119,6 +2148,8 @@
             document.getElementById('edit-emailjs-template').value = config.emailjsTemplate || '';
             document.getElementById('edit-emailjs-key').value = config.emailjsKey || '';
             document.getElementById('edit-report-emails').value = config.reportEmails || '';
+            document.getElementById('edit-report-time').value = config.reportTime || '09:00';
+            document.getElementById('edit-report-sender').value = config.reportSender || '';
 
             const projectStartInput = document.getElementById('edit-project-start');
             const projectEndInput = document.getElementById('edit-project-end');
@@ -2571,6 +2602,7 @@
                     } else { 
                         data.comments = []; 
                         await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'tasks'), data); 
+                        // --- ALERTA DE NUEVA TAREA A GOOGLE CHAT ---
                         window.sendGoogleChatAlert(data.title, 'creado una nueva tarea', currentUser);
                     }
                     window.closeModal();
