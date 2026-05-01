@@ -24,21 +24,19 @@
         /* TRANSICIÓN BASE Y FONDOS MULTICOLOR INTACTOS */
         body {
             transition: background-color 0.4s, color 0.4s;
-            background-color: #f8fafc;
-            background-image: radial-gradient(at 0% 0%, hsla(210, 100%, 95%, 1) 0px, transparent 50%),
-                              radial-gradient(at 100% 0%, hsla(280, 100%, 95%, 1) 0px, transparent 50%);
-            background-attachment: fixed;
+            background-color: #ffffff; /* Fondo modo día blanco limpio */
+            background-image: none !important; /* Se remueve degradado en modo claro */
             color: #1e293b;
         }
 
         html.dark body {
             background-color: #0b0f19;
             background-image: radial-gradient(at 0% 0%, hsla(220, 50%, 15%, 1) 0px, transparent 50%),
-                              radial-gradient(at 100% 0%, hsla(280, 40%, 15%, 1) 0px, transparent 50%);
+                              radial-gradient(at 100% 0%, hsla(280, 40%, 15%, 1) 0px, transparent 50%) !important;
             color: #e2e8f0;
         }
 
-        /* --- SISTEMA DE DISEÑO DINÁMICO (BLANCO LIMPIO / NEGRO GLASS) --- */
+        /* --- SISTEMA DE DISEÑO DINÁMICO --- */
         .glass-ui {
             background-color: #ffffff;
             border: 1px solid #e2e8f0;
@@ -53,6 +51,20 @@
             border: 1px solid rgba(71, 85, 105, 0.4);
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
         }
+
+        /* --- COLORES POTENCIADOS 50% MODO DÍA --- */
+        #col-backlog { background-color: #dbeafe !important; border-color: #93c5fd !important; }
+        #col-todo { background-color: #fef3c7 !important; border-color: #fcd34d !important; }
+        #col-progress { background-color: #e0e7ff !important; border-color: #a5b4fc !important; }
+        #col-review { background-color: #f3e8ff !important; border-color: #d8b4fe !important; }
+        #col-done { background-color: #d1fae5 !important; border-color: #6ee7b7 !important; }
+
+        html.dark #col-backlog { background-color: rgba(30, 41, 59, 0.6) !important; border-color: #475569 !important; }
+        html.dark #col-todo { background-color: rgba(120, 53, 15, 0.4) !important; border-color: rgba(180, 83, 9, 0.5) !important; }
+        html.dark #col-progress { background-color: rgba(49, 46, 129, 0.4) !important; border-color: rgba(67, 56, 202, 0.5) !important; }
+        html.dark #col-review { background-color: rgba(88, 28, 135, 0.4) !important; border-color: rgba(126, 34, 206, 0.5) !important; }
+        html.dark #col-done { background-color: rgba(6, 78, 59, 0.4) !important; border-color: rgba(4, 120, 87, 0.5) !important; }
+
 
         /* --- EFECTO HOVER AMARILLO GLOBAL --- */
         button, a.btn-global-hover { transition: all 0.3s ease !important; }
@@ -93,15 +105,6 @@
         .kanban-card-tags { max-height: 3.15rem; overflow: hidden; }
         .kanban-subtask-title { min-width: 0; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; text-overflow: ellipsis; overflow-wrap: anywhere; }
         @media (max-width: 768px) { .kanban-task-title { -webkit-line-clamp: 2; max-height: 2.7rem; } }
-        
-        /* Ocultar elementos inactivos o Todoist no requeridos */
-        #todoist-task-link-box, #task-todoist-section, #task-todoist-labels, #task-todoist-id, #api-todoist-token,
-        #todoist-sync-status, #api-todoist-default-project, #todoist-project-list, #todoist-label-list, #todoist-section-map-container,
-        button[onclick="window.testTodoistConnection()"], button[onclick="window.syncTodoistCatalogs()"],
-        button[onclick="window.runTodoistBidirectionalSync(true)"], label:has(#api-todoist-enabled), label:has(#api-todoist-auto-sync),
-        label:has(#api-todoist-sync-push), label:has(#api-todoist-sync-pull), label:has(#api-todoist-sync-subtasks),
-        div:has(> #api-todoist-token), div:has(> #api-todoist-default-project), div:has(> #todoist-project-list),
-        div:has(> #todoist-label-list), div:has(> #todoist-section-map-container) { display: none !important; }
         
         .tag-suggestion-chip { transition: all .18s ease; }
         .tag-suggestion-chip:hover { transform: translateY(-1px); }
@@ -188,8 +191,6 @@
         .gantt-bar.overdue { box-shadow: 0 0 0 3px rgba(239, 68, 68, .18), 0 10px 18px rgba(15, 23, 42, .14); }
         .subtask-duration-input { max-width: 92px; }
 
-        body { background-image: radial-gradient(at 0% 0%, hsla(210, 100%, 94%, 1) 0px, transparent 46%), radial-gradient(at 88% 12%, hsla(265, 95%, 94%, .95) 0px, transparent 42%), radial-gradient(at 50% 100%, hsla(175, 80%, 92%, .8) 0px, transparent 42%); }
-        html.dark body { background-image: radial-gradient(at 0% 0%, hsla(220, 70%, 18%, 1) 0px, transparent 48%), radial-gradient(at 100% 0%, hsla(282, 55%, 20%, .95) 0px, transparent 45%), radial-gradient(at 48% 100%, hsla(190, 55%, 15%, .75) 0px, transparent 42%); }
         .glass-ui { box-shadow: 0 14px 35px -28px rgba(79, 70, 229, .42), 0 1px 3px rgba(15, 23, 42, .08); }
         html.dark .glass-ui { box-shadow: 0 0 0 1px rgba(129, 140, 248, .12), 0 18px 55px -34px rgba(56, 189, 248, .45); }
         .gantt-board { overflow: auto; max-height: 72vh; align-items: start; }
@@ -224,9 +225,13 @@
         .gantt-board.compact .gantt-cell { padding-left: 10px; padding-right: 10px; }
         .gantt-indicator-option { display: flex; align-items: center; gap: .5rem; padding: .65rem .75rem; border-radius: .9rem; }
         .gantt-indicator-option input { width: 1rem; height: 1rem; }
+
+        /* UPLOAD FILES SPINNER */
+        .loader-ring { display: inline-block; width: 16px; height: 16px; border: 2px solid rgba(99,102,241,.3); border-radius: 50%; border-top-color: #4f46e5; animation: spin 1s ease-in-out infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
     </style>
 </head>
-<body class="font-sans p-4 md:p-6 custom-scrollbar overflow-x-hidden">
+<body class="font-sans p-4 md:p-6 custom-scrollbar overflow-x-hidden transition-colors duration-300">
 
     <!-- Cargando / Errores -->
     <div id="loading-overlay" class="fixed inset-0 flex items-center justify-center z-[400] glass-overlay">
@@ -353,6 +358,10 @@
                 <div class="flex flex-wrap items-center gap-2 border-l-2 pl-4 border-slate-200 dark:border-slate-700/50">
                     <button onclick="toggleMasterFileStatus()" class="text-indigo-700 bg-indigo-50 dark:bg-transparent dark:text-slate-300 px-4 py-2 rounded-xl text-[9px] font-black uppercase border border-transparent">🔄 Estado</button>
                     <button id="btn-open-drive" onclick="openFileLinkWithInternalLog()" class="bg-indigo-600/90 dark:bg-indigo-500/80 text-white px-4 py-2 rounded-xl flex items-center gap-2 border border-indigo-500/50 transition-all"><span class="text-[9px] font-black uppercase">📂 Archivo Maestro </span></button>
+                    
+                    <!-- BOTÓN CRONOGRAMA DINÁMICO -->
+                    <button id="btn-view-schedule" onclick="openScheduleModal()" class="hidden bg-amber-500/90 dark:bg-amber-600/80 text-white px-4 py-2 rounded-xl flex items-center gap-2 border border-amber-500/50 transition-all"><span class="text-[9px] font-black uppercase">📅 Cronograma</span></button>
+                    
                     <button id="btn-metrics-view" onclick="toggleMetricsView()" class="bg-emerald-500/90 dark:bg-emerald-500/80 text-white px-4 py-2 rounded-xl flex items-center gap-2 border border-emerald-500/50"><span class="text-[9px] font-black uppercase">📊 Métricas</span></button>
                     <button id="btn-settings-config" onclick="openFileEditModal()" class="hidden text-slate-600 dark:text-slate-300 p-2 rounded-xl border border-transparent" title="Configuraciones (Solo Admin)">⚙️</button>
                 </div>
@@ -380,6 +389,19 @@
             </div>
         </div>
     </header>
+
+    <!-- CRONOGRAMA IMAGEN MODAL -->
+    <div id="schedule-image-modal" class="fixed inset-0 hidden flex items-center justify-center p-4 z-[300] glass-overlay">
+        <div class="glass-ui !bg-white/95 dark:!bg-slate-900/95 rounded-[2rem] shadow-2xl w-full max-w-5xl overflow-hidden flex flex-col h-[90vh]">
+            <div class="p-4 border-b border-slate-200 dark:border-slate-700/50 flex justify-between items-center bg-slate-50/50 dark:bg-slate-800/50">
+                <h3 class="text-xl font-black text-slate-900 dark:text-white tracking-tighter uppercase flex items-center gap-2"><span class="text-2xl">📅</span> Cronograma General / Plazos</h3>
+                <button onclick="document.getElementById('schedule-image-modal').classList.add('hidden')" class="px-5 py-2 text-xs font-black text-slate-700 dark:text-slate-400 glass-ui rounded-xl uppercase">Cerrar</button>
+            </div>
+            <div class="flex-1 p-4 bg-slate-100 dark:bg-slate-900 overflow-auto custom-scrollbar flex items-center justify-center">
+                <img id="schedule-image-view" src="" alt="Cronograma" class="max-w-full rounded-xl shadow-lg border border-slate-200 dark:border-slate-700" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%22100%22 height=%22100%22><text y=%2250%22 x=%2250%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 font-size=%2212%22>Imagen no disponible</text></svg>'">
+            </div>
+        </div>
+    </div>
 
     <!-- DASHBOARD DE MÉTRICAS (OVERLAY) -->
     <div id="metrics-modal-overlay" class="fixed inset-0 hidden flex items-center justify-center p-4 z-[250] glass-overlay">
@@ -490,7 +512,7 @@
                 </div>
                 <select id="calendar-selector" onchange="window.changeCalendarSource()" class="w-full glass-ui !bg-white/60 dark:!bg-slate-800/60 text-slate-800 dark:text-white rounded-xl p-3 text-xs font-bold outline-none focus:border-indigo-500/50 cursor-pointer">
                     <option value="master">🌐 Calendario Maestro (General)</option>
-                    <!-- Las opciones de los 5 calendarios personales se llenan aquí -->
+                    <!-- Las opciones de los calendarios personales se llenan aquí -->
                 </select>
             </div>
             <!-- CONTENEDOR FLEX DEL IFRAME PARA FORZAR TAMAÑO -->
@@ -499,7 +521,7 @@
                     <p class="text-4xl mb-3">🗓️</p>
                     <p class="text-slate-600 dark:text-slate-300 font-black text-[10px] uppercase tracking-widest leading-relaxed">Calendario No Configurado<br>o Enlace Inválido</p>
                 </div>
-                <!-- IFRAME SEPARADO DEL FONDO Y SIN MIX-BLEND -->
+                <!-- IFRAME SEPARADO DEL FONDO -->
                 <iframe id="side-calendar-frame" title="Google Calendar" src="about:blank" class="w-full h-full flex-1 border-0 absolute inset-0 z-20 transition-opacity duration-300 rounded-b-[2rem]" style="min-height: 100%; opacity: 0.85;"></iframe>
             </div>
         </div>
@@ -560,10 +582,19 @@
     </div>
 
     <!-- MODAL TAREAS -->
-    <div id="modal-overlay" class="fixed inset-0 hidden flex items-center justify-center p-4 z-[200] glass-overlay">
-        <div class="glass-ui !bg-white/95 dark:!bg-slate-800/90 rounded-[2rem] shadow-2xl w-full max-w-5xl overflow-hidden flex flex-col md:flex-row h-[90vh]">
-            <div class="p-8 border-r border-slate-200 dark:border-slate-700/50 flex-1 overflow-y-auto custom-scrollbar cursor-default">
-                <h3 id="modal-title" class="text-2xl font-black text-slate-900 dark:text-white mb-8 tracking-tighter uppercase">Detalle de Actividad</h3>
+    <div id="modal-overlay" class="fixed inset-0 hidden flex items-center justify-center p-4 z-[200] glass-overlay overflow-y-auto">
+        <!-- Contenedor adaptativo: Cambia su layout si se abre el calendario -->
+        <div id="task-modal-container" class="glass-ui !bg-white/95 dark:!bg-slate-800/90 rounded-[2rem] shadow-2xl w-full max-w-5xl flex flex-col lg:flex-row min-h-[90vh] max-h-[95vh] transition-all duration-300 relative overflow-hidden">
+            
+            <div class="p-8 border-r border-slate-200 dark:border-slate-700/50 flex-1 overflow-y-auto custom-scrollbar cursor-default relative">
+                <div class="flex justify-between items-start mb-6 border-b border-slate-200 dark:border-slate-700/50 pb-4">
+                    <h3 id="modal-title" class="text-2xl font-black text-slate-900 dark:text-white tracking-tighter uppercase">Detalle de Actividad</h3>
+                    <div class="flex gap-2">
+                        <!-- Botón para ver calendario lateral dentro del modal -->
+                        <button type="button" onclick="window.toggleModalCalendar()" class="bg-indigo-50 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 px-4 py-2 rounded-xl text-[10px] font-black uppercase border border-indigo-200 dark:border-indigo-700/50 shadow-sm transition-transform hover:scale-105">🗓️ Mostrar Calendario</button>
+                    </div>
+                </div>
+                
                 <form id="task-form" class="space-y-5">
                     <input type="hidden" id="edit-id">
                     <div>
@@ -617,20 +648,33 @@
                                 <option value="4">P1 Urgente</option>
                             </select>
                         </div>
-                        <input type="hidden" id="task-todoist-id">
                     </div>
                     <div>
                         <label class="block text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase mb-2">Etiquetas ✨ <span class="text-[8px] italic text-indigo-500 dark:text-amber-500">(Sepáralas por comas)</span></label>
                         <input type="text" id="task-labels" list="label-suggestions" placeholder="Ej. #Dashboard, #DAX" class="w-full glass-ui text-slate-900 dark:text-white rounded-xl p-3.5 text-sm outline-none focus:border-indigo-500/50 transition-colors">
                         <datalist id="label-suggestions"></datalist>
                         <div id="task-label-suggestions-bar" class="mt-2 flex flex-wrap gap-1.5"></div>
-                        <p class="text-[10px] font-bold text-slate-500 dark:text-slate-400 mt-1">Etiquetas internas para filtros y automatizaciones.</p>
                     </div>
 
-                    <!-- SECCIÓN: MÚLTIPLES ENLACES -->
+                    <!-- SECCIÓN: ARCHIVOS ADJUNTOS (FIREBASE STORAGE) -->
                     <div class="pt-2">
                         <label class="flex justify-between items-center text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase mb-2 border-b border-slate-200 dark:border-slate-700/50 pb-2">
-                            <span>Enlaces Adjuntos 🔗</span>
+                            <span>Archivos Adjuntos 📎</span>
+                            <div class="flex items-center gap-2">
+                                <span id="upload-status" class="text-[9px] text-indigo-500 font-bold hidden"><span class="loader-ring align-middle mr-1"></span> Subiendo...</span>
+                                <label class="text-emerald-600 dark:text-emerald-400 hover:scale-105 transition-transform bg-transparent cursor-pointer no-yellow-hover font-bold">
+                                    ➕ Subir Archivo
+                                    <input type="file" id="task-file-input" class="hidden" multiple onchange="window.handleFileUpload(event)">
+                                </label>
+                            </div>
+                        </label>
+                        <div id="task-files-container" class="mt-3 flex flex-col gap-2"></div>
+                    </div>
+
+                    <!-- SECCIÓN: MÚLTIPLES ENLACES EXTERNOS -->
+                    <div class="pt-2">
+                        <label class="flex justify-between items-center text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase mb-2 border-b border-slate-200 dark:border-slate-700/50 pb-2">
+                            <span>Enlaces Web Adicionales 🔗</span>
                             <button type="button" onclick="window.addLinkInput()" class="text-indigo-600 dark:text-amber-400 hover:scale-105 transition-transform bg-transparent border-0 p-0 shadow-none no-yellow-hover">➕ Añadir Enlace</button>
                         </label>
                         <div id="task-links-container" class="space-y-2 mt-2"></div>
@@ -647,11 +691,12 @@
                 </form>
             </div>
 
-            <div id="comments-section" class="w-full md:w-80 bg-slate-50/50 dark:bg-slate-900/50 backdrop-blur-md p-8 flex flex-col border-l border-slate-200 dark:border-slate-700/50 relative">
+            <!-- Panel Derecho del Modal (Comentarios) -->
+            <div id="comments-section" class="w-full lg:w-80 bg-slate-50/50 dark:bg-slate-900/50 backdrop-blur-md p-6 flex flex-col border-l border-slate-200 dark:border-slate-700/50 relative overflow-y-auto">
                 <h4 class="text-xs font-black text-slate-600 dark:text-slate-400 uppercase mb-6 tracking-widest flex items-center gap-2"><span class="text-lg">💬</span> Notas</h4>
-                <div id="comments-list" class="flex-1 overflow-y-auto space-y-4 mb-6 text-xs custom-scrollbar pr-2"></div>
+                <div id="comments-list" class="flex-1 overflow-y-auto space-y-4 mb-6 text-xs custom-scrollbar pr-2 min-h-[150px]"></div>
 
-                <div class="space-y-3 relative">
+                <div class="space-y-3 relative mt-auto">
                     <p class="text-[10px] text-slate-600 dark:text-slate-400 italic">Menciona usando <span class="font-bold text-indigo-700 dark:text-amber-500">@usuario</span></p>
 
                     <div id="mention-dropdown" class="absolute hidden bottom-full mb-2 left-0 w-full glass-ui shadow-2xl rounded-xl max-h-40 overflow-y-auto z-[60] custom-scrollbar cursor-pointer">
@@ -662,6 +707,20 @@
                     <button onclick="addComment()" class="w-full bg-slate-900/90 dark:bg-indigo-600/90 text-white py-3 rounded-xl text-[10px] font-black uppercase shadow-md border border-slate-700 dark:border-indigo-500/50">Publicar Nota</button>
                 </div>
             </div>
+
+            <!-- Panel Oculto: Calendario Side-by-Side del Modal -->
+            <div id="modal-calendar-section" class="hidden w-full lg:w-[450px] bg-white/40 dark:bg-slate-800/40 backdrop-blur-md flex-col border-l border-slate-200 dark:border-slate-700/50 relative">
+                <div class="p-4 border-b border-slate-200/50 dark:border-slate-700/50 flex flex-col gap-2">
+                    <h4 class="text-[10px] font-black text-indigo-700 dark:text-amber-400 uppercase tracking-widest">Calendario Asistente 📅</h4>
+                    <select id="modal-calendar-selector" onchange="window.changeModalCalendarSource()" class="w-full glass-ui !bg-white/60 dark:!bg-slate-800/60 text-slate-800 dark:text-white rounded-xl p-2 text-xs font-bold outline-none focus:border-indigo-500/50 cursor-pointer">
+                        <option value="master">🌐 Calendario Maestro</option>
+                    </select>
+                </div>
+                <div class="flex-1 w-full relative">
+                    <iframe id="modal-side-calendar-frame" src="about:blank" class="w-full h-full absolute inset-0 border-0 opacity-85"></iframe>
+                </div>
+            </div>
+
         </div>
     </div>
 
@@ -669,17 +728,13 @@
     <div id="personal-cal-modal" class="fixed inset-0 hidden flex items-center justify-center p-4 z-[260] glass-overlay">
         <div class="glass-ui !bg-white/95 dark:!bg-slate-800/90 rounded-[2rem] shadow-2xl p-8 max-w-lg w-full cursor-default">
             <h3 class="text-xl font-black text-slate-900 dark:text-white mb-2 uppercase tracking-tight">Mis Calendarios Privados 🔒</h3>
-            <p class="text-[10px] text-slate-500 dark:text-slate-400 mb-6 font-bold uppercase">Agrega las URLs de tus Google Calendars. (Nota: Para que carguen en el sistema, debes usar la <b>URL de incrustación</b> o asegurarte que tu calendario sea Público).</p>
-            <div class="space-y-3" id="personal-cal-inputs">
-                <input type="url" id="pcal-input-0" placeholder="Ej. https://calendar.google.com/calendar/embed?src=..." class="w-full glass-ui text-slate-900 dark:text-white rounded-xl p-3 text-xs outline-none focus:border-indigo-500/50 transition-colors">
-                <input type="url" id="pcal-input-1" placeholder="Ej. https://calendar.google.com/calendar/embed?src=..." class="w-full glass-ui text-slate-900 dark:text-white rounded-xl p-3 text-xs outline-none focus:border-indigo-500/50 transition-colors">
-                <input type="url" id="pcal-input-2" placeholder="URL Calendario 3 (Opcional)" class="w-full glass-ui text-slate-900 dark:text-white rounded-xl p-3 text-xs outline-none focus:border-indigo-500/50 transition-colors">
-                <input type="url" id="pcal-input-3" placeholder="URL Calendario 4 (Opcional)" class="w-full glass-ui text-slate-900 dark:text-white rounded-xl p-3 text-xs outline-none focus:border-indigo-500/50 transition-colors">
-                <input type="url" id="pcal-input-4" placeholder="URL Calendario 5 (Opcional)" class="w-full glass-ui text-slate-900 dark:text-white rounded-xl p-3 text-xs outline-none focus:border-indigo-500/50 transition-colors">
+            <p class="text-[10px] text-slate-500 dark:text-slate-400 mb-6 font-bold uppercase">Personaliza el nombre y pega la <b>URL de incrustación</b> de tus Google Calendars.</p>
+            <div class="space-y-4 max-h-[50vh] overflow-y-auto custom-scrollbar pr-2" id="personal-cal-inputs">
+                <!-- Se inyecta por JS (pares de Nombre y URL) -->
             </div>
             <div class="flex gap-3 mt-8">
                 <button onclick="document.getElementById('personal-cal-modal').classList.add('hidden')" class="flex-1 glass-ui text-slate-800 dark:text-slate-300 py-3 rounded-xl text-[10px] font-black uppercase">Cancelar</button>
-                <button onclick="window.savePersonalCalendars()" class="flex-1 bg-indigo-600/90 text-white py-3 rounded-xl text-[10px] font-black uppercase shadow-lg border border-indigo-500/50 hover:bg-indigo-500">Guardar Mis Calendarios</button>
+                <button onclick="window.savePersonalCalendars()" class="flex-1 bg-indigo-600/90 text-white py-3 rounded-xl text-[10px] font-black uppercase shadow-lg border border-indigo-500/50 hover:bg-indigo-500">Guardar Calendarios</button>
             </div>
         </div>
     </div>
@@ -693,17 +748,18 @@
                 <!-- SECCIÓN: RANGO DE PROYECTO -->
                 <div class="bg-indigo-50/50 dark:bg-indigo-900/20 backdrop-blur-sm p-6 rounded-2xl border border-indigo-200 dark:border-indigo-800/50">
                     <h4 class="text-[10px] font-black text-indigo-700 dark:text-indigo-400 uppercase mb-4 tracking-widest flex items-center gap-2"><span class="text-base">📆</span> Rango y Tiempo del Proyecto</h4>
+                    <p class="text-[9px] text-slate-500 uppercase font-bold mb-3">*Si dejas Fecha de Fin vacía, el sistema calculará dinámicamente el final usando la tarea más lejana.</p>
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div>
                             <label class="block text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase mb-1">Fecha de Inicio</label>
                             <input type="date" id="edit-project-start" onchange="window.updateProjectDaysCount()" class="w-full glass-ui text-slate-900 dark:text-white rounded-xl p-3 text-xs font-bold outline-none focus:border-indigo-500/50">
                         </div>
                         <div>
-                            <label class="block text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase mb-1">Fecha de Fin Estimada</label>
+                            <label class="block text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase mb-1">Fecha de Fin (Opcional)</label>
                             <input type="date" id="edit-project-end" onchange="window.updateProjectDaysCount()" class="w-full glass-ui text-slate-900 dark:text-white rounded-xl p-3 text-xs font-bold outline-none focus:border-indigo-500/50">
                         </div>
                         <div>
-                            <label class="block text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase mb-1">Total Días de Proyecto</label>
+                            <label class="block text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase mb-1">Total Días Calculados</label>
                             <input type="number" id="edit-project-days" readonly class="w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 rounded-xl p-3 text-xs font-black text-center outline-none" placeholder="Automático">
                         </div>
                     </div>
@@ -729,13 +785,18 @@
                             <label class="block text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase mb-1">Google Chat Webhook (Para alertas en el chat) 💬</label>
                             <input type="url" id="edit-chat-webhook" class="w-full glass-ui text-slate-900 dark:text-white rounded-xl p-3 text-xs font-bold outline-none focus:border-indigo-500/50" placeholder="https://chat.googleapis.com/v1/spaces/.../messages?...">
                         </div>
+                        <!-- NUEVO: CRONOGRAMA IMAGEN -->
+                        <div class="border-t border-slate-200 dark:border-slate-700/50 pt-4 mt-2">
+                            <label class="block text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase mb-1 flex items-center gap-2">URL Imagen del Cronograma/Plazos 🖼️ <input type="checkbox" id="edit-schedule-image-enable" class="w-3 h-3"></label>
+                            <input type="url" id="edit-schedule-image-url" class="w-full glass-ui text-slate-900 dark:text-white rounded-xl p-3 text-xs font-bold outline-none focus:border-indigo-500/50" placeholder="https://mi-imagen.com/cronograma.jpg">
+                        </div>
                     </div>
                 </div>
 
                 <!-- SECCIÓN: EMAILJS CONFIG -->
                 <div class="bg-emerald-50/50 dark:bg-emerald-900/20 backdrop-blur-sm p-6 rounded-2xl border border-emerald-200 dark:border-emerald-800/50">
                     <h4 class="text-[10px] font-black text-emerald-700 dark:text-emerald-400 uppercase mb-2 tracking-widest flex items-center gap-2"><span class="text-base">📧</span> Reportes Automáticos EmailJS</h4>
-                    <p class="text-[9px] text-slate-600 dark:text-slate-400 mb-4 font-bold uppercase tracking-wide">Configura tus credenciales de EmailJS para el envío automático a las 9:00 AM o envío manual.</p>
+                    <p class="text-[9px] text-slate-600 dark:text-slate-400 mb-4 font-bold uppercase tracking-wide">Configura tus credenciales de EmailJS para envío desde FrontEnd (Requiere pestaña abierta).</p>
                     <div class="space-y-4">
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
@@ -857,7 +918,7 @@
         </div>
     </div>
 
-    <!-- SISTEMA DE ALERTAS (Z-INDEX SUPERIOR PARA MOSTRARSE SIEMPRE) -->
+    <!-- SISTEMA DE ALERTAS -->
     <div id="alert-overlay" class="fixed inset-0 hidden flex items-center justify-center p-4 z-[999] glass-overlay">
         <div class="glass-ui !bg-white/95 dark:!bg-slate-800/95 rounded-[2rem] shadow-2xl p-10 max-w-sm text-center border-t-[8px] border-indigo-500 relative overflow-hidden cursor-default">
             <div class="w-20 h-20 bg-indigo-100/50 dark:bg-indigo-900/30 backdrop-blur-sm text-indigo-600 rounded-full flex items-center justify-center text-4xl mx-auto mb-4 border border-indigo-200/50 dark:border-indigo-800/50">🔔</div>
@@ -871,6 +932,7 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, setDoc, updateDoc, deleteDoc, collection, onSnapshot, addDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getStorage, ref, uploadBytesResumable, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyCNsvuEiZkJHZM2ct4XTIVZC1rgNOWRb_c",
@@ -884,7 +946,7 @@
 
         const appId = "pucp-bi-kanban-v2";
 
-        let app, auth, db;
+        let app, auth, db, storage;
         let currentUser = null;
         let tasks = [];
         let roles = [];
@@ -896,14 +958,16 @@
             calendarUrl: '',
             chatWebhook: '',
             
-            // EMAILJS CONFIGS
             emailjsService: '',
             emailjsTemplate: '',
             emailjsKey: '',
             reportEmails: '',
-            reportTime: '09:00', // Nueva configuración: Hora por defecto
-            reportSender: '',    // Nueva configuración: Nombre remitente por defecto
+            reportTime: '09:00',
+            reportSender: '',
             lastAutoReportDate: '',
+            
+            scheduleImageUrl: '',
+            scheduleImageEnable: false,
 
             customLinks: [],
             projectDays: 30,
@@ -926,9 +990,120 @@
         let heartbeatInterval = null;
         let autoReportInterval = null;
         let metricsChartsObj = {};
+        
+        let tempTaskFiles = []; // Para manejar archivos en el modal antes de guardar
+        let isModalCalendarOpen = false;
+
+        // --- SISTEMA INTELIGENTE DE DETECCIÓN DE LINKS ---
+        function formatSmartLink(urlStr) {
+            if (!urlStr) return { name: "Enlace", icon: "🔗", url: "" };
+            let url = urlStr.trim();
+            if(!url.startsWith('http')) url = 'https://' + url;
+            const lower = url.toLowerCase();
+            
+            if (lower.includes('youtube.com') || lower.includes('youtu.be')) return { name: "YouTube", icon: "🔴", url };
+            if (lower.includes('drive.google.com/drive/folders') || lower.includes('drive.google.com/file')) return { name: "Drive", icon: "📁", url };
+            if (lower.includes('docs.google.com/spreadsheets')) return { name: "Sheets", icon: "📊", url };
+            if (lower.includes('docs.google.com/document')) return { name: "Docs", icon: "📝", url };
+            if (lower.includes('docs.google.com/presentation')) return { name: "Slides", icon: "🎦", url };
+            if (lower.includes('figma.com')) return { name: "Figma", icon: "🎨", url };
+            if (lower.includes('github.com')) return { name: "GitHub", icon: "🐈‍⬛", url };
+            if (lower.includes('zoom.us')) return { name: "Zoom", icon: "📹", url };
+            if (lower.includes('meet.google.com')) return { name: "Meet", icon: "🎥", url };
+            
+            return { name: "Pág Web", icon: "🌐", url };
+        }
+
+        // --- DETECCIÓN DE EMOJIS POR EXTENSIÓN ---
+        function getFileEmoji(filename) {
+            const extMatch = filename.match(/\.([^.]+)$/);
+            const ext = extMatch ? extMatch[1].toLowerCase() : '';
+            const map = {
+                'pdf': '📄', 'zip': '🗜️', 'rar': '🗜️', '7z': '🗜️', 'tar': '🗜️',
+                'png': '🖼️', 'jpg': '🖼️', 'jpeg': '🖼️', 'gif': '🖼️', 'svg': '🖼️', 'webp': '🖼️',
+                'doc': '📝', 'docx': '📝', 'txt': '📝', 'rtf': '📝',
+                'xls': '📊', 'xlsx': '📊', 'csv': '📊',
+                'ppt': '🎦', 'pptx': '🎦',
+                'mp4': '🎬', 'mov': '🎬', 'avi': '🎬',
+                'mp3': '🎵', 'wav': '🎵',
+                'json': '⚙️', 'xml': '⚙️'
+            };
+            return map[ext] || '📎';
+        }
+
+        // --- MANEJO DE ARCHIVOS FIREBASE STORAGE ---
+        window.handleFileUpload = async (event) => {
+            const files = event.target.files;
+            if (!files || files.length === 0) return;
+            
+            const statusIndicator = document.getElementById('upload-status');
+            statusIndicator.classList.remove('hidden');
+            
+            const taskId = document.getElementById('edit-id').value || `temp_${Date.now()}`;
+
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                const storagePath = `artifacts/${appId}/tasks/${taskId}/${Date.now()}_${file.name}`;
+                const fileRef = ref(storage, storagePath);
+                
+                try {
+                    const snapshot = await uploadBytesResumable(fileRef, file);
+                    const downloadURL = await getDownloadURL(snapshot.ref);
+                    
+                    tempTaskFiles.push({
+                        name: file.name,
+                        url: downloadURL,
+                        path: storagePath,
+                        size: file.size,
+                        uploadedAt: Date.now()
+                    });
+                } catch (error) {
+                    console.error("Error al subir:", error);
+                    window.showAlert(`Error subiendo ${file.name}: ${error.message}`);
+                }
+            }
+            
+            statusIndicator.classList.add('hidden');
+            renderTaskFiles();
+            event.target.value = ''; // Reset
+        };
+
+        window.removeTaskFile = async (index) => {
+            const file = tempTaskFiles[index];
+            if (!file) return;
+            // Opcional: Eliminar físicamente del Storage para ahorrar espacio
+            try {
+                if (file.path) await deleteObject(ref(storage, file.path));
+            } catch(e) { console.warn("No se pudo eliminar de storage", e); }
+            
+            tempTaskFiles.splice(index, 1);
+            renderTaskFiles();
+        };
+
+        function renderTaskFiles() {
+            const container = document.getElementById('task-files-container');
+            if(!container) return;
+            
+            container.innerHTML = tempTaskFiles.map((file, idx) => {
+                const emoji = getFileEmoji(file.name);
+                const kb = Math.round(file.size / 1024);
+                return `
+                    <div class="flex items-center justify-between glass-ui p-2 rounded-xl border border-slate-200 dark:border-slate-700/50 bg-slate-50 dark:bg-slate-800/50">
+                        <div class="flex items-center gap-2 overflow-hidden flex-1">
+                            <span class="text-lg leading-none">${emoji}</span>
+                            <div class="flex flex-col overflow-hidden">
+                                <a href="${file.url}" target="_blank" class="text-[10px] font-black text-indigo-700 dark:text-indigo-400 hover:underline truncate" title="${escapeHtml(file.name)}">${escapeHtml(file.name)}</a>
+                                <span class="text-[8px] text-slate-500 uppercase font-bold">${kb} KB</span>
+                            </div>
+                        </div>
+                        <button type="button" onclick="window.removeTaskFile(${idx})" class="text-red-500 hover:bg-red-100 dark:hover:bg-red-900/30 p-1.5 rounded-lg transition-colors ml-2">❌</button>
+                    </div>
+                `;
+            }).join('');
+        }
+
 
         // --- SISTEMA CRON AUTOMÁTICO PARA EMAILJS ---
-        // Verifica si ya es la hora configurada (o 5 minutos después máximo)
         async function checkAndSendAutoReport() {
             if (!config.emailjsService || !config.emailjsTemplate || !config.emailjsKey || !config.reportEmails) return;
             
@@ -936,23 +1111,19 @@
             const targetTimeStr = config.reportTime || '09:00';
             const [targetHours, targetMinutes] = targetTimeStr.split(':').map(Number);
             
-            // Convertir a minutos absolutos para hacer la comparación de ventana más segura
             const currentMins = now.getHours() * 60 + now.getMinutes();
             const targetMins = targetHours * 60 + targetMinutes;
             
-            // Verifica que sea exactamente la hora configurada o hasta 5 minutos después
             if (currentMins >= targetMins && currentMins <= targetMins + 5) {
-                const todayStr = now.toISOString().split('T')[0]; // Ej: 2024-05-01
+                const todayStr = now.toISOString().split('T')[0]; 
                 
                 if (config.lastAutoReportDate !== todayStr) {
                     try {
-                        // Bloqueo optimista
                         await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'config', 'master'), { lastAutoReportDate: todayStr });
-                        // El que logró actualizarlo, dispara el correo
                         await window.sendProgressReport(true); 
                         console.log("Correo automático enviado con éxito a las " + targetTimeStr);
                     } catch (e) {
-                        console.log("Otro cliente ya envió el reporte automático.");
+                        console.log("Otro cliente ya envió el reporte.");
                     }
                 }
             }
@@ -1033,14 +1204,20 @@
             const ind = document.getElementById('status-indicator');
             const txt = document.getElementById('status-text');
             const btnDrive = document.getElementById('btn-open-drive');
+            const btnSchedule = document.getElementById('btn-view-schedule');
+            
             if(!ind || !txt) return;
             ind.className = `w-3.5 h-3.5 rounded-full border-2 border-white/50 dark:border-slate-700 ${config.available ? 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.8)]' : 'bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.8)]'}`;
             txt.innerText = config.available ? 'DISPONIBLE ✅' : 'EN USO ⛔';
             txt.className = `text-[11px] font-black uppercase ${config.available ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500'}`;
+            
             if (btnDrive) {
                 btnDrive.classList.toggle('opacity-50', !config.available);
                 btnDrive.classList.toggle('cursor-not-allowed', !config.available);
                 btnDrive.classList.toggle('saturate-0', !config.available);
+            }
+            if (btnSchedule) {
+                btnSchedule.classList.toggle('hidden', !config.scheduleImageEnable || !config.scheduleImageUrl);
             }
         }
 
@@ -1096,18 +1273,16 @@
             } catch (err) { console.error("No se pudo conectar con Chat:", err); }
         };
 
-        // --- SISTEMA DE REPORTES INTEGRADO CON EMAILJS ---
         window.sendProgressReport = async (isAuto = false) => {
             if (!config.emailjsService || !config.emailjsTemplate || !config.emailjsKey) {
-                if(!isAuto) window.showAlert("❌ No se ha configurado EmailJS en el panel de administrador (Service ID, Template ID y Public Key).");
+                if(!isAuto) window.showAlert("❌ No se ha configurado EmailJS en el panel de administrador.");
                 return;
             }
             if (!config.reportEmails || config.reportEmails.trim() === '') {
-                if(!isAuto) window.showAlert("❌ Faltan los correos destinatarios en la configuración del proyecto.");
+                if(!isAuto) window.showAlert("❌ Faltan los correos destinatarios.");
                 return;
             }
             
-            // Recolectar datos y métricas
             const activeTasks = tasks.filter(t => t.status !== 'archived');
             const totalTasks = activeTasks.length;
             const doneTasks = activeTasks.filter(t => t.status === 'done').length;
@@ -1127,41 +1302,26 @@
             };
             
             const cleanEmails = config.reportEmails.split(',').map(e => e.trim()).filter(e => e).join(',');
-
-            // Definir quién envía el correo. (Prioriza el nombre personalizado del admin, luego la automatización o el nombre del usuario real).
             let finalSenderName = config.reportSender || '';
-            if (finalSenderName.trim() === '') {
-                finalSenderName = isAuto ? "Sistema Kanban Automático" : currentUser;
-            }
+            if (finalSenderName.trim() === '') finalSenderName = isAuto ? "Sistema Kanban" : currentUser;
 
-            // Inicializar SDK de EmailJS con la llave pública
             emailjs.init(config.emailjsKey.trim());
-
-            // Preparar parámetros exactos que se inyectarán en la plantilla
             const templateParams = {
                 to_emails: cleanEmails,
                 senderName: finalSenderName,
                 date: new Date().toLocaleDateString('es-PE'),
                 time: new Date().toLocaleTimeString('es-PE'),
-                totalTasks: totalTasks,
-                doneTasks: doneTasks,
-                wipTasks: wipTasks,
-                overdueTasks: overdueTasks,
-                completionPercentage: completionRate,
-                avgLeadTime: avgLeadTime,
-                priority1: priorityCounts.p1,
-                priority2: priorityCounts.p2,
-                priority3: priorityCounts.p3,
-                priority4: priorityCounts.p4
+                totalTasks: totalTasks, doneTasks: doneTasks, wipTasks: wipTasks, overdueTasks: overdueTasks,
+                completionPercentage: completionRate, avgLeadTime: avgLeadTime,
+                priority1: priorityCounts.p1, priority2: priorityCounts.p2, priority3: priorityCounts.p3, priority4: priorityCounts.p4
             };
             
             try {
                 if(!isAuto) window.showAlert("⏳ Enviando correos, por favor espera...");
                 await emailjs.send(config.emailjsService.trim(), config.emailjsTemplate.trim(), templateParams);
-                if(!isAuto) window.showAlert("✅ Reporte enviado con éxito a todos los correos.");
+                if(!isAuto) window.showAlert("✅ Reporte enviado con éxito.");
             } catch (err) {
-                console.error("Error EmailJS:", err);
-                if(!isAuto) window.showAlert("⚠️ Error al enviar correo: " + (err.text || err.message || "Verifica tus credenciales."));
+                if(!isAuto) window.showAlert("⚠️ Error al enviar: " + (err.text || err.message));
             }
         };
 
@@ -1186,7 +1346,7 @@
                     <span class="text-[10px] font-bold text-slate-800 dark:text-slate-300 uppercase">👤 ${u.name} ${isOnline ? '<span class="text-emerald-500 ml-1 text-xs">●</span>' : ''}</span>
                     <button type="button" onclick="window.deleteUser('${u.id}')" class="text-slate-500 hover:text-red-600 transition-colors bg-transparent shadow-none border-0">🗑️</button>
                 </div>`;
-            }).join('') || '<p class="text-[9px] text-slate-500 italic col-span-2">No hay responsables registrados</p>';
+            }).join('') || '<p class="text-[9px] text-slate-500 italic col-span-2">No hay responsables</p>';
         }
 
         function updateRoleSelects() {
@@ -1363,10 +1523,30 @@
         }
         function ganttTaskStart(task) { return ganttDate(task.dateStart) || ganttDate(task.dateEnd) || new Date(); }
         function ganttTaskEnd(task) { const s=ganttTaskStart(task); const e=ganttDate(task.dateEnd); return e&&e>=s?e:s; }
+        
+        // --- CÁLCULO DINÁMICO DE FECHA FIN ---
+        function getDynamicProjectEndDate() {
+            if (config.projectEndDate) return parseDateLocal(config.projectEndDate).getTime();
+            let maxMs = Date.now();
+            tasks.forEach(t => {
+                if (t.dateEnd) {
+                    const d = parseDateLocal(t.dateEnd).getTime();
+                    if (d > maxMs) maxMs = d;
+                }
+            });
+            return maxMs;
+        }
+
         function getTaskDurationDays(startValue, endValue) {
             const start = ganttDate(startValue);
-            const end = ganttDate(endValue);
-            if (!start && !end) return 1;
+            let end = ganttDate(endValue);
+            if (!endValue && !startValue) return 1;
+            
+            // Si hay inicio pero no fin de proyecto, toma el fin dinámico
+            if (start && !endValue) {
+                end = new Date(getDynamicProjectEndDate());
+            }
+
             if (start && end && end >= start) return ganttDiffDays(end, start) + 1;
             return 1;
         }
@@ -1374,7 +1554,7 @@
         window.updateProjectDaysCount = () => { 
             const s=document.getElementById('edit-project-start')?.value; 
             const e=document.getElementById('edit-project-end')?.value; 
-            if(s&&e) { 
+            if(s) { 
                 const d=getTaskDurationDays(s,e); 
                 const input=document.getElementById('edit-project-days'); 
                 if(input) input.value=d; 
@@ -1557,6 +1737,71 @@
                 calBtn.classList.add('text-slate-600', 'dark:text-slate-400', 'border-transparent');
             }
         };
+        
+        // --- CALENDARIO SIDE-BY-SIDE (EN EL MODAL) ---
+        window.toggleModalCalendar = () => {
+            isModalCalendarOpen = !isModalCalendarOpen;
+            const calSection = document.getElementById('modal-calendar-section');
+            if (isModalCalendarOpen) {
+                calSection.classList.remove('hidden');
+                calSection.classList.add('flex');
+                updateModalCalendarSelector();
+            } else {
+                calSection.classList.add('hidden');
+                calSection.classList.remove('flex');
+            }
+        };
+
+        function updateModalCalendarSelector() {
+            const selector = document.getElementById('modal-calendar-selector');
+            if (!selector) return;
+            const currentValue = selector.value;
+            let html = `<option value="master">🌐 Calendario Maestro</option>`;
+            
+            const me = registeredUsers.find(u => u.name === currentUser);
+            if (me && me.personalCalendars && me.personalCalendars.length > 0) {
+                me.personalCalendars.forEach((cal, idx) => {
+                    const cUrl = typeof cal === 'string' ? cal : cal.url;
+                    const cName = typeof cal === 'string' ? `Mi Calendario ${idx+1}` : (cal.name || `Privado ${idx+1}`);
+                    if (cUrl) {
+                        html += `<option value="pcal-${idx}">🔒 ${escapeHtml(cName)}</option>`;
+                    }
+                });
+            }
+            selector.innerHTML = html;
+            if (Array.from(selector.options).some(o => o.value === currentValue)) selector.value = currentValue;
+            window.changeModalCalendarSource();
+        }
+
+        window.changeModalCalendarSource = () => {
+            const selector = document.getElementById('modal-calendar-selector');
+            const iframe = document.getElementById('modal-side-calendar-frame');
+            if (!selector || !iframe) return;
+            
+            const val = selector.value;
+            let srcUrl = '';
+
+            if (val === 'master') {
+                srcUrl = config.calendarUrl || '';
+            } else if (val.startsWith('pcal-')) {
+                const idx = parseInt(val.split('-')[1]);
+                const me = registeredUsers.find(u => u.name === currentUser);
+                if (me && me.personalCalendars && me.personalCalendars[idx]) {
+                    const cal = me.personalCalendars[idx];
+                    srcUrl = typeof cal === 'string' ? cal : cal.url;
+                }
+            }
+
+            if (srcUrl) {
+                const iframeSrcMatch = srcUrl.match(/src="([^"]+)"/);
+                if (iframeSrcMatch) srcUrl = iframeSrcMatch[1];
+                if (srcUrl.includes('calendar.google.com') && !srcUrl.includes('embed')) {
+                    const matchCid = srcUrl.match(/src=([^&]+)/) || srcUrl.match(/cid=([^&]+)/);
+                    if (matchCid) srcUrl = `https://calendar.google.com/calendar/embed?src=${matchCid[1]}`;
+                }
+            }
+            iframe.src = srcUrl && srcUrl.startsWith('http') ? srcUrl : 'about:blank';
+        };
 
         function updateCalendarSelector() {
             const selector = document.getElementById('calendar-selector');
@@ -1566,18 +1811,17 @@
             
             const me = registeredUsers.find(u => u.name === currentUser);
             if (me && me.personalCalendars && me.personalCalendars.length > 0) {
-                me.personalCalendars.forEach((calUrl, idx) => {
-                    if (calUrl) {
-                        html += `<option value="pcal-${idx}">🔒 Mi Calendario Privado ${idx + 1}</option>`;
+                me.personalCalendars.forEach((cal, idx) => {
+                    const cUrl = typeof cal === 'string' ? cal : cal.url;
+                    const cName = typeof cal === 'string' ? `Mi Calendario Privado ${idx + 1}` : (cal.name || `Privado ${idx+1}`);
+                    if (cUrl) {
+                        html += `<option value="pcal-${idx}">🔒 ${escapeHtml(cName)}</option>`;
                     }
                 });
             }
             selector.innerHTML = html;
-            if (Array.from(selector.options).some(o => o.value === currentValue)) {
-                selector.value = currentValue;
-            } else {
-                selector.value = 'master';
-            }
+            if (Array.from(selector.options).some(o => o.value === currentValue)) selector.value = currentValue;
+            else selector.value = 'master';
             window.changeCalendarSource();
         }
 
@@ -1596,7 +1840,8 @@
                 const idx = parseInt(val.split('-')[1]);
                 const me = registeredUsers.find(u => u.name === currentUser);
                 if (me && me.personalCalendars && me.personalCalendars[idx]) {
-                    srcUrl = me.personalCalendars[idx];
+                    const cal = me.personalCalendars[idx];
+                    srcUrl = typeof cal === 'string' ? cal : cal.url;
                 }
             }
 
@@ -1628,9 +1873,21 @@
         window.openPersonalCalModal = () => {
             const me = registeredUsers.find(u => u.name === currentUser);
             const myCals = me?.personalCalendars || [];
+            const container = document.getElementById('personal-cal-inputs');
+            container.innerHTML = '';
+            
             for (let i = 0; i < 5; i++) {
-                const input = document.getElementById(`pcal-input-${i}`);
-                if(input) input.value = myCals[i] || '';
+                const calData = myCals[i];
+                let cName = '', cUrl = '';
+                if (typeof calData === 'string') { cUrl = calData; cName = `Mi Calendario ${i+1}`; }
+                else if (calData) { cName = calData.name || ''; cUrl = calData.url || ''; }
+                
+                container.innerHTML += `
+                    <div class="flex gap-2 mb-2 p-3 glass-ui bg-slate-50 dark:bg-slate-800/50 rounded-xl">
+                        <input type="text" id="pcal-name-${i}" value="${escapeHtml(cName)}" placeholder="Ej: Personal" class="w-1/3 glass-ui text-slate-900 dark:text-white rounded-lg p-2 text-xs font-bold outline-none focus:border-indigo-500/50">
+                        <input type="url" id="pcal-input-${i}" value="${escapeHtml(cUrl)}" placeholder="https://calendar.google.com/calendar/embed?..." class="flex-1 glass-ui text-slate-900 dark:text-white rounded-lg p-2 text-xs outline-none focus:border-indigo-500/50">
+                    </div>
+                `;
             }
             document.getElementById('personal-cal-modal').classList.remove('hidden');
         };
@@ -1638,9 +1895,13 @@
         window.savePersonalCalendars = async () => {
             const myCals = [];
             for (let i = 0; i < 5; i++) {
-                const input = document.getElementById(`pcal-input-${i}`);
-                if (input && input.value.trim()) {
-                    myCals.push(input.value.trim());
+                const nameInput = document.getElementById(`pcal-name-${i}`);
+                const urlInput = document.getElementById(`pcal-input-${i}`);
+                if (urlInput && urlInput.value.trim()) {
+                    myCals.push({
+                        name: nameInput.value.trim() || `Calendario ${i+1}`,
+                        url: urlInput.value.trim()
+                    });
                 }
             }
             const me = registeredUsers.find(u => u.name === currentUser);
@@ -1649,11 +1910,19 @@
                 await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', me.id), { personalCalendars: myCals });
                 document.getElementById('personal-cal-modal').classList.add('hidden');
                 updateCalendarSelector();
+                if(isModalCalendarOpen) updateModalCalendarSelector();
                 window.showAlert("Tus calendarios privados han sido guardados.");
             } catch (err) {
                 window.showAlert("Error al guardar calendarios: " + err.message);
             }
         };
+        
+        window.openScheduleModal = () => {
+            if (config.scheduleImageUrl) {
+                document.getElementById('schedule-image-view').src = config.scheduleImageUrl;
+                document.getElementById('schedule-image-modal').classList.remove('hidden');
+            }
+        }
 
         window.toggleMetricsView = () => {
             const container = document.getElementById('metrics-modal-overlay');
@@ -1714,8 +1983,9 @@
             const completionRate = totalTasks > 0 ? Math.round((doneTasks / totalTasks) * 100) : 0;
 
             let projectDaysLeft = "N/A";
-            if (config.projectEndDate) {
-                const endD = new Date(config.projectEndDate + 'T23:59:59');
+            const endD_ms = getDynamicProjectEndDate();
+            if (endD_ms) {
+                const endD = new Date(endD_ms);
                 const today = new Date();
                 const diff = Math.ceil((endD - today) / (1000 * 60 * 60 * 24));
                 projectDaysLeft = diff >= 0 ? `${diff} d.` : `Vencido`;
@@ -1914,9 +2184,20 @@
                     const tags = priorityTag + (task.labels || []).map(l => `<span class="text-[8px] font-black text-slate-700 dark:text-slate-200 mr-1 bg-slate-100 dark:bg-slate-700/50 backdrop-blur-sm px-2 py-1 rounded-md uppercase border border-slate-200 dark:border-slate-600/30 cursor-default">${escapeHtml(l)}</span>`).join('');
 
                     const taskLinks = task.links || (task.link ? [task.link] : []);
-                    const linksHtml = taskLinks.map((l, idx) => `
-                        <button type="button" onclick="event.stopPropagation(); window.open('${l}', '_blank')" class="mt-2 w-full py-2 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white text-[9px] font-black rounded-xl border border-slate-200 dark:border-slate-600/50 uppercase shadow-sm flex items-center justify-center gap-2">📂 Link ${taskLinks.length > 1 ? idx+1 : 'Drive'}</button>
-                    `).join('');
+                    const linksHtml = taskLinks.map((l, idx) => {
+                        const sLink = formatSmartLink(l);
+                        return `<button type="button" onclick="event.stopPropagation(); window.open('${sLink.url}', '_blank')" class="mt-2 w-full py-2 bg-slate-50 dark:bg-slate-700/50 text-slate-800 dark:text-white text-[9px] font-black rounded-xl border border-slate-200 dark:border-slate-600/50 uppercase shadow-sm flex items-center justify-center gap-2">${sLink.icon} ${sLink.name} ${taskLinks.length > 1 ? idx+1 : ''}</button>`;
+                    }).join('');
+                    
+                    // Renderizar chips de archivos si hay
+                    const taskFiles = task.files || [];
+                    let filesHtml = '';
+                    if (taskFiles.length > 0) {
+                        filesHtml = `<div class="mt-2 flex flex-wrap gap-1.5">` + taskFiles.map(f => {
+                            const e = getFileEmoji(f.name);
+                            return `<span class="text-[9px] bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-2 py-1 rounded-md text-slate-600 dark:text-slate-300 font-bold max-w-[120px] truncate" title="${escapeHtml(f.name)}">${e} ${escapeHtml(f.name)}</span>`;
+                        }).join('') + `</div>`;
+                    }
 
                     const subtasks = task.subtasks || [];
                     let subtasksHtml = '';
@@ -1962,6 +2243,7 @@
                         <div class="kanban-card-tags mb-2 flex flex-wrap gap-1 mt-1">${tags}</div>
                         <h3 class="task-title-clamp kanban-task-title font-black text-slate-900 dark:text-slate-100 text-[13px] mb-1 leading-snug" title="${escapeHtml(task.title || '')}">${escapeHtml(task.title || 'Sin titulo')}</h3>
                         ${subtasksHtml}
+                        ${filesHtml}
                         <div class="mt-2 space-y-1">${linksHtml}</div>
                         ${validationButtons}
                         <div class="flex items-center justify-between pt-4 mt-3 border-t border-slate-200 dark:border-slate-600/30 cursor-default">
@@ -2020,6 +2302,7 @@
                 app = initializeApp(firebaseConfig);
                 auth = getAuth(app);
                 db = getFirestore(app);
+                storage = getStorage(app); // Inicializar storage
 
                 await signInAnonymously(auth).catch(err => { throw new Error("AUTH_ERROR: " + err.message); });
 
@@ -2078,6 +2361,7 @@
                 window.renderOnlineUsers();
                 window.renderAuthList();
                 updateCalendarSelector();
+                if(isModalCalendarOpen) updateModalCalendarSelector();
             });
 
             onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'config', 'master'), (snap) => {
@@ -2089,12 +2373,15 @@
                     const dynamicLinksContainer = document.getElementById('dynamic-quick-links');
                     if (dynamicLinksContainer) {
                         const customLinks = config.customLinks || [];
-                        const htmlLinks = customLinks.map(l => `<a href="${l.url}" target="_blank" class="glass-ui text-slate-700 dark:text-slate-200 px-5 py-2.5 rounded-full text-[10px] font-black uppercase inline-block btn-global-hover">${l.title} 🔗</a>`).join('');
+                        const htmlLinks = customLinks.map(l => {
+                            const sLink = formatSmartLink(l.url);
+                            return `<a href="${l.url}" target="_blank" class="glass-ui text-slate-700 dark:text-slate-200 px-5 py-2.5 rounded-full text-[10px] font-black uppercase inline-block btn-global-hover">${sLink.icon} ${l.title}</a>`;
+                        }).join('');
                         dynamicLinksContainer.innerHTML = `<a id="btn-infopucp" href="${config.infoPucpLink || '#'}" target="_blank" class="glass-ui text-slate-700 dark:text-slate-200 px-5 py-2.5 rounded-full text-[10px] font-black uppercase inline-block btn-global-hover">INFOPUCP 🎓</a>${htmlLinks}`;
                     }
                     updateCalendarSelector();
                 } else {
-                    setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'config', 'master'), { available: true, link: '#', infoPucpLink: '#', calendarUrl: '', chatWebhook: '', emailjsService: '', emailjsTemplate: '', emailjsKey: '', reportEmails: '', reportTime: '09:00', reportSender: '', customLinks: [], metricsConfig: config.metricsConfig });
+                    setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'config', 'master'), { available: true, link: '#', infoPucpLink: '#', calendarUrl: '', chatWebhook: '', emailjsService: '', emailjsTemplate: '', emailjsKey: '', reportEmails: '', reportTime: '09:00', reportSender: '', scheduleImageUrl: '', scheduleImageEnable: false, customLinks: [], metricsConfig: config.metricsConfig });
                 }
             });
         }
@@ -2110,6 +2397,8 @@
                 infoPucpLink: document.getElementById('edit-pucp-link').value,
                 calendarUrl: document.getElementById('edit-calendar-url').value,
                 chatWebhook: document.getElementById('edit-chat-webhook').value,
+                scheduleImageUrl: document.getElementById('edit-schedule-image-url').value,
+                scheduleImageEnable: document.getElementById('edit-schedule-image-enable').checked,
                 
                 emailjsService: document.getElementById('edit-emailjs-service').value,
                 emailjsTemplate: document.getElementById('edit-emailjs-template').value,
@@ -2143,6 +2432,8 @@
             document.getElementById('edit-pucp-link').value = config.infoPucpLink || '';
             document.getElementById('edit-calendar-url').value = config.calendarUrl || '';
             document.getElementById('edit-chat-webhook').value = config.chatWebhook || '';
+            document.getElementById('edit-schedule-image-url').value = config.scheduleImageUrl || '';
+            document.getElementById('edit-schedule-image-enable').checked = !!config.scheduleImageEnable;
             
             document.getElementById('edit-emailjs-service').value = config.emailjsService || '';
             document.getElementById('edit-emailjs-template').value = config.emailjsTemplate || '';
@@ -2273,6 +2564,10 @@
             linksContainer.innerHTML = '';
             const taskLinks = task.links || (task.link ? [task.link] : []);
             taskLinks.forEach(l => window.addLinkInput(l));
+            
+            // Archivos adjuntos
+            tempTaskFiles = task.files ? [...task.files] : [];
+            renderTaskFiles();
 
             const subtasksContainer = document.getElementById('task-subtasks-container');
             subtasksContainer.innerHTML = '';
@@ -2283,6 +2578,10 @@
             document.getElementById('btn-archive-task').classList.toggle('hidden', task.status === 'archived');
             document.getElementById('modal-overlay').classList.remove('hidden');
             renderComments(task.comments || []);
+            
+            // Si el calendario main estaba abierto, abrimos también el side by side
+            const mainCalOpen = !document.getElementById('calendar-side-panel').classList.contains('hidden');
+            if (mainCalOpen && !isModalCalendarOpen) window.toggleModalCalendar();
         };
 
         window.restoreTask = async (id) => {
@@ -2329,6 +2628,12 @@
             }
             if (confirm("¿Eliminar actividad permanentemente?")) {
                 try {
+                    // Limpiar storage de archivos de la tarea
+                    if(task.files && task.files.length > 0) {
+                        for(const file of task.files) {
+                            try { await deleteObject(ref(storage, file.path)); } catch(e){}
+                        }
+                    }
                     await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'tasks', id));
                     window.closeModal();
                 } catch (err) { window.showAlert("Error al eliminar: " + err.message); }
@@ -2414,7 +2719,13 @@
 
         window.openModal = () => {
             document.getElementById('task-form').reset();
-            document.getElementById('edit-id').value = '';
+            
+            // Generar ID temporal o dejar en blanco para que firebase lo asigne, 
+            // pero lo necesitamos para la ruta de storage si suben antes de guardar.
+            const newId = `temp_` + Date.now();
+            document.getElementById('edit-id').value = ''; 
+            document.getElementById('task-title').setAttribute('data-temp-id', newId); // Guardamos para storage
+            
             document.getElementById('task-status').value = 'backlog';
             document.getElementById('task-assignee').value = currentUser;
             document.getElementById('task-priority').value = '1';
@@ -2423,8 +2734,15 @@
             document.getElementById('task-links-container').innerHTML = '';
             document.getElementById('task-subtasks-container').innerHTML = '';
             renderTaskLabelSuggestions();
+            
+            tempTaskFiles = [];
+            renderTaskFiles();
+            
             document.getElementById('modal-overlay').classList.remove('hidden');
             renderComments([]);
+            
+            const mainCalOpen = !document.getElementById('calendar-side-panel').classList.contains('hidden');
+            if (mainCalOpen && !isModalCalendarOpen) window.toggleModalCalendar();
         };
 
         window.closeModal = () => document.getElementById('modal-overlay').classList.add('hidden');
@@ -2542,14 +2860,15 @@
                     const currentTaskStart = parseDateLocal(formDateStartRaw).getTime();
                     if (!earliestStart || currentTaskStart < earliestStart) { earliestStart = currentTaskStart; }
 
-                    const maxAllowedEndMs = config.projectEndDate ? parseDateLocal(config.projectEndDate).getTime() : earliestStart + ((configuredDays - 1) * 86400000);
+                    const maxAllowedEndMs = config.projectEndDate ? parseDateLocal(config.projectEndDate).getTime() : getDynamicProjectEndDate();
                     const formDateEndRaw = document.getElementById('task-date-end').value || formDateStartRaw;
                     const currentTaskEndMs = parseDateLocal(formDateEndRaw).getTime();
 
-                    if (currentTaskEndMs > maxAllowedEndMs) {
+                    // Solo restringir si el admin forzó una fecha de fin y se excede
+                    if (config.projectEndDate && currentTaskEndMs > maxAllowedEndMs) {
                         const maxDateObj = new Date(maxAllowedEndMs);
                         const maxDateStr = `${maxDateObj.getFullYear()}-${String(maxDateObj.getMonth() + 1).padStart(2, '0')}-${String(maxDateObj.getDate()).padStart(2, '0')}`;
-                        window.showAlert(`Vigencia de Proyecto Excedida: El proyecto dura un máximo de ${configuredDays} días. La fecha fin de la tarea no puede superar el límite del ${maxDateStr}.`);
+                        window.showAlert(`Límite de Proyecto: El proyecto tiene un cierre forzado el ${maxDateStr}. La fecha de fin no puede superar el límite.`);
                         return;
                     }
 
@@ -2572,7 +2891,6 @@
                         return;
                     }
 
-                    const existingTask = tasks.find(t => t.id === id) || {};
                     const data = {
                         title: document.getElementById('task-title').value,
                         role: document.getElementById('task-role').value,
@@ -2582,6 +2900,7 @@
                         dateEnd: document.getElementById('task-date-end').value,
                         labels: labels,
                         links: links,
+                        files: tempTaskFiles, // Vinculamos los archivos
                         subtasks: subtasks,
                         priority: Number(document.getElementById('task-priority')?.value || 1),
                         updatedBy: currentUser,
@@ -2602,7 +2921,6 @@
                     } else { 
                         data.comments = []; 
                         await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'tasks'), data); 
-                        // --- ALERTA DE NUEVA TAREA A GOOGLE CHAT ---
                         window.sendGoogleChatAlert(data.title, 'creado una nueva tarea', currentUser);
                     }
                     window.closeModal();
